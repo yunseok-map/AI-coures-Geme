@@ -6,6 +6,7 @@
 
 import { workTerms } from './terms-work.js';
 import { extraTerms } from './terms-extra.js';
+import { lawTerms } from './terms-law.js';
 
 export const CHECKED_AT = '2026-08';
 
@@ -245,7 +246,7 @@ const coreTerms = [
 ];
 
 /** 도감에 실리는 용어 전체 */
-export const terms = coreTerms.concat(workTerms, extraTerms);
+export const terms = coreTerms.concat(workTerms, extraTerms, lawTerms);
 
 /** 코스맵·도감에서 쓰는 챕터 이름 */
 export const chapterNames = {

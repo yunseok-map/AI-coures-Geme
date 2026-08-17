@@ -8,6 +8,8 @@
 //   5. 모든 카드에 watchOut(주의점)과 checkedAt, 공식 링크 필수
 //   6. 넣기 전에 현재도 서비스 중인지 확인 (2026-08-17 확인)
 
+import { meetingCategory } from './tools-meeting.js';
+
 export const CHECKED_AT = '2026-08';
 
 /** 도감 맨 위에 고정되는 경고. 스크롤해도 사라지지 않는다 */
@@ -15,7 +17,7 @@ export const BANNER =
   '여기 나온 도구를 회사 업무에 바로 쓸 수 있다는 뜻이 아닙니다. ' +
   '사내 자료를 넣기 전에 승인된 도구인지 반드시 확인하세요.';
 
-export const categories = [
+const baseCategories = [
   {
     id: 'chat', name: '범용 채팅',
     use: '묻고 답 받기. 대부분의 사람이 “AI”라고 할 때 떠올리는 그것',
@@ -279,6 +281,12 @@ export const categories = [
     ]
   }
 ];
+
+/**
+ * 회의 기록·요약 칸은 파일을 나눠 두었다 (500줄 규칙).
+ * 카테고리를 새로 추가하려면 파일 하나 + 여기 한 줄이면 된다.
+ */
+export const categories = baseCategories.concat(meetingCategory);
 
 /** 애그리게이터 설명 — 챕터 2의 "모델 vs 제품"이 여기서 한 번 더 쓰인다 */
 export const AGGREGATOR_NOTE = {

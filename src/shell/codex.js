@@ -6,6 +6,7 @@ import { terms, chapterNames, CHECKED_AT } from '../data/terms.js';
 import { state } from '../core/state.js';
 import { enter, cardIn, press } from '../core/motion.js';
 import { go } from '../core/router.js';
+import { esc, strong } from '../core/text.js';
 
 export function renderCodex(root, query = '') {
   root.innerHTML = '';
@@ -70,7 +71,10 @@ export function renderCodex(root, query = '') {
       sec.className = 'codex__group';
       const h = document.createElement('div');
       h.className = 'codex__groupname';
-      h.textContent = `${ch === 9 ? '번외' : '챕터 ' + ch} — ${chapterNames[ch] || ''} (${group.length})`;
+      // 번외는 챕터 번호가 없다 — "번외 — 번외"가 되지 않게 이름만 쓴다
+      const name = chapterNames[ch] || '';
+      h.textContent = ch === 9 ? `번외 (${group.length})`
+                               : `챕터 ${ch} — ${name} (${group.length})`;
       sec.append(h);
       for (const t of group) {
         const card = termCard(t, key && group.length <= 3);
@@ -116,7 +120,7 @@ function termCard(t, open) {
     row('설명', t.explain) +
     row('실무 예시', t.example) +
     `<div class="term__row term__myth">` +
-      `<span class="term__key">자주 하는 오해</span>${esc(t.myth)}</div>` +
+      `<span class="term__key">자주 하는 오해</span>${strong(t.myth)}</div>` +
     // 출처가 없는 용어가 있다. 공식 정의가 존재하지 않는 말에 억지로 링크를 붙이는 대신
     // "이건 이 교육자료의 정리"라고 밝힌다. 그게 챕터 4에서 가르치는 태도다.
     (t.source
@@ -147,7 +151,8 @@ function termCard(t, open) {
 }
 
 function row(key, val) {
-  return `<div class="term__row"><span class="term__key">${esc(key)}</span>${esc(val)}</div>`;
+  // 콘텐츠의 `**강조**` 를 <b> 로 바꿔서 보여 준다 (core/text.js)
+  return `<div class="term__row"><span class="term__key">${esc(key)}</span>${strong(val)}</div>`;
 }
 
 function shortUrl(u) {
@@ -155,7 +160,3 @@ function shortUrl(u) {
   catch { return u; }
 }
 
-function esc(s) {
-  return String(s == null ? '' : s)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}

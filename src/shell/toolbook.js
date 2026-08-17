@@ -9,6 +9,7 @@
 import { categories, BANNER, AGGREGATOR_NOTE, toolCount, CHECKED_AT } from '../data/tools.js';
 import { enter } from '../core/motion.js';
 import { go } from '../core/router.js';
+import { esc, strong } from '../core/text.js';
 
 export function renderToolbook(root, query = '') {
   root.innerHTML = '';
@@ -118,9 +119,9 @@ function toolCard(t) {
   const d = document.createElement('article');
   d.className = 'tool';
 
-  const good = (t.goodAt || []).map(x => `<li><span>${esc(x)}</span></li>`).join('');
+  const good = (t.goodAt || []).map(x => `<li><span>${strong(x)}</span></li>`).join('');
   // watchOut 은 반드시 채운다 — 장점만 나열하면 그 자체가 워크슬롭이다 (프롬프트 §6-B)
-  const watch = (t.watchOut || []).map(x => `<li><span>${esc(x)}</span></li>`).join('');
+  const watch = (t.watchOut || []).map(x => `<li><span>${strong(x)}</span></li>`).join('');
 
   d.innerHTML =
     `<div class="tool__head">` +
@@ -128,7 +129,7 @@ function toolCard(t) {
       `<span class="tool__price">${esc(t.pricing || '확인 필요')}</span>` +
       (t.note === 'aggregator' ? `<span class="tool__price">애그리게이터</span>` : '') +
     `</div>` +
-    `<p class="tool__one">${esc(t.oneLine)}</p>` +
+    `<p class="tool__one">${strong(t.oneLine)}</p>` +
     (good  ? `<ul class="tool__list tool__good">${good}</ul>` : '') +
     (watch ? `<ul class="tool__list tool__watch">${watch}</ul>` : '') +
     `<div class="tool__meta">` +
@@ -140,7 +141,3 @@ function toolCard(t) {
   return d;
 }
 
-function esc(s) {
-  return String(s == null ? '' : s)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
