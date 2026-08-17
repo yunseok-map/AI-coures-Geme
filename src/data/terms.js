@@ -125,14 +125,14 @@ const coreTerms = [
     term: '제품', en: 'Product', chapter: 2,
     analogy: '그 엔진으로 만든 자동차',
     explain: '모델을 감싸서 사람이 쓸 수 있게 만든 도구다. 파일을 읽고, 도구를 부르고, 권한을 확인하는 부분이 전부 여기 붙는다. 공식 문서의 표현이 정확하다 — "Claude Code가 하네스이고, Claude는 그 안에 든 모델이다".',
-    example: 'ChatGPT, Claude.ai, Claude Code, Cowork, Codex는 전부 제품',
+    example: 'ChatGPT, Claude.ai, Gemini, 그리고 터미널에서 도는 claude·codex·gemini 는 전부 제품',
     myth: '"제품이 똑똑한 것"이 아니다. 똑똑한 건 모델, 제품은 그걸 일하게 만드는 껍데기. 둘 다 있어야 쓸모가 있다',
     source: D
   },
   {
     term: '표면', en: 'Surface', chapter: 2,
     analogy: '같은 은행을 창구·ATM·앱으로 이용하는 것',
-    explain: '같은 제품을 쓰는 여러 창구를 말한다. Claude Code는 터미널·VS Code·JetBrains·데스크톱 앱·claude.ai 다섯 표면에서 돌아간다. 전부 같은 엔진이라 설정과 지침이 그대로 따라온다.',
+    explain: '같은 제품을 쓰는 여러 창구를 말한다. CLI 에이전트는 터미널이 본 자리이고 거기에 IDE 확장·데스크톱 앱·웹이 더 붙는다 — 예를 들어 Claude Code는 터미널·VS Code·JetBrains·데스크톱 앱·claude.ai 다섯 표면에서 돈다. 전부 같은 엔진이라 설정과 지침이 그대로 따라온다.',
     example: '회사에선 데스크톱 앱, 이동 중엔 휴대폰 — 같은 작업을 이어서',
     myth: '"표면마다 다른 제품"이 아니다. 창구만 다르다',
     source: D
@@ -154,24 +154,26 @@ const coreTerms = [
     source: 'https://support.claude.com/en/articles/9487310-what-are-artifacts-and-how-do-i-use-them'
   },
   {
-    term: 'Claude Code', en: 'Claude Code', chapter: 2,
-    analogy: '내 컴퓨터의 파일과 명령을 직접 다루는 작업자',
-    explain: '공식 정의는 "코드베이스를 읽고, 파일을 수정하고, 명령을 실행하고, 개발 도구와 연동하는 에이전틱 코딩 도구"다. 터미널·IDE·데스크톱 앱·브라우저에서 돌아간다. 채팅과 다른 점은 말만 하는 게 아니라 실제로 파일을 고친다는 것이다.',
-    example: '폴더 안 문서 200개의 머리말을 한 번에 통일, 파일 일괄 이름 변경',
-    myth: '"이름에 Code가 있으니 개발자 전용?" — 공식 정의는 지금도 코딩 도구가 맞다. 다만 파일·명령을 다루는 도구라 비코딩 업무에도 쓰이기 시작했고, 그래서 비개발자용 Cowork가 따로 나왔다',
-    source: 'https://code.claude.com/docs/en/overview'
+    term: 'CLI 에이전트', en: 'CLI coding agent', chapter: 2,
+    analogy: '터미널에 앉아서 내 컴퓨터의 파일과 명령을 직접 다루는 작업자',
+    explain: '한 회사의 제품 이름이 아니라 도구의 한 갈래다. 터미널(명령창)에 설치하고 자연어로 지시하면 내 컴퓨터의 파일을 실제로 읽고 고치고 명령을 실행한다 — 채팅과 다른 점이 이것이다. 회사마다 하나씩 있고(claude · codex · gemini) 공식 소개 문장이 서로 거의 같다.',
+    example: '터미널에 이름을 치고 들어가 폴더 안 문서 200개의 머리말을 한 번에 통일',
+    myth: '"이름에 Code가 있으니 개발자 전용?" — 공식 정의는 셋 다 코딩 도구가 맞다. 다만 본질이 파일·명령을 다루는 것이라 비코딩 업무에도 쓰이기 시작했다. 그리고 하나를 익히면 나머지도 조작이 같다 — 다른 것은 지침 파일 이름뿐이다 (CLAUDE.md / AGENTS.md / GEMINI.md)',
+    source: ['https://code.claude.com/docs/en/overview',
+             'https://learn.chatgpt.com/docs/codex/cli',
+             'https://google-gemini.github.io/gemini-cli/']
   },
   {
     term: 'Cowork', en: 'Claude Cowork', chapter: 2,
     analogy: '코딩 빼고 나머지 사무 업무를 맡기는 동료',
-    explain: '공식 소개는 "어디서든 방향을 잡아줄 수 있는 작업 완수 도구. 목표를 주면 내 파일과 도구를 넘나들며 일한다"이다. Claude Code와 같은 기술을 쓰되 비개발자의 사무 업무를 위해 만들어졌다. 데스크톱·웹·모바일에서 돌아간다.',
+    explain: '공식 소개는 "어디서든 방향을 잡아줄 수 있는 작업 완수 도구. 목표를 주면 내 파일과 도구를 넘나들며 일한다"이다. CLI 에이전트와 같은 기술을 쓰되 터미널 대신 일반 화면에서, 비개발자의 사무 업무를 위해 만들어졌다. 데스크톱·웹·모바일에서 돌아간다.',
     example: '여러 자료를 대조해 표 만들기, 계약서 다수 검토, 정기 보고서 반복 생성',
     myth: '"Claude Code의 쉬운 버전?" — 대상과 용도가 다른 별개 제품이다',
     source: 'https://claude.com/product/cowork'
   },
   {
     term: 'Codex', en: 'OpenAI Codex', chapter: 2,
-    analogy: 'OpenAI 쪽의 Claude Code에 해당하는 자리',
+    analogy: 'OpenAI 쪽의 CLI 에이전트 자리',
     explain: 'ChatGPT 데스크톱 앱·웹, CLI, IDE 확장, 클라우드에서 돌아가는 에이전트 제품이다. 클라우드에서 작업을 비동기로 돌려놓고 나중에 결과를 받을 수 있다.',
     example: '저장소를 통째로 맡겨 두고 자리를 비운 뒤 결과 확인',
     myth: '"2021년의 코드 자동완성 모델?" — 다른 물건이다. 2021년 Codex는 모델이었고 2023년 3월 폐기됐다. 2025년 5월 같은 이름으로 완전히 다른 에이전트 제품이 나왔다',

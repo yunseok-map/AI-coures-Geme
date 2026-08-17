@@ -6,7 +6,7 @@
 
 import { stamp, countUp, wait, enter, burst, shake } from '../core/motion.js';
 import { go } from '../core/router.js';
-import { esc, strong } from '../core/text.js';
+import { esc, strong, plain } from '../core/text.js';
 
 const LABEL = { pass: '승인', partial: '조건부', fail: '반려' };
 
@@ -165,7 +165,9 @@ function fmt(sec) {
   return m ? `${m}분 ${s % 60}초` : `${s}초`;
 }
 
+// engines/base.js 에 같은 함수가 있지만 셸이 엔진을 import 하면 층이 거꾸로 된다.
+// 별표를 떼는 규칙만 core/text.js 의 plain() 으로 공유한다.
 function say(text) {
   const live = document.getElementById('live');
-  if (live) live.textContent = text;
+  if (live) live.textContent = plain(text);
 }

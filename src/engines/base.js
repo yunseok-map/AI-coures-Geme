@@ -5,9 +5,9 @@
 // 결과만 알려주는 대신 **과정을 보여줘야** "왜 이게 필요한지"를 스스로 알게 된다.
 
 import { runLog, spin, cardIn, enter } from '../core/motion.js';
-import { esc, strong } from '../core/text.js';
+import { esc, strong, plain } from '../core/text.js';
 
-export { esc, strong };
+export { esc, strong, plain };
 
 export function el(tag, cls, html) {
   const n = document.createElement(tag);
@@ -16,9 +16,10 @@ export function el(tag, cls, html) {
   return n;
 }
 
+/** 낭독 영역에 한 줄 넣는다. 강조 표시(`**`)는 plain() 이 떼 준다. */
 export function say(text) {
   const live = document.getElementById('live');
-  if (live) live.textContent = text;
+  if (live) live.textContent = plain(text);
 }
 
 /** 이벤트를 모아 두었다가 unmount 에서 한 번에 뗀다 */

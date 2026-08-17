@@ -98,10 +98,21 @@ export const products = [
     name: 'Codex (OpenAI)',
     kind: 'product',
     oneLine: 'ChatGPT·CLI·IDE·클라우드에서 도는 OpenAI의 에이전트 제품',
-    useWhen: 'OpenAI 쪽에서 Claude Code에 해당하는 자리',
+    useWhen: 'OpenAI 쪽의 CLI 에이전트 자리',
     surfaces: ['ChatGPT 앱', '웹', 'CLI', 'IDE 확장', '클라우드'],
     myth: '"2021년 코드 자동완성 모델?" — 다른 물건이다. 2021년 Codex는 모델이었고 2023년 3월 폐기됐다. 2025년 5월 같은 이름으로 완전히 다른 에이전트 제품이 나왔다',
-    official: 'https://learn.chatgpt.com/docs',
+    official: 'https://learn.chatgpt.com/docs/codex/cli',
+    checkedAt: CHECKED_AT
+  },
+  {
+    id: 'gemini-cli',
+    name: 'Gemini CLI (gemini)',
+    kind: 'product',
+    oneLine: 'Gemini 를 터미널로 바로 가져오는 오픈소스 AI 에이전트',
+    useWhen: 'Google 쪽 생태계를 쓰거나 도구 내부를 직접 확인해야 할 때',
+    surfaces: ['터미널'],
+    myth: '"오픈소스니까 사내에서 마음대로 써도 된다?" — 코드가 공개된 것과 회사 자료를 넣어도 되는 것은 별개다. 어느 CLI 에이전트든 사내 자료를 넣기 전 승인 절차를 확인해야 한다',
+    official: 'https://google-gemini.github.io/gemini-cli/',
     checkedAt: CHECKED_AT
   },
   {

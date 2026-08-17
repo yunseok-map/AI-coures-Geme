@@ -13,3 +13,14 @@ export function esc(s) {
 export function strong(s) {
   return esc(s).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
 }
+
+/**
+ * 강조 표시만 떼고 글자만 남긴다. 낭독 영역(`#live`)에 쓴다.
+ *
+ * 낭독 영역은 textContent 라서 별표가 그대로 남는다. 눈으로는 안 보이지만
+ * 스크린리더는 "별표별표 CLI 에이전트 별표별표" 로 읽는다 — 실제로 그렇게 되어 있었다.
+ * 낭독에 강조 표시는 의미가 없으므로 떼고 넘긴다.
+ */
+export function plain(s) {
+  return String(s == null ? '' : s).replace(/\*\*([^*]+)\*\*/g, '$1');
+}

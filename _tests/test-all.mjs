@@ -4,6 +4,7 @@
 const ROOT = '../src';
 const { manifest } = await import(`${ROOT}/games/index.js`);
 const { terms } = await import(`${ROOT}/data/terms.js`);
+const { plain, strong } = await import(`${ROOT}/core/text.js`);
 
 // main.js 가 등록한 엔진 글자 (main.js 는 DOM 을 만지므로 원문에서 읽는다)
 const fs = await import('node:fs/promises');
@@ -66,6 +67,43 @@ for (const m of manifest) {
   rows.push([m.no, m.id, m.engine, g.simulate ? 'simulate' : '-',
     g.concept.length + '용어', (m.required ? '필수' : '심화')]);
 }
+
+// ---- 강조 표시가 낭독으로 새지 않는가 ----
+// 콘텐츠는 `**이렇게**` 로 강조를 적는데, 낭독 영역은 textContent 라서 별표가 그대로 남는다.
+// 눈으로는 안 보이니 화면을 봐서는 절대 못 잡는다. plain() 이 떼는지 여기서 확인한다.
+check('plain() 이 강조 표시를 떼낸다', plain('**CLI 에이전트**는 도구다') === 'CLI 에이전트는 도구다',
+  plain('**CLI 에이전트**는 도구다'));
+check('plain() 이 별표 없는 글을 안 건드린다', plain('그냥 문장') === '그냥 문장');
+check('plain() 이 null 을 빈 문자열로', plain(null) === '' && plain(undefined) === '');
+check('strong() 은 여전히 <b> 로 바꾼다', strong('**강조**') === '<b>강조</b>', strong('**강조**'));
+check('strong() 이 태그 주입을 막는다', !strong('<script>x</script>').includes('<script'),
+  strong('<script>x</script>'));
+
+// 용어 도감 문구에는 강조 표시를 쓰지 않는다 — codex.js 의 row() 는 esc() 만 한다
+const markedTerms = terms.filter(t =>
+  ['analogy', 'explain', 'example'].some(k => typeof t[k] === 'string' && t[k].includes('**')));
+check('도감 본문에 별표가 없다', markedTerms.length === 0, markedTerms.map(t => t.term).join(', '));
+
+// ---- 용어 도감 자체 검사 ----
+// 출처는 문자열 하나이거나 배열이다. 한 회사 제품이 아니라 도구의 갈래를 설명하는 용어는
+// 회사마다 출처가 하나씩 붙는다(예: CLI 에이전트). 배열이 들어와도 화면이 깨지지 않아야 한다.
+// codex.js 의 srcRow() 와 같은 규칙으로 걸러야 검사가 실제 화면과 어긋나지 않는다.
+// source: '' 는 실수가 아니라 "공식 정의가 없는 용어"라는 뜻이고, 그때는 링크 대신 문구가 나간다.
+let multi = 0, noSrc = 0;
+for (const t of terms) {
+  const s = t.source;
+  const list = (Array.isArray(s) ? s : [s]).filter(Boolean);
+  if (!list.length) { noSrc++; continue; }
+  if (Array.isArray(s)) multi++;
+  for (const u of list) {
+    check(`용어 "${t.term}" 출처가 http 주소다`, typeof u === 'string' && /^https?:\/\//.test(u), String(u));
+  }
+  // 같은 주소를 두 번 걸면 화면에 같은 링크가 두 개 나온다
+  check(`용어 "${t.term}" 출처에 중복이 없다`, new Set(list).size === list.length);
+}
+check('용어 이름에 중복이 없다', new Set(terms.map(t => t.term)).size === terms.length);
+check('모든 용어에 chapter 가 있다', terms.every(t => Number.isFinite(t.chapter)));
+console.log(`출처가 여러 개인 용어: ${multi}개 · 공식 출처가 없는 용어: ${noSrc}개\n`);
 
 // 엔진별 사용 수
 console.log('엔진별 미니게임 수');

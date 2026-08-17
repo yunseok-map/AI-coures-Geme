@@ -15,7 +15,7 @@ export default {
   chapter: 3,
   required: false,
   // 도감의 용어 이름과 글자 하나까지 같아야 ✓ 가 붙는다
-  concept: ['CLAUDE.md · AGENTS.md', '컨텍스트 엔지니어링'],
+  concept: ['지침 파일', '컨텍스트 엔지니어링'],
   checkedAt: '2026-08',
 
   data: {

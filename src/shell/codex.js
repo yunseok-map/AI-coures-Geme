@@ -97,6 +97,20 @@ function tab(label, on, fn) {
   return b;
 }
 
+/** 출처 한 줄. 문자열 하나든 배열이든 받는다. */
+function srcRow(source) {
+  const list = (Array.isArray(source) ? source : [source]).filter(Boolean);
+  if (!list.length) {
+    return `<div class="term__row term__src"><span class="term__key">출처</span>` +
+           `공식 정의가 있는 용어가 아니다. 이 교육자료가 정리한 표현이다.</div>`;
+  }
+  const links = list
+    .map(u => `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(shortUrl(u))}</a>`)
+    .join('<span class="term__srcsep"> · </span>');
+  return `<div class="term__row term__src">` +
+         `<span class="term__key">출처 (확인 ${esc(CHECKED_AT)})</span>${links}</div>`;
+}
+
 function termCard(t, open) {
   const got = state.hasTerm(t.term);
 
@@ -123,11 +137,11 @@ function termCard(t, open) {
       `<span class="term__key">자주 하는 오해</span>${strong(t.myth)}</div>` +
     // 출처가 없는 용어가 있다. 공식 정의가 존재하지 않는 말에 억지로 링크를 붙이는 대신
     // "이건 이 교육자료의 정리"라고 밝힌다. 그게 챕터 4에서 가르치는 태도다.
-    (t.source
-      ? `<div class="term__row term__src"><span class="term__key">출처 (확인 ${esc(CHECKED_AT)})</span>` +
-        `<a href="${esc(t.source)}" target="_blank" rel="noopener noreferrer">${esc(shortUrl(t.source))}</a></div>`
-      : `<div class="term__row term__src"><span class="term__key">출처</span>` +
-        `공식 정의가 있는 용어가 아니다. 이 교육자료가 정리한 표현이다.</div>`);
+    //
+    // 한 회사 제품이 아니라 도구의 갈래를 설명하는 용어는 출처가 여러 개다
+    // (예: CLI 에이전트 — claude·codex·gemini 공식 문서 3건). 그때 하나만 걸면
+    // 나머지 두 회사 설명이 근거 없는 말이 된다. 그래서 배열도 받는다.
+    srcRow(t.source);
 
   head.addEventListener('click', () => {
     const willOpen = body.hidden;

@@ -62,6 +62,11 @@
 .term__key { display: block; font-size: var(--fs-aux); color: var(--muted); margin-bottom: 2px; }
 .term__myth { border-left: 3px solid var(--partial); padding-left: var(--sp-3); }
 .term__src { font-size: var(--fs-aux); color: var(--muted); }
+/* 갈래를 설명하는 용어는 출처가 여러 개다(회사마다 하나씩).
+   360px 에서 세 링크가 한 줄에 안 들어가므로 줄바꿈을 허용한다. */
+.term__src a { display: inline-block; }
+/* 링크 사이 구분점. --ink-12 로는 화면에서 안 보여서 --muted 로 올렸다. */
+.term__srcsep { color: var(--muted); }
 
 /* ---------- AI 도구 도감 ---------- */
 /* 스크롤해도 사라지지 않는 경고 배너 (프롬프트 §6-B 필수) */

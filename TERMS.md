@@ -28,6 +28,20 @@
 | "Claude Code = 개발자 전용은 오해다" | 공식 정의는 여전히 **"agentic coding tool"**. 다만 개발자들이 비코딩 작업에 쓰기 시작했고, **그래서 Anthropic이 비개발자용 Cowork를 따로 냈다** | 미니게임 7을 "이름이 함정이다"가 아니라 **"코딩 도구 맞다 → 그래서 비개발자용이 따로 나왔다"**로 수정. 더 정확하고 교육 효과도 큼 |
 | 아티팩트 = 대화 옆 산출물 | 맞다. 단 **정의가 2개**다. claude.ai 대화의 아티팩트와, Claude Code가 발행하는 아티팩트(비공개 URL 웹페이지)는 다르지만 **같은 갤러리**에 모인다 | 미니게임 5에 이 구분을 오해 카드로 추가 |
 
+### 2026-08-17 — 한 회사 제품이 아니라 도구의 갈래로 바꿨다
+
+원래 챕터 2는 터미널 도구를 **"Claude Code"** 라는 제품 이름으로 가르쳤다. 이걸
+**"CLI 에이전트"** 라는 갈래로 바꿨다. 사용자 요청이었고, 교육 자료로서도 이게 맞다.
+
+| 왜 | 근거 |
+|---|---|
+| 사내 교육 자료가 한 회사 제품 이름으로 굴러가면, 회사가 다른 도구를 쓰기로 하는 순간 자료 전체를 다시 만들어야 한다 | — |
+| 세 회사 도구의 공식 소개 문장이 사실상 같다. 즉 갈래로 묶는 것이 사실에 더 가깝다 | `claude` · `codex` · `gemini` 공식 문서 3건 확인 (2026-08-17) |
+| 조작 방식과 배우는 개념이 도구마다 같다. 다른 것은 지침 파일 이름뿐이다 | `CLAUDE.md` / `AGENTS.md` |
+
+**바꾸지 않은 것**: 프로젝트·아티팩트·Cowork는 특정 제품의 기능이라 갈래로 묶을 수 없다.
+제품 이름 그대로 두고, 다른 회사에 비슷한 기능이 있으면 그건 별개 확인 작업이다.
+
 ---
 
 # 챕터 1 — AI 기본기
@@ -146,13 +160,13 @@
 ### 제품 (Product)
 - **비유**: 그 엔진으로 만든 자동차
 - **설명**: 모델을 감싸서 사람이 쓸 수 있게 만든 도구다. 파일을 읽고, 도구를 부르고, 권한을 확인하는 부분이 전부 여기 붙는다. **Agent = Model + Harness**라는 표현이 이 관계를 정확히 말한다.
-- **실무 예시**: ChatGPT, Claude.ai, Claude Code, Cowork, Codex는 전부 제품
+- **실무 예시**: ChatGPT, Claude.ai, Gemini, 그리고 터미널에서 도는 `claude`·`codex`·`gemini` 는 전부 제품
 - **오해**: "제품이 똑똑한 것" → 똑똑한 건 모델이고, 제품은 그걸 **일하게 만드는 껍데기**다. 둘 다 있어야 쓸모가 있다
 - **출처**: [Claude Code 용어집 — Agentic harness](https://code.claude.com/docs/en/glossary) — *"Claude Code is the harness; Claude is the model inside it."*
 
 ### 표면 (Surface)
 - **비유**: 같은 은행을 창구·ATM·앱으로 이용하는 것
-- **설명**: 같은 제품을 쓰는 여러 창구를 말한다. Claude Code는 터미널·VS Code·JetBrains·데스크톱 앱·claude.ai 다섯 표면에서 돌아간다. **전부 같은 엔진**이라 설정과 지침이 그대로 따라온다.
+- **설명**: 같은 제품을 쓰는 여러 창구를 말한다. CLI 에이전트들은 터미널이 본 자리이고 거기에 IDE 확장·데스크톱 앱·웹이 더 붙는다 — 예를 들어 Claude Code는 터미널·VS Code·JetBrains·데스크톱 앱·claude.ai 다섯 표면에서 돈다. **전부 같은 엔진**이라 설정과 지침이 그대로 따라온다.
 - **실무 예시**: 회사에선 데스크톱 앱, 이동 중엔 휴대폰 — 같은 작업을 이어서
 - **오해**: "표면마다 다른 제품" → 아니다. 창구만 다르다
 - **출처**: [Claude Code 용어집 — Surface](https://code.claude.com/docs/en/glossary) — *"Any place you access Claude Code... All surfaces share the same engine."*
@@ -179,12 +193,27 @@
 - **오해 ②**: 아티팩트라는 말이 두 군데 쓰인다. claude.ai 대화의 산출물이 하나, Claude Code가 세션 결과를 비공개 URL 웹페이지로 발행하는 것이 또 하나. **둘은 같은 갤러리에 모인다**
 - **출처**: [support.claude.com — What are artifacts?](https://support.claude.com/en/articles/9487310-what-are-artifacts-and-how-do-i-use-them) · [Claude Code 용어집 — Artifact](https://code.claude.com/docs/en/glossary)
 
-### Claude Code
-- **비유**: 내 컴퓨터의 파일과 명령을 직접 다루는 작업자
-- **설명**: 공식 정의는 **"코드베이스를 읽고, 파일을 수정하고, 명령을 실행하고, 개발 도구와 연동하는 에이전틱 코딩 도구"** 다. 터미널·IDE·데스크톱 앱·브라우저에서 돌아간다. 채팅과 결정적으로 다른 점은 **말만 하는 게 아니라 실제로 파일을 고친다**는 것이다.
+### CLI 에이전트 (CLI coding agent)
+- **비유**: 터미널에 앉아서 내 컴퓨터의 파일과 명령을 직접 다루는 작업자
+- **설명**: **한 회사의 제품 이름이 아니라 도구의 한 갈래다.** 터미널(명령창)에 설치해서 쓰고,
+  자연어로 지시하면 **내 컴퓨터의 파일을 실제로 읽고 고치고 명령을 실행한다.**
+  채팅과 결정적으로 다른 점이 이것이다 — 말만 하는 게 아니라 파일이 바뀐다.
+  여러 회사가 같은 갈래의 도구를 내놓았고, 공식 소개 문장이 서로 거의 같다.
+  - **`claude` (Claude Code / Anthropic)** — "코드베이스를 읽고, 파일을 수정하고, 명령을 실행하고, 개발 도구와 연동하는 에이전틱 코딩 도구"
+  - **`codex` (Codex CLI / OpenAI)** — "터미널을 벗어나지 않고 코드를 살펴보고, 고치고, 명령을 실행하고, 반복 작업을 자동화한다"
+  - **`gemini` (Gemini CLI / Google)** — "Gemini를 터미널로 바로 가져오는 오픈소스 AI 에이전트"
 - **실무 예시**: 폴더 안 문서 200개의 머리말을 한 번에 통일, 파일 일괄 이름 변경, 표 형식 변환
-- **오해**: "Code라는 이름 때문에 개발자 전용" → **절반만 맞다.** 공식 정의는 지금도 "코딩 도구"가 맞다. 그런데 개발자들이 파일 정리·자료 조사·문서 취합 같은 **코딩과 무관한 일**에 쓰기 시작했고, 그래서 Anthropic이 **비개발자용으로 Cowork를 따로 냈다**
-- **출처**: [code.claude.com — Overview](https://code.claude.com/docs/en/overview) — *"Claude Code is an agentic coding tool that reads your codebase, edits files, runs commands, and integrates with your development tools. Available in your terminal, IDE, desktop app, and browser."*
+- **오해 ①**: "Code라는 이름 때문에 개발자 전용" → **절반만 맞다.** 공식 정의는 셋 다 코딩 도구가 맞다.
+  그런데 본질이 "파일과 명령을 다루는 것"이라 개발자들이 파일 정리·자료 취합 같은 **코딩과 무관한 일**에
+  쓰기 시작했고, 그래서 Anthropic이 **비개발자용으로 Cowork를 따로 냈다**
+- **오해 ②**: "하나를 배우면 나머지는 다시 배워야 한다" → 조작 방식이 같다. 터미널에서 이름을 치고,
+  자연어로 지시하고, 파일 변경을 승인한다. **지침 파일 이름만 다르다** (`CLAUDE.md` / `AGENTS.md`)
+- **출처**:
+  [code.claude.com — Overview](https://code.claude.com/docs/en/overview) — *"an agentic coding tool that reads your codebase, edits files, runs commands, and integrates with your development tools"* ·
+  [Codex CLI 문서](https://learn.chatgpt.com/docs/codex/cli) — *"Inspect code, make changes, run commands, and automate repeatable work without leaving your terminal"* ·
+  [Gemini CLI 문서](https://google-gemini.github.io/gemini-cli/) — *"an open-source AI agent that brings the power of Gemini directly into your terminal"*
+- **넣지 않은 것**: 세 도구의 요금·사용량 한도·성능 비교. 몇 주면 틀린 정보가 되고 순위를 매기는 것이
+  이 교육의 목적이 아니다 (규칙: 가격·벤치마크·순위 금지)
 
 ### Cowork
 - **비유**: 코딩 빼고 나머지 사무 업무를 맡기는 동료
@@ -194,7 +223,7 @@
 - **출처**: [claude.com/product/cowork](https://claude.com/product/cowork)
 
 ### Codex (OpenAI)
-- **비유**: OpenAI 쪽의 Claude Code에 해당하는 자리
+- **비유**: OpenAI 쪽의 CLI 에이전트 자리
 - **설명**: ChatGPT 데스크톱 앱·웹, CLI, IDE 확장, 클라우드에서 돌아가는 에이전트 제품이다. 클라우드에서 작업을 비동기로 돌려놓고 나중에 결과를 받을 수 있다.
 - **실무 예시**: 저장소를 통째로 맡겨 두고 자리를 비운 뒤 결과 확인
 - **오해**: "2021년의 코드 자동완성 모델" → **다른 물건이다.** 2021년 Codex는 모델이었고 2023년 3월 API에서 폐기됐다. 2025년 5월에 **같은 이름으로 완전히 다른 에이전트 제품**이 나왔다
@@ -255,10 +284,13 @@
 
 ### CLAUDE.md / AGENTS.md
 - **비유**: 신입에게 주는 업무 지침서. 매번 읽고 시작한다
-- **설명**: 프로젝트 폴더에 두는 지침 파일이다. 세션 시작 때마다 자동으로 읽힌다. 코딩 규칙, 하지 말 것, 우리 팀 관행을 적는다. **Claude Code는 `CLAUDE.md`, Codex 계열은 `AGENTS.md`** — 목적은 같고 이름이 다르다.
+- **설명**: 프로젝트 폴더에 두는 지침 파일이다. 세션 시작 때마다 자동으로 읽힌다. 코딩 규칙, 하지 말 것, 우리 팀 관행을 적는다. **하는 일은 같고 CLI 에이전트마다 파일 이름이 다르다** — `claude` 는 `CLAUDE.md`, `codex` 는 `AGENTS.md`, `gemini` 는 `GEMINI.md`. 이 중 `AGENTS.md` 는 한 회사 것이 아니라 **여러 도구가 함께 쓰기로 한 공개 형식**이다 (오픈소스 6만 개 이상 사용).
 - **실무 예시**: "수치는 config 파일에만 넣는다", "파일이 500줄 넘으면 분리한다" 같은 규칙
 - **오해**: "많이 적을수록 좋다" → **아니다.** 길어지면 컨텍스트 로트로 오히려 성능이 떨어진다. 미니게임 10이 이걸 실패로 체험시킨다
-- **출처**: [Claude Code 용어집 — CLAUDE.md](https://code.claude.com/docs/en/glossary) · [agents.md](https://agents.md/) — *"Think of AGENTS.md as a README for agents"*, 오픈소스 6만 개 이상 사용, 20종 이상 도구 지원
+- **출처**: [Claude Code 용어집 — CLAUDE.md](https://code.claude.com/docs/en/glossary) ·
+  [agents.md](https://agents.md/) — *"Think of AGENTS.md as a README for agents"*, 오픈소스 6만 개 이상 사용 ·
+  [Codex — Custom instructions with AGENTS.md](https://learn.chatgpt.com/docs/agent-configuration/agents-md) ·
+  [Gemini CLI — Context Files (GEMINI.md)](https://github.com/google-gemini/gemini-cli) *(파일 이름이 셋 다 다른 것을 실제로 확인, 2026-08-17)*
 
 ### 에이전트 루프 (Agentic Loop)
 - **비유**: 맥락 파악 → 실행 → 확인 → 반복. 사람이 일하는 순서와 같다

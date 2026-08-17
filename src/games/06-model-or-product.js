@@ -31,12 +31,12 @@ export default {
         why: '제품이다. 그 안에서 도는 모델이 GPT 계열이다. 가장 흔한 혼동이 바로 이것.' },
       { id: 'm2', bin: 'model', text: 'GPT-5 계열',
         why: '모델이다. 제품 이름 ChatGPT 와 헷갈리기 쉽다.' },
-      { id: 'p2', bin: 'product', text: 'Claude Code',
-        why: '제품이다. 공식 정의는 “코드베이스를 읽고 파일을 고치는 에이전틱 코딩 도구”.' },
+      { id: 'p2', bin: 'product', text: 'Claude Code · Codex CLI · Gemini CLI',
+        why: '셋 다 제품이다. 터미널에서 도는 같은 갈래(CLI 에이전트)이고 공식 정의도 거의 같다 — 파일을 읽고 고치고 명령을 실행한다.' },
       { id: 'm3', bin: 'model', text: 'Claude Sonnet',
         why: '모델이다. 같은 Sonnet 이 웹·앱·터미널 어디서나 똑같이 돈다.' },
       { id: 'p3', bin: 'product', text: 'Cowork',
-        why: '제품이다. Claude Code 와 같은 기술을 쓰되 비개발자의 사무 업무용으로 나왔다.' },
+        why: '제품이다. CLI 에이전트와 같은 기술을 쓰되 터미널 없이, 비개발자의 사무 업무용으로 나왔다.' },
       { id: 'p4', bin: 'product', text: 'Codex',
         why: '지금의 Codex 는 제품(에이전트)이다. 2021년의 Codex 는 모델이었고 2023년에 폐기됐다.' },
       { id: 'm4', bin: 'model', text: 'Gemini (모델 쪽)',
@@ -56,7 +56,8 @@ export default {
 
   named: {
     all: '엔진이 **모델**, 그 엔진으로 만든 도구가 **제품**, 같은 제품을 쓰는 여러 창구가 **표면**이다. ' +
-         '공식 문서의 한 문장이 이 관계를 정확히 말한다 — “Claude Code 가 하네스이고, Claude 는 그 안에 든 모델이다.”'
+         '공식 문서의 한 문장이 이 관계를 정확히 말한다 — “Claude Code 가 하네스이고, Claude 는 그 안에 든 모델이다.” ' +
+         '다른 회사 CLI 에이전트도 구조가 같다. **Agent = Model + Harness.**'
   },
 
   debrief: {
