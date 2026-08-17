@@ -105,6 +105,45 @@ check('용어 이름에 중복이 없다', new Set(terms.map(t => t.term)).size 
 check('모든 용어에 chapter 가 있다', terms.every(t => Number.isFinite(t.chapter)));
 console.log(`출처가 여러 개인 용어: ${multi}개 · 공식 출처가 없는 용어: ${noSrc}개\n`);
 
+// ---- 사유 묶기 (core/sim.js groupReasons) ----
+//
+// 실시간 판은 일어난 일을 하나씩 다 적는다 — "3건 놓쳤다"가 점수에 정확히
+// 반영돼야 하니까. 그런데 그 목록을 그대로 그려서 **똑같은 줄이 세 개** 뜬 적이
+// 있다(14번 "워크슬롭 통과"). 묶는 것은 화면 쪽 일이고, 그 함수를 여기서 잡는다.
+{
+  const { groupReasons, Run } = await import(`${ROOT}/core/sim.js`);
+
+  const three = groupReasons([
+    { name: '워크슬롭 통과', why: 'a' },
+    { name: '워크슬롭 통과', why: 'b' },
+    { name: '검증 부채', why: 'c' },
+    { name: '워크슬롭 통과', why: 'd' }
+  ]);
+  check('같은 이름이 한 줄로 묶인다', three.length === 2, String(three.length));
+  check('몇 번이었는지 센다', three[0].n === 3, String(three[0].n));
+  check('처음 나온 순서를 지킨다', three[0].name === '워크슬롭 통과' && three[1].name === '검증 부채',
+    three.map(r => r.name).join(' / '));
+  check('처음 나온 설명을 남긴다', three[0].why === 'a', three[0].why);
+  check('한 번짜리는 n 이 1', three[1].n === 1, String(three[1].n));
+  check('빈 목록도 받는다', groupReasons([]).length === 0 && groupReasons(undefined).length === 0);
+  check('이름 없는 쓰레기는 걸러낸다',
+    groupReasons([null, { why: 'x' }, { name: 'ok', why: 'y' }]).length === 1);
+
+  // 묶기는 화면에서만 한다 — 판정 쪽 개수는 줄어들면 안 된다.
+  // 줄어들면 "3건 놓쳤다"가 점수에 한 번만 반영된다.
+  const r = new Run();
+  r.fault('과잉 차단', '안전한 작업까지 막았다', 10);
+  r.fault('과잉 차단', '안전한 작업까지 막았다', 10);
+  check('판정은 개수를 그대로 센다', r.faults.length === 2, String(r.faults.length));
+  check('점수도 부른 만큼 깎인다', r.score === 80, String(r.score));
+}
+
+// 같은 잘한 점을 두 번 주는 것 자체를 검사로 막으려 했지만 뺐다.
+// 16번은 g-sandbox 와 g-hook 이 각각 '가드레일'을 준다 — 묶으면 "가드레일 2건"
+// 이고 이건 뜻이 통한다(가드레일 두 개를 걸었다). 1번의 경우는 안 통했다
+// (같은 한 가지 잘한 점을 두 조건이 각자 센 것). 이 차이는 뜻의 문제라
+// 기계가 못 가른다. 규칙은 CLAUDE.md §2 에 글로 적어 두었다.
+
 // 엔진별 사용 수
 console.log('엔진별 미니게임 수');
 for (const k of Object.keys(engineUse).sort()) console.log(`  ${k}: ${engineUse[k]}판`);

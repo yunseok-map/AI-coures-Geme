@@ -296,8 +296,8 @@
   gap: var(--sp-1);
   padding: var(--sp-2);
   margin-bottom: var(--sp-4);
-  background: var(--ink-06);
-  border: var(--border-w) solid var(--ink-20);
+  background: var(--surface-well);
+  border: var(--border-w) solid var(--edge);
   border-radius: var(--radius);
 }
 .desk__item {
@@ -308,7 +308,7 @@
   padding: var(--sp-1) var(--sp-3);
   background: var(--mark);
   border-radius: var(--radius-sm);
-  box-shadow: var(--lift-1);
+  box-shadow: var(--lift-1), var(--gloss);
   transform-origin: left center;      /* wipeIn 이 왼쪽에서 펴진다 */
 }
 /* 부품함 버튼과 같은 글자 크기로 둔다 — 같은 글자가 같은 크기로 올라가야
@@ -326,7 +326,7 @@
 }
 /* 빈 칸 — 남은 여유가 눈에 보이는 자리 */
 .desk__free {
-  border: 1px dashed var(--ink-20);
+  border: 1px dashed var(--edge);
   border-radius: var(--radius-sm);
 }
 .budget--over ~ .desk { border-color: var(--fail); background: var(--fail-10); }
@@ -385,16 +385,26 @@
 }
 .slot__tag:empty { display: none; }
 
-.parts { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+/* 부품함은 **우묵한 통**이다 (표면 1단계). 흰 배경에 버튼만 흩어 놓으면
+   "여기 있는 것을 저기로 옮긴다"가 안 읽히고 그냥 버튼 목록이 된다.
+   통 안(부품함) → 통 밖(책상·슬롯) 이 보여야 옮기는 동작이 이해된다. */
+.parts {
+  display: flex; flex-wrap: wrap; gap: var(--sp-2);
+  padding: var(--sp-3);
+  background: var(--surface-well);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius);
+}
 .part, .bin, .toggle, .target, .board__row, .cell {
   transition: transform var(--dur-tap) var(--ease),
               box-shadow var(--dur-tap) var(--ease),
               background-color var(--dur-tap) var(--ease),
               border-color var(--dur-tap) var(--ease);
 }
+/* 뜨는 높이는 --rise 하나로 맞춘다. 물건마다 다르게 뜨면 손맛이 어긋난다. */
 .part:hover:not(:disabled), .bin:hover:not(:disabled),
 .toggle:hover:not(:disabled), .target:hover:not(:disabled),
-.board__row:hover:not(:disabled) { transform: translateY(-2px); box-shadow: var(--lift-2); }
+.board__row:hover:not(:disabled) { transform: translateY(var(--rise)); box-shadow: var(--lift-2); }
 .part:active:not(:disabled), .bin:active:not(:disabled),
 .toggle:active:not(:disabled), .target:active:not(:disabled),
 .board__row:active:not(:disabled), .cell:active:not(:disabled) { transform: scale(.97); }

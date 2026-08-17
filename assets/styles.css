@@ -47,21 +47,47 @@ button {
               transform var(--dur-press) var(--ease),
               border-bottom-width var(--dur-press) var(--ease);
 }
-button:hover:not(:disabled) { border-color: var(--ink-45); }
+/* 물체는 전부 같은 방식으로 반응한다 — 뜨고(hover), 눌리고(active), 잠긴다(disabled).
+   반응이 물건마다 다르면 화면이 여러 사람이 만든 것처럼 읽힌다. */
+button:hover:not(:disabled) {
+  border-color: var(--ink-45);
+  transform: translateY(var(--rise));
+  box-shadow: var(--lift-2);
+}
 button:active:not(:disabled) {
   transform: translateY(calc(var(--lip) - var(--border-w)));
   border-bottom-width: var(--border-w);
+  box-shadow: none;
 }
-button:disabled { opacity: .45; cursor: default; }
+
+/* 잠긴 버튼.
+   **opacity 를 쓰지 않는다.** motion.enter() 가 등장 연출을 끝낼 때 인라인
+   opacity:1 을 남기므로, 클래스로 준 opacity 는 아무 효과가 없다 — 실행 중에
+   부품함이 잠겨도 멀쩡해 보였다(실제 증상). 색·테두리로 나타낸다.
+   그리고 **아랫면(lip)을 없앤다** — 누를 수 있는 물체로 보이지 않게 하는 게
+   흐리게 만드는 것보다 정확한 신호다. */
+button:disabled {
+  cursor: default;
+  color: var(--muted);
+  background: var(--surface-well);
+  border-color: var(--hair);
+  border-bottom-width: var(--border-w);
+  box-shadow: none;
+}
 
 a { color: var(--mark); }
 
-/* 포커스 링을 절대 없애지 않는다 */
+/* 포커스 링을 절대 없애지 않는다.
+   radius 를 여기서 지정하지 않는다 — outline 은 요소 자신의 border-radius 를
+   따라가므로, 지정하면 알약이 포커스되는 순간 각진 사각형으로 바뀐다. */
 :focus-visible {
   outline: 2px solid var(--mark);
   outline-offset: 2px;
-  border-radius: var(--radius-sm);
 }
+
+/* 고른 글자 · 입력 커서도 이 화면의 색을 쓴다 */
+::selection { background: var(--mark-28); color: var(--ink); }
+input { caret-color: var(--mark); }
 
 .sr-only {
   position: absolute; width: 1px; height: 1px;
@@ -87,10 +113,29 @@ a { color: var(--mark); }
 /* ---------- 2) 공통 셸 ---------- */
 #app { min-height: 100dvh; display: flex; flex-direction: column; }
 
+/* 상단바 (표면 4단계 — 늘 위에 떠 있다).
+   내용이 아래로 흘러 들어가는 순간 그림자가 생긴다. 처음부터 그림자를 깔면
+   스크롤할 것이 없는 화면에서도 뜬 것처럼 보여서 부담스럽다.
+
+   scroll() 타임라인을 못 쓰는 브라우저에서는 애니메이션이 그냥 안 돌고
+   기본 상태(그림자 없음)로 남는다 — 지금과 똑같다. 그래서 안전하다. */
 .topbar {
   position: sticky; top: 0; z-index: 20;
   background: var(--card);
-  border-bottom: 1px solid var(--ink-12);
+  border-bottom: 1px solid var(--hair);
+  animation: topbarLift auto linear both;
+  animation-timeline: scroll();
+  animation-range: 0 var(--sp-5);
+}
+@keyframes topbarLift {
+  to { box-shadow: var(--lift-2); }
+}
+/* 움직임을 줄여 달라는 설정에서는 그림자를 늘 켜 둔다.
+   tokens.css 가 모든 애니메이션 시간을 .001ms 로 강제하므로 이 애니메이션은
+   어차피 끝 상태로 굳는다 — 그걸 사고가 아니라 의도로 못 박아 둔다.
+   그림자는 움직임이 아니라서 이 설정과 충돌하지 않는다. */
+@media (prefers-reduced-motion: reduce) {
+  .topbar { box-shadow: var(--lift-2); }
 }
 .topbar__inner {
   height: var(--shell-top);
@@ -124,6 +169,7 @@ a { color: var(--mark); }
   border-radius: var(--radius-pill);
   padding: 2px var(--sp-2);
   white-space: nowrap;
+  box-shadow: var(--gloss);
 }
 /* 사람 이름 — 여러 명이 나눠 쓸 때만 나온다. 등급 알약과 헷갈리지 않게
    채우지 않고 테두리만 두른다. 보상 신호(채운 알약)를 하나로 유지한다. */
@@ -180,11 +226,13 @@ a { color: var(--mark); }
 /* ---------- 지금 배우는 사람 (shell/learners.js) ----------
    혼자 쓸 때는 배경도 테두리도 없는 안내문 한 줄이다. 여기서 카드처럼 눈에
    띄면 시작 전에 "뭘 설정해야 하나"로 읽힌다. 나눈 뒤에만 상자가 된다. */
+/* 표면 1단계 — 이것은 내용이 아니라 설정이다. 흰 카드로 두면 바로 아래
+   "이어서 하기"(3단계)와 같은 무게로 읽혀서 무엇을 먼저 볼지 흐려진다. */
 .who {
   margin-top: var(--sp-4);
   padding: var(--sp-3);
-  background: var(--card);
-  border: 1px solid var(--ink-12);
+  background: var(--surface-well);
+  border: 1px solid var(--hair);
   border-radius: var(--radius);
 }
 .who--solo {
@@ -218,6 +266,7 @@ a { color: var(--mark); }
   color: var(--on-mark);
   background: var(--mark);
   border-color: var(--mark-deep);
+  box-shadow: var(--gloss);
 }
 .who__btn { min-height: var(--tap-min); padding: 0 var(--sp-2); white-space: nowrap; }
 .who__go { color: var(--mark); font-weight: 700; }
@@ -364,6 +413,7 @@ a { color: var(--mark); }
 .node--required .node__mark { border-color: var(--mark); color: var(--mark); }
 .node--done .node__mark {
   background: var(--pass); border-color: var(--pass-deep); color: var(--on-mark);
+  box-shadow: var(--gloss);
 }
 .node--rejected .node__mark { border-color: var(--fail); color: var(--fail); }
 
@@ -373,9 +423,11 @@ a { color: var(--mark); }
   background: var(--mark); border-color: var(--mark-deep); color: var(--on-mark);
   animation: nowPulse 1.9s var(--ease) infinite;
 }
+/* 광택을 키프레임 안에 같이 넣는다 — box-shadow 는 통째로 덮이므로
+   base 에 따로 두면 애니메이션이 도는 동안 사라진다. */
 @keyframes nowPulse {
-  0%, 100% { box-shadow: 0 0 0 0 var(--mark-28); }
-  55%      { box-shadow: 0 0 0 9px rgba(58, 79, 216, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 var(--mark-28), var(--gloss); }
+  55%      { box-shadow: 0 0 0 9px var(--mark-00), var(--gloss); }
 }
 
 .node__body { min-width: 0; }
@@ -408,21 +460,35 @@ a { color: var(--mark); }
   border-top: 2px solid var(--ink-12);
   display: flex; flex-wrap: wrap; gap: var(--sp-2);
 }
+/* 조용한 버튼은 뜨지 않는다. 보조 버튼이 줄줄이 있는 곳에서 다 같이 들썩이면
+   어느 것이 주인공인지 사라진다. 대신 글자가 진해지는 것으로 반응한다. */
 .btn-quiet {
   font-size: var(--fs-aux);
   color: var(--muted);
   background: none;
 }
+.btn-quiet:hover:not(:disabled) {
+  color: var(--ink);
+  transform: none;
+  box-shadow: none;
+}
+
 /* 주 버튼. 아랫면(lip)을 본색보다 어둡게 깔아야 "누를 수 있는 물체"로 보인다.
-   누르는 순간 lip 두께만큼 내려가면서 lip 이 사라진다 — 실제로 눌린 것처럼. */
+   누르는 순간 lip 두께만큼 내려가면서 lip 이 사라진다 — 실제로 눌린 것처럼.
+   윗변 광택(--gloss)이 같은 색 사각형을 물체로 만든다. */
 .btn-primary {
   background: var(--mark);
   color: var(--on-mark);
   border-color: var(--mark-deep);
   font-weight: 700;
   letter-spacing: .01em;
+  box-shadow: var(--gloss);
 }
-.btn-primary:hover:not(:disabled) { filter: brightness(1.08); }
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+  box-shadow: var(--lift-2), var(--gloss);
+}
+.btn-primary:active:not(:disabled) { box-shadow: var(--gloss); }
 .btn-danger { color: var(--fail); border-color: var(--fail); background: none; }
 
 /* 그림자·filter 가 무시되는 고대비 모드에서도 눌림이 보이게 한다 */
@@ -535,6 +601,20 @@ a { color: var(--mark); }
 .why__item--bad  { background: var(--fail-10); }
 .why__item--good { background: var(--pass-10); }
 .why__name { font-weight: 700; white-space: nowrap; }
+/* 같은 사유가 몇 번이었나 — 3건을 3줄로 늘어놓지 않고 여기 붙인다.
+   배경은 사유 색을 따라가야 한다. currentColor 로는 안 된다 —
+   이 요소의 color 를 흰색으로 바꾸는 순간 currentColor 도 흰색이 된다. */
+.why__n {
+  margin-left: var(--sp-1);
+  padding: 0 6px;
+  font-size: var(--fs-aux);
+  color: var(--on-mark);
+  background: var(--ink);
+  border-radius: var(--radius-pill);
+  font-variant-numeric: tabular-nums;
+}
+.why__item--bad  .why__n { background: var(--fail); }
+.why__item--good .why__n { background: var(--pass); }
 .why__item--bad .why__name  { color: var(--fail); }
 .why__item--good .why__name { color: var(--pass); }
 

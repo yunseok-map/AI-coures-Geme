@@ -50,6 +50,12 @@ export class Run {
   /**
    * 실패 사유를 기록한다. name 은 배운 용어 그대로 쓴다 —
    * "왜 실패했는지가 결과 화면에서 즉시 이해된다"(프롬프트 §0)를 만족시키는 부분이다.
+   *
+   * **일어난 일을 하나씩 다 적는다.** 같은 사유가 세 번이면 세 개다 —
+   * 실시간 판에서는 "3건 놓쳤다"가 점수와 mistakes 에 정확히 반영돼야 한다.
+   * 화면에 똑같은 줄이 세 개 뜨는 문제는 여기서 줄이지 않고
+   * `shell/debrief.js` 가 묶어서 "3건"으로 그린다 —
+   * 세는 것은 판정, 묶는 것은 화면이다.
    */
   fault(name, why, cost = 25) {
     this.faults.push({ name, why });
@@ -114,6 +120,34 @@ export const GAIN = {
   guard:    ['가드레일', '사고가 날 수 있는 행동을 구조로 막았다'],
   least:    ['최소 권한', '필요한 만큼만 열었다']
 };
+
+/**
+ * 같은 이름의 사유를 한 줄로 묶고 몇 번이었는지(`n`) 붙인다.
+ *
+ * 위의 `fault`/`gain` 은 일어난 일을 하나씩 다 적는다 — 그래야 "3건 놓쳤다"가
+ * 점수와 `mistakes` 에 정확히 반영된다. 그런데 그 목록을 그대로 그리면
+ * **똑같은 줄이 세 개** 뜬다(14번에서 "워크슬롭 통과" 가 3줄로 실제로 떴다).
+ * 같은 문장이 반복되는 화면은 그 자체로 워크슬롭이고, 그건 이 게임이
+ * 챕터 4에서 가르치는 것이다. **세는 것은 판정, 묶는 것은 그리는 쪽이다.**
+ *
+ * 여기 두는 이유: DOM 을 안 쓰는 순수 함수라 Node 로 검사할 수 있고,
+ * 판정 결과의 모양을 아는 것은 이 파일이다. 처음 나온 순서를 지킨다 —
+ * 시간 순으로 읽히던 것이 뒤섞이면 안 된다.
+ *
+ * @param {Array<{name:string, why:string}>} list
+ * @returns {Array<{name:string, why:string, n:number}>}
+ */
+export function groupReasons(list) {
+  const out = [];
+  const at = new Map();
+  for (const r of list || []) {
+    if (!r || !r.name) continue;
+    if (at.has(r.name)) { out[at.get(r.name)].n++; continue; }
+    at.set(r.name, out.length);
+    out.push({ name: r.name, why: r.why, n: 1 });
+  }
+  return out;
+}
 
 /** FAULT/GAIN 상수를 Run 에 바로 넣기 위한 도우미 */
 export function applyFault(run, key, cost) {

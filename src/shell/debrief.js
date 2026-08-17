@@ -6,6 +6,7 @@
 
 import { stamp, countUp, wait, enter, burst, shake, sendTo, pulse, typeIn } from '../core/motion.js';
 import { esc, strong, plain } from '../core/text.js';
+import { groupReasons } from '../core/sim.js';
 import { terms } from '../data/terms.js';
 
 /** 용어 하나 찾기. 칩을 눌렀을 때 그 자리에서 뜻을 보여 주려고 쓴다. */
@@ -70,8 +71,9 @@ export async function showDebrief(game, result, on) {
   // ---- 왜 이렇게 됐는가: 실패 사유 / 잘한 점 ----
   const why = document.createElement('div');
   why.className = 'why';
-  for (const f of result.faults || []) why.append(reason(f, 'bad'));
-  for (const g of result.gains || []) why.append(reason(g, 'good'));
+  // 같은 사유가 세 번이면 세 줄이 아니라 한 줄에 "3건" 이다 (core/sim.js)
+  for (const f of groupReasons(result.faults)) why.append(reason(f, 'bad'));
+  for (const g of groupReasons(result.gains)) why.append(reason(g, 'good'));
   if (why.children.length) inner.append(why);
 
   // ---- 해설 (최대 3줄) ----
@@ -205,7 +207,9 @@ export function hideDebrief() {
 function reason(r, kind) {
   const d = document.createElement('div');
   d.className = `why__item why__item--${kind}`;
-  d.innerHTML = `<span class="why__name">${esc(r.name)}</span><span>${strong(r.why)}</span>`;
+  d.innerHTML = `<span class="why__name">${esc(r.name)}` +
+                (r.n > 1 ? `<span class="why__n">${r.n}건</span>` : '') +
+                `</span><span>${strong(r.why)}</span>`;
   return d;
 }
 
