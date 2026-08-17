@@ -108,7 +108,7 @@ export const products = [
     id: 'gemini-cli',
     name: 'Gemini CLI (gemini)',
     kind: 'product',
-    oneLine: 'Gemini 를 터미널로 바로 가져오는 오픈소스 AI 에이전트',
+    oneLine: 'Gemini를 터미널로 바로 가져오는 오픈소스 AI 에이전트',
     useWhen: 'Google 쪽 생태계를 쓰거나 도구 내부를 직접 확인해야 할 때',
     surfaces: ['터미널'],
     myth: '"오픈소스니까 사내에서 마음대로 써도 된다?" — 코드가 공개된 것과 회사 자료를 넣어도 되는 것은 별개다. 어느 CLI 에이전트든 사내 자료를 넣기 전 승인 절차를 확인해야 한다',

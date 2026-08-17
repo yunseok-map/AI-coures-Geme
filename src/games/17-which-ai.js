@@ -37,7 +37,7 @@ export default {
 
       { id: 'w2', bin: 'video',
         text: '제품 홍보용 15초 영상을 만들어야 한다. 사람은 안 나온다.',
-        why: '영상 생성 계열이다. Veo·Kling·Runway 같은 엔진이 있고, Higgsfield 처럼 여러 엔진을 골라 쓰게 해주는 플랫폼(애그리게이터)도 있다.' },
+        why: '영상 생성 계열이다. Veo·Kling·Runway 같은 엔진이 있고, Higgsfield처럼 여러 엔진을 골라 쓰게 해주는 플랫폼(애그리게이터)도 있다.' },
 
       { id: 'w3', bin: 'avatar',
         text: '사내 교육 영상을 만들어야 하는데, 촬영 없이 사람이 설명하는 형태였으면 한다.',
@@ -45,7 +45,7 @@ export default {
 
       { id: 'w4', bin: 'docs',
         text: '내일 아침 발표할 자료를 초안이라도 빨리 만들어야 한다.',
-        why: '문서·슬라이드 계열이다. Gamma 는 빠른 초안, M365 Copilot 은 PowerPoint 파일 그대로 나온다.' },
+        why: '문서·슬라이드 계열이다. Gamma는 빠른 초안, M365 Copilot은 PowerPoint 파일 그대로 나온다.' },
 
       { id: 'w5', bin: 'local',
         text: '대외비 계약서를 요약해야 하는데 자료를 외부로 보낼 수 없다.',
@@ -73,7 +73,7 @@ export default {
 
       { id: 'w11', bin: 'research',
         text: '내가 모아둔 논문 30편 안에서만 답하는 정리 도구가 필요하다. 밖의 정보는 섞이면 안 된다.',
-        why: '같은 리서치 칸이지만 성격이 갈린다 — Gemini Notebook(구 NotebookLM)은 올린 자료 안에서만 답하고, Perplexity 는 살아 있는 웹을 뒤진다.' },
+        why: '같은 리서치 칸이지만 성격이 갈린다 — Gemini Notebook(구 NotebookLM)은 올린 자료 안에서만 답하고, Perplexity는 살아 있는 웹을 뒤진다.' },
 
       { id: 'w12', bin: 'automation',
         text: '사내 문서를 기반으로 직원들이 물어보면 답하는 창구를 만들고 싶다.',
@@ -84,7 +84,7 @@ export default {
   },
 
   named: {
-    all: '도구 이름 대신 **카테고리**로 기억하면 목록이 낡지 않는다. ' +
+    all: '도구 이름 대신 칸으로 외우면 목록이 낡지 않는다. 이것을 **카테고리로 기억하기**라고 한다. ' +
          '그리고 상당수 서비스는 자기 모델이 아니라 남의 엔진을 골라 쓰게 해주는 **애그리게이터**다 — ' +
          '챕터 2의 “모델 vs 제품” 구분이 여기서 한 번 더 쓰인다.'
   },

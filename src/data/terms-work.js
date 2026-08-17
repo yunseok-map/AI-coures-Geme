@@ -9,7 +9,7 @@ export const workTerms = [
   {
     term: '지침 파일', en: 'AGENTS.md · CLAUDE.md · GEMINI.md', chapter: 3,
     analogy: '신입에게 주는 업무 지침서. 매번 읽고 시작한다',
-    explain: '프로젝트 폴더에 두는 지침 파일이다. 일을 시작할 때마다 자동으로 읽힌다. 규칙, 하지 말 것, 우리 팀 관행을 적는다. 하는 일은 같고 CLI 에이전트마다 파일 이름이 다르다 — claude 는 CLAUDE.md, codex 는 AGENTS.md, gemini 는 GEMINI.md. 이 중 AGENTS.md 는 한 회사 것이 아니라 여러 도구가 함께 쓰기로 한 공개 형식이다.',
+    explain: '프로젝트 폴더에 두는 지침 파일이다. 일을 시작할 때마다 자동으로 읽힌다. 규칙, 하지 말 것, 우리 팀 관행을 적는다. 하는 일은 같고 CLI 에이전트마다 파일 이름이 다르다 — claude는 CLAUDE.md, codex는 AGENTS.md, gemini는 GEMINI.md. 이 중 AGENTS.md는 한 회사 것이 아니라 여러 도구가 함께 쓰기로 한 공개 형식이다.',
     example: '"수치는 설정 파일에만 넣는다", "파일이 500줄 넘으면 나눈다"',
     myth: '"많이 적을수록 좋다"가 아니다. 길어지면 컨텍스트 로트로 오히려 성능이 떨어진다',
     source: ['https://code.claude.com/docs/en/memory',

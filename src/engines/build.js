@@ -57,6 +57,9 @@ export function mount(root, game, ctx) {
       el('span', 'budget__cap', esc(d.budgetLabel || '가방')),
       budgetNum
     );
+    // 칸 하나가 무엇인지 적어 둘 수 있다. 엔진은 그 뜻을 모르고 자리만 내준다 —
+    // 판마다 칸의 의미가 다르다(1번은 토큰, 10번은 지침 분량).
+    if (d.budgetUnit) budgetBox.append(el('span', 'budget__unit', esc(d.budgetUnit)));
     deskGrid = el('div', 'desk');
     deskGrid.style.setProperty('--cells', String(d.budget ?? 6));
     root.append(budgetBox, deskGrid);

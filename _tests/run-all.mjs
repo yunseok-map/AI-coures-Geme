@@ -20,6 +20,7 @@ const SUITES = [
   ['14 결재 반려 (검토 라인)', 'test-qc.mjs'],
   ['용어 수집 (획득/읽음)', 'test-collect.mjs'],
   ['학습자 칸 (공용 PC)', 'test-who.mjs'],
+  ['콘텐츠 검수 (글·용어·조사)', 'test-content.mjs'],
   ['글꼴 조각', 'test-font.mjs']
 ];
 

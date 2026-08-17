@@ -11,6 +11,7 @@
 //     (core/state.js 가 저장 키를 모듈 로드 때 한 번만 읽는 것과 같은 이유)
 
 import { who } from '../core/who.js';
+import { euro } from '../core/ko.js';
 
 export function renderLearners() {
   const box = document.createElement('section');
@@ -49,7 +50,9 @@ function pills(box) {
     b.textContent = s.name;
     b.setAttribute('aria-label', s.active
       ? `${s.name} — 지금 이 사람. 누르면 이름을 고칠 수 있다`
-      : `${s.name}으로 바꾸기`);
+      // 이름은 사람이 입력한 것이라 받침을 알 수 없다. 낭독기는 이 문장을 그대로
+      // 읽으므로 "민수으로 바꾸기"가 나가면 안 된다 (CLAUDE.md 8번)
+      : `${euro(s.name)} 바꾸기`);
     if (s.active) b.setAttribute('aria-current', 'true');
     b.addEventListener('click', () => {
       if (s.active) renameForm(box, s);

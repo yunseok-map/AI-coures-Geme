@@ -34,13 +34,13 @@ const baseCategories = [
         official: 'https://claude.ai' },
       { name: 'Gemini', oneLine: 'Google의 채팅 제품. 같은 이름의 모델과 층이 다르다',
         goodAt: ['구글 문서·메일과 이어 쓰기', '이미지 다루기'],
-        watchOut: ['제품 Gemini 와 모델 Gemini 를 구분해야 한다'],
+        watchOut: ['제품 Gemini와 모델 Gemini를 구분해야 한다'],
         useWhen: '구글 워크스페이스를 쓰는 조직', pricing: '부분 무료',
         official: 'https://gemini.google.com' },
       { name: 'Microsoft Copilot', oneLine: '마이크로소프트의 채팅 제품. 오피스 안에 들어와 있다',
         goodAt: ['엑셀·워드·팀즈 안에서 바로 쓰기'],
         watchOut: ['조직이 켜 주지 않으면 기능이 제한된다', '오피스 밖 작업은 다른 도구가 나을 때가 많다'],
-        useWhen: '이미 M365 를 쓰는 조직', pricing: '유료',
+        useWhen: '이미 M365를 쓰는 조직', pricing: '유료',
         official: 'https://copilot.microsoft.com' },
       { name: '뤼튼 (국내)', oneLine: '여러 회사 모델을 묶어 무료로 쓰게 해주는 국내 서비스',
         goodAt: ['한국어 사용', '여러 모델을 한 곳에서', 'AI 검색'],
@@ -63,7 +63,7 @@ const baseCategories = [
         official: 'https://perplexity.ai' },
       { name: 'Gemini Notebook (구 NotebookLM)', oneLine: '구글의 자료 기반 조사 도구. 내가 올린 자료를 근거로 답한다',
         goodAt: ['내 문서 묶음 정리', '자료 기반 요약·음성 브리핑'],
-        watchOut: ['이름이 NotebookLM 에서 Gemini Notebook 으로 바뀌었다 — 옛 이름으로 찾으면 헷갈린다',
+        watchOut: ['이름이 NotebookLM에서 Gemini Notebook으로 바뀌었다 — 옛 이름으로 찾으면 헷갈린다',
                    '올린 자료 밖의 최신 정보는 모른다', '자료 자체가 낡았으면 답도 낡는다'],
         useWhen: '자료는 이미 있고 정리가 필요할 때', pricing: '부분 무료',
         official: 'https://notebook.google/' },
@@ -105,7 +105,7 @@ const baseCategories = [
     tools: [
       { name: 'Claude Code (claude)', oneLine: '코드베이스를 읽고 파일을 고치고 명령을 실행하는 에이전틱 코딩 도구',
         goodAt: ['여러 파일에 걸친 일괄 작업', '터미널·IDE·데스크톱·웹 어디서나 같은 설정'],
-        watchOut: ['공식 정의는 코딩 도구다 — 비개발자에게는 Cowork 가 따로 있다',
+        watchOut: ['공식 정의는 코딩 도구다 — 비개발자에게는 Cowork가 따로 있다',
                    '파일을 실제로 고치므로 되돌릴 방법을 먼저 확인해야 한다',
                    '지침 파일은 CLAUDE.md'],
         useWhen: '내 PC의 파일을 실제로 건드려야 할 때', pricing: '유료',
@@ -116,7 +116,7 @@ const baseCategories = [
                    '지침 파일은 AGENTS.md (여러 도구가 함께 쓰는 공개 형식)'],
         useWhen: 'OpenAI 쪽 생태계를 쓸 때', pricing: '유료',
         official: 'https://learn.chatgpt.com/docs/codex/cli' },
-      { name: 'Gemini CLI (gemini)', oneLine: 'Gemini 를 터미널로 바로 가져오는 오픈소스 AI 에이전트',
+      { name: 'Gemini CLI (gemini)', oneLine: 'Gemini를 터미널로 바로 가져오는 오픈소스 AI 에이전트',
         goodAt: ['터미널에서 바로 작업', '소스가 공개돼 있어 사내 검토가 가능'],
         watchOut: ['오픈소스라 설치·업데이트를 직접 관리해야 한다',
                    '지침 파일은 GEMINI.md'],
@@ -227,7 +227,7 @@ const baseCategories = [
     tools: [
       { name: 'Gamma', oneLine: '한 줄 설명에서 발표 자료 초안을 빠르게 뽑는다',
         goodAt: ['초안을 링크로 공유', '빠른 시안'],
-        watchOut: ['자체 형식이라 PowerPoint 로 내보내면 배치가 흐트러지는 경우가 있다'],
+        watchOut: ['자체 형식이라 PowerPoint로 내보내면 배치가 흐트러지는 경우가 있다'],
         useWhen: '초안을 빨리 보여줘야 할 때', pricing: '부분 무료',
         official: 'https://gamma.app' },
       { name: 'Microsoft 365 Copilot', oneLine: '오피스 안에서 슬라이드·문서를 만든다',
@@ -300,7 +300,7 @@ export const categories = baseCategories.concat(meetingCategory);
 export const AGGREGATOR_NOTE = {
   cap: '알아두면 목록이 확 줄어드는 것 — 애그리게이터',
   body: '자기 모델을 만들지 않고 여러 회사 모델을 묶어 파는 층이 있다. 영상 생성에서 두드러졌고 지금은 이미지·음성·편집까지 넓어졌다. ' +
-        '예를 들어 Higgsfield 는 모델이 아니라 여러 회사 엔진을 골라 쓰게 해주는 플랫폼이다. ' +
+        '예를 들어 Higgsfield는 모델이 아니라 여러 회사 엔진을 골라 쓰게 해주는 플랫폼이다. ' +
         '“AI 툴이 수백 개”라는 말의 상당 부분은 같은 모델을 다르게 포장한 것이라, ' +
         '이 구조를 알면 외울 것이 크게 줄어든다.'
 };

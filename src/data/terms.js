@@ -115,7 +115,7 @@ const coreTerms = [
   // ===================== 챕터 2 — 도구 구분 =====================
   {
     term: '모델', en: 'Model', chapter: 2,
-    analogy: '엔진',
+    analogy: '엔진. 차 안에 들어 있어서 직접 만질 일은 없지만, 실제로 움직이는 힘은 여기서 나온다',
     explain: '실제로 글을 이해하고 만들어내는 두뇌 부분이다. 사람이 직접 쓰는 게 아니라 제품 안에 들어간다. Claude Opus·Sonnet, GPT 계열, Gemini 등이 모델 이름이다.',
     example: '같은 Claude 모델이 웹·앱·터미널에서 똑같이 돈다',
     myth: '"ChatGPT는 모델 이름"이 아니다. ChatGPT는 제품, GPT가 모델',
@@ -125,7 +125,7 @@ const coreTerms = [
     term: '제품', en: 'Product', chapter: 2,
     analogy: '그 엔진으로 만든 자동차',
     explain: '모델을 감싸서 사람이 쓸 수 있게 만든 도구다. 파일을 읽고, 도구를 부르고, 권한을 확인하는 부분이 전부 여기 붙는다. 공식 문서의 표현이 정확하다 — "Claude Code가 하네스이고, Claude는 그 안에 든 모델이다".',
-    example: 'ChatGPT, Claude.ai, Gemini, 그리고 터미널에서 도는 claude·codex·gemini 는 전부 제품',
+    example: 'ChatGPT, Claude.ai, Gemini, 그리고 터미널에서 도는 claude·codex·gemini는 전부 제품',
     myth: '"제품이 똑똑한 것"이 아니다. 똑똑한 건 모델, 제품은 그걸 일하게 만드는 껍데기. 둘 다 있어야 쓸모가 있다',
     source: D
   },

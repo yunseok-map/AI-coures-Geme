@@ -13,6 +13,7 @@
 // 그래서 "아무 장치나 놓으면 막힌다"가 성립하지 않는다 — 이게 이 판의 핵심이다.
 
 import { Run, applyGain } from '../core/sim.js';
+import { euro, iGa } from '../core/ko.js';
 
 export default {
   id: 'prevent-accident',
@@ -100,8 +101,10 @@ export default {
         r.ok(f.ok);
       } else if (setup.leaked.includes(f.id)) {
         r.fail(f.fail);
-        r.fault(f.label, `이 작업은 ${labelOf(d, f.blockedBy)}(으)로만 막힌다`, 24);
-        mistakes.push({ itemId: f.id, hint: `${labelOf(d, f.blockedBy)}가 앞에 있어야 막힌다.` });
+        // 장치 이름이 '검증'·'훅'·'샌드박스'로 받침이 제각각이다. 손으로 "(으)로"라고
+        // 적으면 화면에 그 괄호가 그대로 나가고, "검증가" 같은 말도 나온다 (CLAUDE.md 8번)
+        r.fault(f.label, `이 작업은 ${euro(labelOf(d, f.blockedBy))}만 막힌다`, 24);
+        mistakes.push({ itemId: f.id, hint: `${iGa(labelOf(d, f.blockedBy))} 앞에 있어야 막힌다.` });
       } else if (setup.overblocked.includes(f.id)) {
         r.warn(f.over || '정상 작업인데 막혔다');
         r.fault('과잉 차단', '안전한 작업까지 막으면 일이 진행되지 않는다', 10);

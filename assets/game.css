@@ -281,6 +281,12 @@
 .budget__cap { font-family: var(--font-body); color: var(--muted); }
 .budget__num { font-weight: 700; }
 .budget--over .budget__num { color: var(--fail); }
+/* 칸 하나가 무엇인지 — 숫자 오른쪽에 조용히 붙는다. 읽으라고 두는 게 아니라
+   "칸"이라는 말이 추상적으로 남지 않게 하려는 것이라 본문보다 작고 흐리다. */
+.budget__unit {
+  margin-left: auto;
+  font-family: var(--font-body); font-size: var(--fs-aux); color: var(--muted);
+}
 
 /* 책상 — 칸이 정해진 그릇.
    막대 하나 + "3 / 6칸" 숫자로는 남은 여유가 안 보여서 4칸짜리를 겁 없이 올린다.

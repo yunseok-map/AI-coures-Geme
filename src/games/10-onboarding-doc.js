@@ -106,7 +106,8 @@ export default {
   },
 
   named: {
-    all: '방금 만든 것이 **CLAUDE.md**(또는 **AGENTS.md**)다. 매 세션 처음에 읽히는 지침 파일이고, ' +
+    all: '방금 만든 것이 **지침 파일**이다 — 일을 시작할 때마다 매번 읽힌다. ' +
+         'claude는 CLAUDE.md, codex는 AGENTS.md, gemini는 GEMINI.md라는 이름으로 읽는다. ' +
          '무엇을 넣고 무엇을 뺄지 고르는 일이 **컨텍스트 엔지니어링**이다.'
   },
 
