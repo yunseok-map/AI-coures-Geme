@@ -71,7 +71,7 @@ function tools(box) {
   }
 
   const me = who.active;
-  row.append(quiet(`${me.name} 지우기`, (btn) => {
+  row.append(quiet([typed(me.name), ' 지우기'], (btn) => {
     // 브라우저 기본 대화상자를 쓰지 않는다 — 확인 버튼을 그 자리에 만든다
     btn.replaceWith(confirmDrop(box, me));
   }));
@@ -146,7 +146,7 @@ function form(box, opt) {
 function confirmDrop(box, me) {
   const wrap = document.createElement('span');
   wrap.className = 'who__confirm';
-  wrap.append(note(`${me.name}의 기록이 사라진다.`));
+  wrap.append(note([typed(me.name), '의 기록이 사라진다.']));
 
   const yes = quiet('정말 지운다', () => {
     who.remove(me.n);
@@ -169,18 +169,36 @@ function cap(text) {
   return s;
 }
 
-function note(text) {
+function note(parts) {
   const s = document.createElement('span');
   s.className = 'who__note';
-  s.textContent = text;
-  return s;
+  return put(s, parts);
 }
 
 function quiet(label, fn) {
   const b = document.createElement('button');
   b.type = 'button';
   b.className = 'btn-quiet who__btn';
-  b.textContent = label;
+  put(b, label);
   b.addEventListener('click', () => fn(b));
   return b;
+}
+
+/** 글자와 조각(span)을 섞어 넣는다. 이름을 따로 감싸야 해서 필요하다. */
+function put(node, parts) {
+  for (const p of [].concat(parts)) node.append(p);
+  return node;
+}
+
+/**
+ * 사람이 직접 입력한 이름. 글꼴을 시스템 것으로 고정한다.
+ * 왜: 저장소에 넣은 Pretendard 조각에는 이 게임 문구에 나오는 음절만 있다.
+ * 남이 타이핑한 이름은 대개 그 안에 없어서, 감싸지 않으면 "지원" 의 '지' 는
+ * Pretendard, '원' 은 맑은 고딕으로 나온다 — 한 이름 안에서 글꼴이 갈린다.
+ */
+export function typed(name) {
+  const s = document.createElement('span');
+  s.className = 'typed';
+  s.textContent = name;
+  return s;
 }

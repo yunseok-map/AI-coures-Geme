@@ -7,7 +7,7 @@ import { chapterNames, terms } from '../data/terms.js';
 import { strong } from '../core/text.js';
 import { go } from '../core/router.js';
 import { enter } from '../core/motion.js';
-import { renderLearners } from './learners.js';
+import { renderLearners, typed } from './learners.js';
 import { who } from '../core/who.js';
 
 const CHAPTER_ORDER = [1, 2, 3, 4, 5, 9];
@@ -244,7 +244,8 @@ function footer(done, total) {
   reset.className = 'btn-quiet';
   // 여러 명이 쓰면 누구 기록이 날아가는지 버튼에 적어 둔다 —
   // 공용 PC 에서 남의 기록을 지우는 사고가 제일 아프다
-  reset.textContent = who.many ? `${who.active.name} 처음부터` : '처음부터';
+  if (who.many) reset.append(typed(who.active.name), ' 처음부터');
+  else reset.textContent = '처음부터';
   reset.addEventListener('click', () => {
     // 브라우저 기본 대화상자를 쓰지 않는다 — 확인 버튼을 그 자리에 만든다.
     reset.replaceWith(confirmReset());

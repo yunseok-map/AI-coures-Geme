@@ -19,7 +19,8 @@ const SUITES = [
   ['15 이상 징후 찾기 (슈팅)', 'test-shoot15.mjs'],
   ['14 결재 반려 (검토 라인)', 'test-qc.mjs'],
   ['용어 수집 (획득/읽음)', 'test-collect.mjs'],
-  ['학습자 칸 (공용 PC)', 'test-who.mjs']
+  ['학습자 칸 (공용 PC)', 'test-who.mjs'],
+  ['글꼴 조각', 'test-font.mjs']
 ];
 
 let bad = 0;

@@ -14,6 +14,11 @@
 <meta property="og:description" content="설명을 읽는 대신 직접 세팅하고 돌려 본다. 미니게임 17판, 필수 10판이면 완주.">
 <meta name="twitter:card" content="summary">
 <title>AI 연수원 — 해보면서 배우는 AI</title>
+<!-- 글꼴은 저장소 안에 있다(CDN 아님). CSS 를 기다리지 않고 바로 받기 시작한다.
+     crossorigin 은 같은 출처라도 반드시 붙인다 — 폰트는 CORS 방식으로 불리므로
+     빼면 CSS 가 같은 파일을 한 번 더 받는다. -->
+<link rel="preload" href="./assets/vendor/pretendard/PretendardVariable.subset.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="./assets/vendor/pretendard/pretendard.css">
 <link rel="stylesheet" href="./assets/tokens.css">
 <link rel="stylesheet" href="./assets/styles.css">
 <link rel="stylesheet" href="./assets/game.css">

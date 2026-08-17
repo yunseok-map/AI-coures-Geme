@@ -66,11 +66,21 @@
   /* hover 에서 물체가 뜨는 높이. 누를 때 내려가는 깊이는 --lip 이다. */
   --rise: -1px;
 
-  /* --- 글꼴: 시스템 폰트만. 웹폰트·CDN 금지(사내망 차단 대비) --- */
-  --font-body: system-ui, -apple-system, "Segoe UI", "Malgun Gothic",
-               "Apple SD Gothic Neo", sans-serif;
+  /* --- 글꼴 ---
+     Pretendard 는 저장소 안에 있다(`assets/vendor/pretendard/`). CDN 이 아니라
+     같은 출처에서 불리므로 외부 요청은 여전히 0건이다.
+     맨 앞에만 놓는다 — 폰트가 늦거나 실패하면 뒤의 시스템 글꼴로 그냥 보인다. */
+  --font-body: "Pretendard Variable", system-ui, -apple-system, "Segoe UI",
+               "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
   --font-mono: ui-monospace, "Cascadia Mono", Consolas, "D2Coding",
                "Nanum Gothic Coding", monospace;
+
+  /* 사람이 직접 입력한 글자(학습자 이름)에 쓴다.
+     Pretendard 조각에는 이 게임 문구에 나오는 음절만 들어 있다. 남이 타이핑한
+     이름은 대개 그 안에 없어서, 한 이름 안에서 글꼴이 섞여 오작동처럼 보인다.
+     그래서 입력값은 처음부터 시스템 글꼴로 통일한다. */
+  --font-typed: system-ui, -apple-system, "Segoe UI", "Malgun Gothic",
+                "Apple SD Gothic Neo", sans-serif;
 
   /* 게임 화면은 제목이 커야 시선이 잡힌다 */
   --fs-display: 30px;  /* 판정 · 점수 · 축하 */

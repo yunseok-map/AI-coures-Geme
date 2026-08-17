@@ -1,0 +1,9 @@
+# 폰트는 이진 파일이다. 이 PC 는 autocrlf 가 켜져 있어서, 만약 git 이 텍스트로
+# 잘못 보면 줄바꿈을 바꾸다가 파일이 깨진다. 명시해 둔다.
+*.woff2 binary
+*.woff  binary
+*.ttf   binary
+*.otf   binary
+
+# 덮는 글자 목록. 줄바꿈이 없는 한 줄이라 손댈 것이 없지만, 도구가 끼어들지 않게 못박는다.
+assets/vendor/pretendard/covered.txt -text

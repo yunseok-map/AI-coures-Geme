@@ -284,6 +284,15 @@ input { caret-color: var(--mark); }
 }
 .who__input:focus-visible { border-color: var(--mark); outline: none; }
 
+/* 사람이 직접 입력한 글자(= 학습자 이름)는 시스템 글꼴로 고정한다.
+   저장소에 넣은 Pretendard 조각에는 이 게임 문구의 음절만 들어 있어서,
+   그냥 두면 이름 한 개 안에서 글꼴이 갈린다. 이유는 tokens.css 의 --font-typed.
+   이름만 감싸므로 옆의 우리말 라벨은 Pretendard 그대로다. */
+.typed,
+.who__pill,
+.who__input,
+.progress__who { font-family: var(--font-typed); }
+
 /* 처음이라면 — 첫 방문에 한 번. 덮개가 아니라 카드다 (shell/coursemap.js).
    표면 2단계: 아래 "이어서 하기"(3단계)보다 가벼워야 한다. 안내가 주인공이면
    시작 버튼을 못 찾는다. */

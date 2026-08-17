@@ -1,0 +1,18 @@
+/* Pretendard — 이 게임이 실제로 쓰는 글자만 남긴 조각.
+   원본: https://github.com/orioncactus/pretendard (v1.3.9), SIL Open Font License 1.1
+   라이선스 원문은 같은 폴더의 OFL.txt. 만드는 방법과 규칙은 README.md.
+
+   외부 요청 0건 규칙은 그대로다 — 이 파일과 woff2 는 저장소 안에 있고 같은 출처에서
+   불린다. CDN 을 가리키지 않는다. 경로는 반드시 상대경로(GitHub Pages).
+
+   가변 폰트 하나로 45~930 굵기를 다 덮는다. 그래서 파일이 하나뿐이고,
+   Bold 를 따로 받지 않는다. */
+@font-face {
+  font-family: 'Pretendard Variable';
+  font-style: normal;
+  font-weight: 45 930;
+  font-display: swap;   /* 폰트가 늦으면 맑은 고딕으로 먼저 보인다 — 글이 안 보이는 시간을 만들지 않는다 */
+  /* format 은 'woff2' 로만 적는다. 'woff2-variations' 는 옛 사파리용 별칭이고,
+     그 문자열을 모르는 브라우저는 이 줄을 통째로 버린다 — 폰트가 아예 안 걸린다. */
+  src: url('./PretendardVariable.subset.woff2') format('woff2');
+}
