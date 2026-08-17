@@ -426,10 +426,28 @@
   color: var(--mark);
   font-weight: 700;
 }
+/* 밀려난 것 — 넣긴 했지만 책상에 못 올라간 상태.
+   **opacity 로 흐리게 만들지 않는다.** 두 가지가 걸린다:
+     1) enter() 가 등장 연출을 끝낼 때 인라인 opacity:1 을 남긴다. 인라인이
+        이기므로 CSS 의 opacity 는 아무 효과가 없다 — 실제로 밀려난 부품이
+        멀쩡해 보이는 화면이 찍혔다.
+     2) .4 로 흐린 글자는 이 저장소가 지키는 대비 4.5:1 을 못 넘긴다.
+   그래서 색·테두리·취소선으로 나타낸다. 인라인 style 이 못 덮는 속성들이다. */
 .part--evicted {
-  opacity: .4;
-  text-decoration: line-through;
+  color: var(--muted);
+  background: var(--ink-06);
   border-style: dashed;
+  border-color: var(--ink-20);
+  border-width: 1px;
+  font-weight: 400;
+  text-decoration: line-through;
+  box-shadow: none;
+}
+/* .part--in 이 붙여 둔 체크를 그대로 두면 "넣었다"로 읽힌다. 밀려난 것은 ✕ 다. */
+.part--evicted::before {
+  content: "✕";
+  color: var(--fail);
+  font-weight: 700;
 }
 .part--danger { border-color: var(--partial); }
 

@@ -10,7 +10,7 @@
 // 판정은 game.simulate(setup) 가 한다. 엔진은 세팅만 모아서 넘긴다.
 
 import { el, esc, say, Bin, header, actions, runner } from './base.js';
-import { press, shake, enter, animate, isReduced, flyTo, pulse, wipeIn, dropOut }
+import { press, shake, enter, flyTo, pulse, wipeIn, dropOut }
   from '../core/motion.js';
 import { hasBatchim, eulReul } from '../core/ko.js';
 
@@ -311,12 +311,11 @@ export function mount(root, game, ctx) {
         `AI는 밀려난 것을 못 본다.</p>`
       : '';
 
-    if (evicted.length && !isReduced()) {
-      for (const p of evicted) {
-        const n = partNodes.get(p.id);
-        if (n) animate(n, { opacity: [1, .35], duration: 220, ease: 'outQuad' });
-      }
-    }
+    // 밀려난 부품을 흐리게 만드는 것은 CSS(.part--evicted) 가 한다.
+    // 예전에는 여기서 animate(opacity) 도 같이 걸었는데, 그게 **인라인 opacity** 를
+    // 남겨서 애니메이션이 시작 프레임에 얼어붙으면 opacity 1 로 고정됐다 —
+    // CSS 의 .4 를 덮어써서 **밀려난 것이 멀쩡해 보였다.** 실제로 그렇게 찍혔다.
+    // 상태를 나타내는 값은 애니메이션하지 않는다(통로 굵기와 같은 이유).
     armRun(pool.length > 0);
   }
 
