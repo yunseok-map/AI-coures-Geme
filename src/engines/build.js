@@ -63,13 +63,24 @@ export function mount(root, game, ctx) {
   }
 
   // ---- 슬롯 (슬롯형) ----
+  //
+  // 부품에 reach(열어 준 폭)가 있으면 슬롯마다 **통로**를 굵기로 그린다.
+  // 엔진은 그 숫자의 뜻을 모른다 — 굵게 그리기만 한다. 뜻은 games/ 가 정한다.
+  // 말로 "최소 권한"이라고 적는 대신 굵은 통로가 화면을 먹는 걸 보게 하는 장치다.
+  const wired = useSlots && (d.parts || []).some(p => p.reach);
   const slotNodes = new Map();
   if (useSlots) {
     const wrap = el('div', 'slots');
+    if (wired) {
+      wrap.append(el('div', 'slot__cap',
+        esc(d.wireHint || '통로가 굵을수록 많이 열어 준 것이다')));
+    }
     for (const s of d.slots) {
       const node = el('div', 'slot');
-      node.innerHTML = `<div class="slot__cap">${esc(s.label)}</div>` +
-                       `<div class="slot__items"></div>`;
+      node.innerHTML =
+        (wired ? `<div class="slot__wire" aria-hidden="true"></div>` : '') +
+        `<div class="slot__cap">${esc(s.label)}<span class="slot__tag"></span></div>` +
+        `<div class="slot__items"></div>`;
       const hit = el('button');
       hit.type = 'button';
       hit.className = 'btn-quiet';
@@ -79,7 +90,13 @@ export function mount(root, game, ctx) {
       node.append(hit);
       bin.on(hit, 'click', () => placeInto(s));
       wrap.append(node);
-      slotNodes.set(s.id, { node, items: node.querySelector('.slot__items'), hit });
+      slotNodes.set(s.id, {
+        node,
+        items: node.querySelector('.slot__items'),
+        wire: node.querySelector('.slot__wire'),
+        tag: node.querySelector('.slot__tag'),
+        hit
+      });
     }
     root.append(wrap);
   }
@@ -232,8 +249,33 @@ export function mount(root, game, ctx) {
     if (was && enabled) pulse(bar.btn.run, 1);
   }
 
+  /**
+   * 통로를 굵기로 그린다 — 슬롯 하나에 여러 개가 놓이면 **가장 넓게 연 것**을 따른다.
+   * 좁은 것을 같이 꽂았다고 넓게 연 사실이 상쇄되지 않는다.
+   */
+  function drawWires() {
+    for (const s of d.slots) {
+      const info = slotNodes.get(s.id);
+      if (!info || !info.wire) continue;
+      const widest = placed.get(s.id)
+        .reduce((a, b) => ((b.reach ?? 1) > (a ? a.reach ?? 1 : 0) ? b : a), null);
+      const reach = widest ? (widest.reach ?? 1) : 0;
+
+      info.wire.style.setProperty('--reach', String(reach || 1));
+      info.wire.className = 'slot__wire' +
+        (reach ? ' slot__wire--on' : '') +
+        (widest && widest.oneway ? ' slot__wire--oneway' : '');
+      // 굵기만으로는 "되돌릴 수 없다"가 안 읽힌다. 그건 굵기가 아니라 종류의 문제다.
+      info.tag.textContent = widest && widest.oneway ? '되돌릴 수 없다' : '';
+    }
+  }
+
   function paint() {
-    if (useSlots) { armRun([...placed.values()].some(v => v.length)); return; }
+    if (useSlots) {
+      if (wired) drawWires();
+      armRun([...placed.values()].some(v => v.length));
+      return;
+    }
 
     const cap = d.budget ?? 6;
     evicted.length = 0;

@@ -30,14 +30,19 @@ export default {
       { id: 'mail', label: '메일',        accepts: ['mail'], capacity: 1 }
     ],
 
+    // reach = 열어 준 폭. 엔진이 이 숫자만큼 통로를 굵게 그린다(엔진은 뜻을 모른다).
+    // oneway = 되돌릴 수 없는 동작이 들어 있다. 굵기와 별개로 표시가 붙는다.
+    // 말로 "최소 권한"이라고 하는 대신, 굵은 통로가 화면을 먹는 걸 보게 하려고 넣었다.
     parts: [
-      { id: 'doc-read',  label: '문서함 — 읽기만',            tags: ['doc'] },
+      { id: 'doc-read',  label: '문서함 — 읽기만',            tags: ['doc'], reach: 1 },
       { id: 'doc-all',   label: '문서함 — 읽기+수정+삭제',    tags: ['doc'], danger: true,
+        reach: 3, oneway: true,
         note: '이 일에 수정·삭제 권한이 필요한가?' },
-      { id: 'cal-read',  label: '일정 — 읽기만',              tags: ['cal'] },
-      { id: 'cal-write', label: '일정 — 읽기+등록',           tags: ['cal'] },
-      { id: 'mail-read', label: '메일 — 읽기만',              tags: ['mail'] },
+      { id: 'cal-read',  label: '일정 — 읽기만',              tags: ['cal'], reach: 1 },
+      { id: 'cal-write', label: '일정 — 읽기+등록',           tags: ['cal'], reach: 2 },
+      { id: 'mail-read', label: '메일 — 읽기만',              tags: ['mail'], reach: 1 },
       { id: 'mail-send', label: '메일 — 읽기+외부 발송',      tags: ['mail'], danger: true,
+        reach: 3, oneway: true,
         note: '외부로 나가는 통로다' }
     ]
   },

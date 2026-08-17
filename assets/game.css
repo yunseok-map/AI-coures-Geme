@@ -353,6 +353,38 @@
 .slot--filled { border-style: solid; border-color: var(--mark); }
 .slot__items { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
 
+/* 통로 — 열어 준 폭(reach)을 굵기로 보여 준다 (games/09-wiring.js).
+   "최소 권한"을 문장으로 읽는 것과, 굵은 통로가 화면을 먹는 걸 보는 것은 다르다.
+   안 꽂힌 칸은 끊어진 점선이라 "연결이 없다"가 굵기 0 으로 자연히 읽힌다. */
+.slot__wire {
+  height: 0;
+  margin-bottom: var(--sp-3);
+  border-top: 3px dashed var(--ink-20);
+}
+.slot__wire--on {
+  /* 1칸 6px · 2칸 10px · 3칸 14px — 두 배 반 차이는 곁눈으로도 보인다 */
+  height: calc(2px + var(--reach, 1) * 4px);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--mark);
+  /* 굵기는 애니메이션하지 않는다. 전환이 멈추면 0px 에 머물러 "연결 안 됨"으로
+     읽힌다 — 굵기가 상태를 나타내는 값이라 중간 프레임이 곧 오답이다.
+     (fillBar 가 0% 에 얼어붙어 진행도가 없어 보였던 것과 같은 계열) */
+  transition: background-color var(--dur-move) var(--ease);
+}
+.slot__wire--oneway { background: var(--fail); }
+
+/* 되돌릴 수 없는 권한은 굵기의 문제가 아니라 종류의 문제다 — 글자로 따로 밝힌다 */
+.slot__tag {
+  margin-left: var(--sp-2);
+  padding: 1px var(--sp-2);
+  font-size: var(--fs-aux); font-weight: 700;
+  color: var(--on-mark); background: var(--fail);
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+}
+.slot__tag:empty { display: none; }
+
 .parts { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
 .part, .bin, .toggle, .target, .board__row, .cell {
   transition: transform var(--dur-tap) var(--ease),
