@@ -1,0 +1,144 @@
+/* ============================================================
+   용어 도감 + AI 도구 도감.
+   둘 다 게임 클리어와 무관하게 언제든 열람 가능하다 (프롬프트 §3, §6-B).
+   ============================================================ */
+
+.codex__search {
+  width: 100%; min-height: var(--tap-min);
+  padding: var(--sp-2) var(--sp-3);
+  font: inherit;
+  border: 1px solid var(--ink-12);
+  border-radius: var(--radius);
+  background: var(--card);
+  margin: var(--sp-3) 0 var(--sp-4);
+}
+
+.tabs {
+  display: flex; gap: var(--sp-2);
+  border-bottom: 2px solid var(--ink-12);
+  margin-top: var(--sp-3);
+}
+.tab {
+  border: 0; border-bottom: 3px solid transparent;
+  background: none; border-radius: 0;
+  padding: var(--sp-2) var(--sp-3);
+  font-size: var(--fs-label); color: var(--muted);
+  min-height: var(--tap-min);
+}
+.tab--on { color: var(--mark); border-bottom-color: var(--mark); font-weight: 700; }
+
+.codex__group { margin-bottom: var(--sp-5); }
+.codex__groupname {
+  font-size: var(--fs-aux); color: var(--muted);
+  letter-spacing: .04em;
+  margin-bottom: var(--sp-2);
+  padding-bottom: var(--sp-1);
+  border-bottom: 1px solid var(--ink-12);
+}
+
+/* ---------- 용어 카드 ---------- */
+.term {
+  background: var(--card);
+  border: 1px solid var(--ink-12);
+  border-radius: var(--radius);
+  margin-bottom: var(--sp-2);
+  overflow: hidden;
+  box-shadow: var(--lift-1);
+}
+.term__head {
+  display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap;
+  width: 100%; min-height: var(--tap-min);
+  padding: var(--sp-3);
+  text-align: left;
+  background: none; border: 0; border-radius: 0;
+}
+.term__name { font-weight: 700; }
+.term__en { font-size: var(--fs-aux); color: var(--muted); }
+.term__lock { margin-left: auto; font-size: var(--fs-aux); color: var(--muted); }
+.term__got  { margin-left: auto; font-size: var(--fs-aux); color: var(--pass); font-weight: 700; }
+
+.term__body { padding: 0 var(--sp-3) var(--sp-3); border-top: 1px dashed var(--ink-12); }
+.term__row { margin-top: var(--sp-3); }
+.term__key { display: block; font-size: var(--fs-aux); color: var(--muted); margin-bottom: 2px; }
+.term__myth { border-left: 3px solid var(--partial); padding-left: var(--sp-3); }
+.term__src { font-size: var(--fs-aux); color: var(--muted); }
+
+/* ---------- AI 도구 도감 ---------- */
+/* 스크롤해도 사라지지 않는 경고 배너 (프롬프트 §6-B 필수) */
+.banner {
+  position: sticky; top: var(--shell-top); z-index: 10;
+  background: var(--partial-10);
+  border: 1px solid var(--partial);
+  border-left: 4px solid var(--partial);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: var(--sp-3);
+  margin-bottom: var(--sp-3);
+  font-size: var(--fs-label);
+}
+.banner b { color: var(--partial); }
+.banner a { font-size: var(--fs-aux); }
+
+.catgrid { display: grid; gap: var(--sp-2); }
+.cat {
+  background: var(--card);
+  border: 1px solid var(--ink-12);
+  border-left: 3px solid var(--mark);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  overflow: hidden;
+  box-shadow: var(--lift-1);
+}
+.cat__head {
+  display: grid; grid-template-columns: 1fr auto; gap: var(--sp-2);
+  align-items: center;
+  width: 100%; min-height: var(--tap-min);
+  padding: var(--sp-3);
+  text-align: left; background: none; border: 0; border-radius: 0;
+}
+.cat__name { font-weight: 700; }
+.cat__use { display: block; font-size: var(--fs-aux); color: var(--muted); line-height: 1.4; }
+.cat__count { font-family: var(--font-mono); font-size: var(--fs-aux); color: var(--muted); }
+
+.cat__body { padding: 0 var(--sp-3) var(--sp-3); border-top: 1px dashed var(--ink-12); }
+
+.tool {
+  padding: var(--sp-3) 0;
+  border-bottom: 1px dashed var(--ink-12);
+}
+.tool:last-child { border-bottom: 0; }
+.tool__head { display: flex; align-items: baseline; gap: var(--sp-2); flex-wrap: wrap; }
+.tool__name { font-weight: 700; }
+.tool__price {
+  font-size: var(--fs-aux);
+  border: 1px solid var(--ink-12); border-radius: var(--radius-sm);
+  padding: 0 var(--sp-2); color: var(--muted);
+}
+.tool__one { margin-top: var(--sp-1); font-size: var(--fs-label); }
+
+.tool__list { margin: var(--sp-2) 0 0; padding: 0; list-style: none; display: grid; gap: 2px; }
+.tool__list li {
+  font-size: var(--fs-aux);
+  display: grid; grid-template-columns: 14px 1fr; gap: var(--sp-2);
+}
+.tool__good li::before { content: "+"; color: var(--pass); font-weight: 700; }
+.tool__watch li::before { content: "!"; color: var(--partial); font-weight: 700; }
+
+.tool__meta {
+  margin-top: var(--sp-2);
+  font-size: var(--fs-aux); color: var(--muted);
+  display: flex; gap: var(--sp-3); flex-wrap: wrap;
+}
+
+/* 애그리게이터 설명 — 모델 vs 제품 구분이 한 번 더 쓰이는 자리 */
+.note-box {
+  background: var(--mark-08);
+  border-left: 3px solid var(--mark);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: var(--sp-3);
+  margin: var(--sp-3) 0;
+  font-size: var(--fs-label);
+}
+.note-box__cap { font-size: var(--fs-aux); color: var(--mark); font-weight: 700; margin-bottom: 2px; }
+
+@media (min-width: 720px) {
+  .catgrid { grid-template-columns: 1fr 1fr; align-items: start; }
+}

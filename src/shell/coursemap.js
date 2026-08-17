@@ -1,0 +1,221 @@
+// 공통 셸 — 코스맵. manifest 만 보고 그린다.
+// 미니게임을 추가해도 이 파일은 고치지 않는다. (GAME_SPEC.md §10)
+
+import { state } from '../core/state.js';
+import { manifest } from '../games/index.js';
+import { chapterNames, terms } from '../data/terms.js';
+import { go } from '../core/router.js';
+import { enter } from '../core/motion.js';
+
+const CHAPTER_ORDER = [1, 2, 3, 4, 5, 9];
+
+export function renderCourse(root) {
+  const { done, total } = state.progress(manifest);
+
+  root.innerHTML =
+    `<h1 class="stage__title">AI 연수원</h1>` +
+    `<p class="stage__sub">읽는 곳이 아니라 해보는 곳이다. 한 판 약 2분 · 필수 ${total}판이면 완주.</p>`;
+
+  root.append(resume(done, total));
+
+  const blocks = [];
+  for (const ch of CHAPTER_ORDER) {
+    const games = manifest.filter(g => g.chapter === ch);
+    if (!games.length) continue;
+    const block = chapterBlock(ch, games);
+    blocks.push(block);
+    root.append(block);
+  }
+
+  root.append(footer(done, total));
+
+  // 노드는 CSS에서 opacity:0 으로 시작한다 — 여기서 살려 준다.
+  enter(root.querySelectorAll('.node'), { each: 18 });
+  enter(blocks.map(b => b.querySelector('.chapter__head')), { each: 30 });
+}
+
+/** 맨 위 "이어서 하기" — 다음에 뭘 눌러야 할지 고민하지 않게 한다. */
+function resume(done, total) {
+  const box = document.createElement('div');
+  box.className = 'resume';
+
+  const next = manifest.find(g => g.required && !state.isCleared(g.id))
+            || manifest.find(g => !state.isCleared(g.id));
+
+  if (!next) {
+    box.innerHTML =
+      `<div class="resume__cap">17판 전부 완주</div>` +
+      `<div class="resume__name">결과 카드를 확인하라</div>`;
+    box.append(bigBtn('결과 카드 보기', () => go('/report')));
+    return box;
+  }
+
+  const requiredDone = done === total && total > 0;
+  box.innerHTML =
+    `<div class="resume__cap">${
+      requiredDone ? '필수 코스 완주 · 심화가 열려 있다'
+      : done === 0 ? '여기서 시작'
+      : `필수 ${done} / ${total} 진행 중`}</div>` +
+    `<div class="resume__name">${next.no}. ${esc(next.title)}</div>` +
+    `<div class="resume__learn">${esc(next.learn)}</div>`;
+  box.append(bigBtn(
+    requiredDone ? '심화 계속하기' : done === 0 ? '시작하기' : '이어서 하기',
+    () => go(`/game/${next.id}`)));
+  if (requiredDone) {
+    const r = document.createElement('button');
+    r.type = 'button';
+    r.className = 'btn-quiet';
+    r.style.marginTop = 'var(--sp-2)';
+    r.textContent = '결과 카드 보기';
+    r.addEventListener('click', () => go('/report'));
+    box.append(r);
+  }
+  return box;
+}
+
+function bigBtn(label, fn) {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'btn-primary btn-big';
+  b.textContent = label;
+  b.addEventListener('click', fn);
+  return b;
+}
+
+function chapterBlock(ch, games) {
+  const wrap = document.createElement('section');
+  wrap.className = 'chapter';
+
+  const allOptional = games.every(g => !g.required);
+  const label = ch === 9 ? '번외' : `챕터 ${ch}`;
+
+  const allDone = games.every(g => state.isCleared(g.id));
+
+  const head = document.createElement('div');
+  head.className = 'chapter__head' + (allDone ? ' chapter__head--done' : '');
+  head.innerHTML =
+    `<span class="chapter__no">${esc(label)}</span>` +
+    `<span class="chapter__name">${esc(chapterNames[ch] || '')}</span>` +
+    (allDone ? `<span class="chapter__tag chapter__tag--done">완료</span>`
+     : allOptional ? `<span class="chapter__tag">심화</span>` : '');
+  wrap.append(head);
+
+  const list = document.createElement('div');
+  list.className = 'nodes';
+
+  for (const g of games) list.append(node(g));
+  wrap.append(list);
+  return wrap;
+}
+
+function node(g) {
+  const result = state.resultOf(g.id);
+  const passed = state.isCleared(g.id);
+  const rejected = Boolean(result) && !passed;
+
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'node ' + (g.required ? 'node--required' : 'node--optional') +
+                (passed ? ' node--done' : '') + (rejected ? ' node--rejected' : '');
+
+  const mark = passed ? '✓' : rejected ? '↻' : (g.required ? '●' : '○');
+  const meta = !g.ready ? '준비 중'
+             : result ? gradeLabel(result.grade)
+             : g.required ? '필수' : '심화';
+
+  b.innerHTML =
+    `<span class="node__mark" aria-hidden="true">${mark}</span>` +
+    `<span class="node__body">` +
+      `<span class="node__name">${g.no}. ${esc(g.title)}</span>` +
+      `<span class="node__learn">${esc(g.learn)}</span>` +
+    `</span>` +
+    `<span class="node__meta">${esc(meta)}</span>`;
+
+  b.setAttribute('aria-label',
+    `${g.no}번 ${g.title}. ${g.required ? '필수' : '심화'}. ${g.learn}. ` +
+    (passed ? `완료, ${gradeLabel(result.grade)}`
+     : rejected ? '반려, 다시 하면 됩니다'
+     : g.ready ? '시작하려면 누르세요' : '아직 준비 중'));
+
+  if (!g.ready) {
+    b.disabled = true;
+  } else {
+    b.addEventListener('click', () => go(`/game/${g.id}`));
+  }
+  return b;
+}
+
+function footer(done, total) {
+  const f = document.createElement('div');
+  f.className = 'course__foot';
+
+  const note = document.createElement('p');
+  note.className = 'node__learn';
+  note.style.flexBasis = '100%';
+  note.style.margin = '0 0 var(--sp-2)';
+  note.textContent = done === total && total > 0
+    ? `필수 코스를 완주했다. 심화도 열려 있다. 모은 용어 ${state.unlockedCount} / ${terms.length}.`
+    : `언제든 중단하고 나중에 이어서 할 수 있다. 진행도는 이 브라우저에만 저장된다. ` +
+      `모은 용어 ${state.unlockedCount} / ${terms.length}.`;
+  f.append(note);
+
+  const codex = quiet('용어 도감', () => go('/codex'));
+  const tools = quiet('AI 도구 도감', () => go('/tools'));
+  const report = quiet('결과 카드', () => go('/report'));
+
+  const reset = document.createElement('button');
+  reset.type = 'button';
+  reset.className = 'btn-quiet';
+  reset.textContent = '처음부터';
+  reset.addEventListener('click', () => {
+    // 브라우저 기본 대화상자를 쓰지 않는다 — 확인 버튼을 그 자리에 만든다.
+    reset.replaceWith(confirmReset());
+  });
+
+  f.append(codex, tools, report, reset);
+  return f;
+}
+
+function quiet(label, fn) {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'btn-quiet';
+  b.textContent = label;
+  b.addEventListener('click', fn);
+  return b;
+}
+
+function confirmReset() {
+  const box = document.createElement('span');
+  box.style.display = 'flex';
+  box.style.gap = 'var(--sp-2)';
+
+  const yes = document.createElement('button');
+  yes.type = 'button';
+  yes.className = 'btn-quiet';
+  yes.style.color = 'var(--fail)';
+  yes.style.borderColor = 'var(--fail)';
+  yes.textContent = '정말 지운다';
+  yes.addEventListener('click', () => {
+    state.reset();
+    location.reload();
+  });
+
+  const no = document.createElement('button');
+  no.type = 'button';
+  no.className = 'btn-quiet';
+  no.textContent = '취소';
+  no.addEventListener('click', () => location.reload());
+
+  box.append(yes, no);
+  return box;
+}
+
+function gradeLabel(grade) {
+  return grade === 'pass' ? '승인' : grade === 'partial' ? '조건부' : '반려';
+}
+
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}

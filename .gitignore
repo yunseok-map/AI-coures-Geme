@@ -1,0 +1,19 @@
+# 라이브러리 원본은 저장소에 넣지 않는다.
+# 게임이 실제로 쓰는 파일은 assets/vendor/anime.esm.min.js 하나뿐이고,
+# 그 파일은 저장소에 포함된다 (빌드 단계 없이 바로 동작해야 하므로).
+node_modules/
+
+# npm 부산물
+package-lock.json
+npm-debug.log*
+
+# 개발 확인용 자동 플레이 하네스 (배포본에 들어가지 않는다)
+_test.js
+
+# 개발 도구가 만든 로컬 캐시
+.impeccable/
+
+# OS
+Thumbs.db
+desktop.ini
+.DS_Store

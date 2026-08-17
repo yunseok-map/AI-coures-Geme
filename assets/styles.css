@@ -1,0 +1,419 @@
+/* ============================================================
+   기본 + 공통 셸. 값은 전부 tokens.css 에서 온다.
+   엔진 화면은 game.css, 도감은 codex.css.
+   ============================================================ */
+
+/* ---------- 1) 기본 ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  overscroll-behavior-y: none;
+  word-break: keep-all;      /* 한글이 단어 중간에서 잘리지 않게 */
+}
+
+h1, h2, h3, p { margin: 0; }
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  border: 1px solid var(--ink-12);
+  background: var(--card);
+  border-radius: var(--radius);
+  min-height: var(--tap-min);
+  padding: var(--sp-2) var(--sp-4);
+  transition: border-color var(--dur-tap) var(--ease),
+              background var(--dur-tap) var(--ease),
+              transform var(--dur-tap) var(--ease);
+}
+button:hover:not(:disabled) { border-color: var(--ink-45); }
+button:active:not(:disabled) { transform: translateY(1px); }
+button:disabled { opacity: .45; cursor: default; }
+
+a { color: var(--mark); }
+
+/* 포커스 링을 절대 없애지 않는다 */
+:focus-visible {
+  outline: 2px solid var(--mark);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.boot-msg {
+  max-width: var(--content-max);
+  margin: var(--sp-6) auto;
+  padding: var(--sp-5);
+  background: var(--card);
+  border: 1px solid var(--ink-12);
+  border-radius: var(--radius);
+}
+.boot-msg h1 { font-size: var(--fs-hero); margin-bottom: var(--sp-3); }
+.boot-msg code {
+  font-family: var(--font-mono);
+  background: var(--ink-06);
+  padding: 2px 6px; border-radius: var(--radius-sm);
+}
+
+/* ---------- 2) 공통 셸 ---------- */
+#app { min-height: 100dvh; display: flex; flex-direction: column; }
+
+.topbar {
+  position: sticky; top: 0; z-index: 20;
+  background: var(--card);
+  border-bottom: 1px solid var(--ink-12);
+}
+.topbar__inner {
+  height: var(--shell-top);
+  display: flex; align-items: center; gap: var(--sp-3);
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: 0 var(--sp-3);
+}
+.topbar__back {
+  min-width: var(--tap-min); min-height: var(--tap-min);
+  border: 0; background: none; padding: 0;
+  font-size: var(--fs-title);
+}
+.topbar__progress { flex: 1; min-width: 0; }
+.topbar__codex {
+  min-height: var(--tap-min);
+  padding: 0 var(--sp-3);
+  font-size: var(--fs-aux);
+  white-space: nowrap;
+}
+
+.progress__label {
+  display: flex; justify-content: space-between; gap: var(--sp-2);
+  font-size: var(--fs-aux); color: var(--muted);
+  margin-bottom: 4px;
+}
+.progress__rank { color: var(--mark); font-weight: 700; }
+.progress__bar {
+  height: 6px; background: var(--ink-06);
+  border-radius: 3px; overflow: hidden;
+}
+.progress__fill { height: 100%; background: var(--mark); width: 0; }
+
+.stage {
+  flex: 1; width: 100%;
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: var(--sp-4) var(--sp-3) var(--sp-7);
+}
+
+.stage__title { font-size: var(--fs-hero); font-weight: 700; line-height: 1.35; }
+.stage__sub   { font-size: var(--fs-aux); color: var(--muted); margin-top: var(--sp-1); }
+.stage__lead  { margin-top: var(--sp-3); }
+
+/* ---------- 3) 코스맵 ---------- */
+
+/* 이어서 하기 — 첫 화면에서 누를 곳이 하나로 보이게 한다 */
+.resume {
+  margin-top: var(--sp-4);
+  padding: var(--sp-4);
+  background: var(--card);
+  border: 1px solid var(--ink-12);
+  border-left: 4px solid var(--mark);
+  box-shadow: var(--lift-2);
+}
+.resume__cap {
+  font-family: var(--font-mono); font-size: var(--fs-mono);
+  color: var(--mark); font-weight: 700;
+  letter-spacing: .02em;
+}
+.resume__name {
+  margin-top: var(--sp-1);
+  font-size: var(--fs-title); font-weight: 700; line-height: 1.3;
+}
+.resume__learn {
+  margin-top: 2px;
+  font-size: var(--fs-aux); color: var(--muted); line-height: 1.4;
+}
+.btn-big {
+  margin-top: var(--sp-3);
+  width: 100%;
+  min-height: 48px;
+  font-size: var(--fs-body);
+}
+
+.chapter { margin-top: var(--sp-5); }
+
+.chapter__head {
+  display: flex; align-items: baseline; gap: var(--sp-2);
+  margin-bottom: var(--sp-2);
+  padding-bottom: var(--sp-2);
+  border-bottom: 2px solid var(--ink-12);
+}
+.chapter__no {
+  font-family: var(--font-mono); font-size: var(--fs-mono);
+  color: var(--mark); font-weight: 700;
+}
+.chapter__name { font-weight: 700; font-size: var(--fs-title); }
+.chapter__tag {
+  margin-left: auto;
+  font-size: var(--fs-aux); color: var(--muted);
+  border: 1px solid var(--ink-12); border-radius: var(--radius-sm);
+  padding: 1px var(--sp-2);
+}
+
+.chapter__head--done { border-bottom-color: var(--pass); }
+.chapter__tag--done {
+  border-color: var(--pass); color: var(--pass); font-weight: 700;
+}
+
+.nodes { display: grid; gap: var(--sp-2); }
+
+.node {
+  display: grid;
+  grid-template-columns: 26px 1fr auto;
+  align-items: center; gap: var(--sp-3);
+  width: 100%; min-height: var(--tap-min);
+  padding: var(--sp-3);
+  text-align: left;
+  background: var(--card);
+  border: 1px solid var(--ink-12);
+  border-left: 3px solid var(--ink-12);
+  box-shadow: var(--lift-1);
+  opacity: 0;                       /* motion.enter 가 올려 준다 */
+}
+/* 누를 수 있다는 게 손끝에 느껴져야 한다 */
+.node { transition: transform var(--dur-tap) var(--ease), box-shadow var(--dur-tap) var(--ease); }
+.node:hover:not(:disabled) { transform: translateY(-2px); box-shadow: var(--lift-2); }
+.node:active:not(:disabled) { transform: translateY(0) scale(.995); }
+
+.node--required { border-left-color: var(--mark); }
+.node--done     { border-left-color: var(--pass); background: var(--pass-10); }
+.node--rejected { border-left-color: var(--fail); }
+.node--rejected .node__mark, .node--rejected .node__meta { color: var(--fail); }
+
+.node__mark {
+  font-family: var(--font-mono); font-size: var(--fs-mono);
+  color: var(--muted); text-align: center;
+}
+.node--done .node__mark { color: var(--pass); font-weight: 700; }
+
+.node__body { min-width: 0; }
+.node__name { display: block; font-weight: 600; line-height: 1.4; }
+.node__learn {
+  display: block;
+  font-size: var(--fs-aux); color: var(--muted); line-height: 1.4;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.node__meta { font-size: var(--fs-aux); color: var(--muted); white-space: nowrap; }
+.node--done .node__meta { color: var(--pass); }
+
+.course__foot {
+  margin-top: var(--sp-6);
+  padding-top: var(--sp-4);
+  border-top: 2px solid var(--ink-12);
+  display: flex; flex-wrap: wrap; gap: var(--sp-2);
+}
+.btn-quiet {
+  font-size: var(--fs-aux);
+  color: var(--muted);
+  background: none;
+}
+.btn-primary {
+  background: var(--mark);
+  color: var(--on-mark);
+  border-color: var(--mark);
+  font-weight: 700;
+}
+.btn-primary:hover:not(:disabled) { border-color: var(--ink); }
+.btn-danger { color: var(--fail); border-color: var(--fail); background: none; }
+
+/* ---------- 4) 판정 도장 ---------- */
+.stamp {
+  display: inline-block;
+  padding: var(--sp-2) var(--sp-4);
+  font-weight: 800;
+  font-size: var(--fs-hero);
+  letter-spacing: .1em;
+  border: 3px solid currentColor;
+  border-radius: var(--radius-sm);
+  transform: rotate(-6deg);
+  opacity: 0;                       /* motion.stamp 가 찍어 준다 */
+  white-space: nowrap;
+}
+.stamp--pass    { color: var(--pass); }
+.stamp--partial { color: var(--partial); }
+.stamp--fail    { color: var(--fail); }
+
+/* ---------- 5) 해설 패널 ---------- */
+.debrief {
+  position: fixed; inset: auto 0 0 0; z-index: 30;
+  background: var(--card);
+  border-top: 2px solid var(--ink-12);
+  box-shadow: var(--lift-3);
+  padding-bottom: env(safe-area-inset-bottom);
+  max-height: 88dvh; overflow-y: auto;
+  transform: translateY(100%);
+  transition: transform var(--dur-stamp) var(--ease-out);
+}
+.debrief.is-open { transform: none; }
+
+.debrief__inner {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: var(--sp-4) var(--sp-3) var(--sp-5);
+}
+.debrief__head {
+  display: flex; align-items: center; gap: var(--sp-4);
+  margin-bottom: var(--sp-3);
+}
+.debrief__score {
+  font-family: var(--font-mono); font-size: var(--fs-mono); color: var(--muted);
+}
+
+/* 이번에 무엇을 했는지 — 용어를 "행동의 이름"으로 알려 주는 부분 */
+.named {
+  border-left: 3px solid var(--mark);
+  background: var(--mark-08);
+  padding: var(--sp-3);
+  margin-bottom: var(--sp-3);
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+.named__key { font-size: var(--fs-aux); color: var(--mark); font-weight: 700; }
+.named__body { margin-top: 2px; }
+
+.debrief__text { margin-bottom: var(--sp-2); }
+
+.why { display: grid; gap: var(--sp-2); margin-bottom: var(--sp-3); }
+.why__item {
+  display: grid; grid-template-columns: auto 1fr; gap: var(--sp-2);
+  align-items: baseline;
+  font-size: var(--fs-label);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--radius-sm);
+}
+.why__item--bad  { background: var(--fail-10); }
+.why__item--good { background: var(--pass-10); }
+.why__name { font-weight: 700; white-space: nowrap; }
+.why__item--bad .why__name  { color: var(--fail); }
+.why__item--good .why__name { color: var(--pass); }
+
+.terms { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-bottom: var(--sp-3); }
+.term-chip {
+  font-size: var(--fs-aux);
+  padding: var(--sp-1) var(--sp-2);
+  border: 1px solid var(--pass);
+  color: var(--pass);
+  border-radius: var(--radius-sm);
+  background: var(--pass-10);
+  cursor: pointer;
+}
+
+.debrief__hint {
+  margin: var(--sp-2) 0;
+  font-size: var(--fs-aux); color: var(--mark); font-weight: 600;
+}
+.debrief__actions { display: flex; gap: var(--sp-2); }
+.debrief__actions button { flex: 1; min-height: var(--tap-min); }
+/* 다음 버튼 문구가 길어질 수 있다 — 줄바꿈 대신 줄여서 보여 준다 */
+.debrief__actions button { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------- 6) 결과 카드 (완주 시) ---------- */
+.report {
+  background: var(--card);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  padding: var(--sp-5);
+  margin-top: var(--sp-4);
+  box-shadow: var(--lift-2);
+}
+.report__head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  border-bottom: 2px solid var(--ink-12);
+  padding-bottom: var(--sp-2); margin-bottom: var(--sp-4);
+}
+.report__rank { font-size: var(--fs-hero); font-weight: 800; color: var(--mark); }
+.report__date { font-family: var(--font-mono); font-size: var(--fs-mono); color: var(--muted); }
+.report__grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-3); margin-bottom: var(--sp-4);
+}
+.report__cell { text-align: center; }
+.report__num {
+  display: block;
+  font-family: var(--font-mono); font-size: var(--fs-hero); font-weight: 700;
+}
+.report__cap { font-size: var(--fs-aux); color: var(--muted); }
+.report__trait {
+  border-top: 1px dashed var(--ink-12);
+  padding-top: var(--sp-3);
+  font-size: var(--fs-label);
+}
+
+.empty { color: var(--muted); font-size: var(--fs-aux); padding: var(--sp-6) 0; text-align: center; }
+
+/* ---------- 6.5) 손맛 — 파문 · 종이조각 ---------- */
+
+/* 눌린 자리에서 퍼지는 파문. 버튼이 자기 안에 담는다 */
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--mark);
+  pointer-events: none;
+  opacity: 0;
+}
+.bin, .part, .cell, .toggle, .target, .board__row, .node, .btn-primary, .btn-quiet, .tab {
+  position: relative;
+  overflow: hidden;
+}
+
+/* 등급이 올라간 순간에만 뜬다 */
+.rankup {
+  position: fixed; left: 50%; top: 18%;
+  transform: translateX(-50%);
+  z-index: 95;
+  display: grid; justify-items: center; gap: 2px;
+  padding: var(--sp-3) var(--sp-5);
+  background: var(--card);
+  border: 2px solid var(--mark);
+  box-shadow: var(--lift-2);
+  pointer-events: none;
+}
+.rankup__cap {
+  font-family: var(--font-mono); font-size: var(--fs-mono);
+  color: var(--mark); letter-spacing: .04em;
+}
+.rankup__name { font-size: var(--fs-hero); font-weight: 800; }
+
+/* 만점일 때만 튀는 종이 조각 */
+.burst {
+  position: fixed; width: 0; height: 0;
+  pointer-events: none; z-index: 90;
+}
+.burst__bit {
+  position: absolute; display: block;
+  width: 8px; height: 12px;
+  margin: -6px 0 0 -4px;
+  background: var(--mark);
+}
+.burst__bit--1 { background: var(--pass); width: 6px; height: 6px; border-radius: 50%; }
+.burst__bit--2 { background: var(--partial); width: 10px; height: 4px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ripple, .burst { display: none !important; }
+}
+
+/* ---------- 7) 데스크톱 확장 ---------- */
+@media (min-width: 720px) {
+  :root { --fs-hero: 24px; }
+  .stage { padding: var(--sp-5) var(--sp-4) var(--sp-7); }
+  .node  { grid-template-columns: 30px 1fr auto; }
+}

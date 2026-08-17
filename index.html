@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<meta name="description" content="AI가 실제로 어떻게 일하는지 15분 만에 해보면서 배우는 연수원 코스">
+<meta name="theme-color" content="#2C4C7C">
+<!-- 파일 없이 인라인으로 넣는다 — 외부 요청 0건을 유지하려고 -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%232C4C7C'/%3E%3Ctext x='32' y='44' font-family='Segoe UI,sans-serif' font-size='30' font-weight='700' fill='%23fff' text-anchor='middle'%3EAI%3C/text%3E%3C/svg%3E">
+<!-- 링크로 공유될 것이므로 미리보기 문구를 정해 둔다. 바깥 이미지는 쓰지 않는다. -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="AI 연수원 — 해보면서 배우는 AI">
+<meta property="og:description" content="설명을 읽는 대신 직접 세팅하고 돌려 본다. 미니게임 17판, 필수 10판이면 완주.">
+<meta name="twitter:card" content="summary">
+<title>AI 연수원 — 해보면서 배우는 AI</title>
+<link rel="stylesheet" href="./assets/tokens.css">
+<link rel="stylesheet" href="./assets/styles.css">
+<link rel="stylesheet" href="./assets/game.css">
+<link rel="stylesheet" href="./assets/codex.css">
+</head>
+<body>
+
+<div id="app" role="application" aria-label="AI 연수원"></div>
+
+<!-- 스크린리더용 실시간 알림 영역 -->
+<div id="live" class="sr-only" role="status" aria-live="polite"></div>
+
+<!--
+  file:// 로 직접 열면 브라우저가 보안 정책(CORS)으로 ES 모듈을 막는다.
+  그때는 아래 안내가 뜬다. GitHub Pages 같은 주소로 열면 정상 동작한다.
+-->
+<noscript>
+  <div class="boot-msg">
+    <h1>자바스크립트가 꺼져 있습니다</h1>
+    <p>브라우저 설정에서 자바스크립트를 켜고 새로고침해 주세요.</p>
+  </div>
+</noscript>
+
+<div id="boot-fallback" class="boot-msg" hidden>
+  <h1>파일을 직접 열면 실행되지 않습니다</h1>
+  <p>브라우저 보안 정책 때문입니다. 아래 둘 중 하나로 열어 주세요.</p>
+  <ol>
+    <li><b>배포 주소로 열기</b> — 링크로 받은 주소를 그대로 열면 바로 됩니다</li>
+    <li><b>이 폴더에서 <code>start.cmd</code> 실행</b> — 로컬에서 확인할 때만 필요합니다</li>
+  </ol>
+</div>
+
+<script type="module" src="./src/main.js"></script>
+<script>
+  // 모듈이 뜨지 않으면(대개 file:// 로 연 경우) 안내를 보여준다.
+  setTimeout(function () {
+    if (!document.documentElement.hasAttribute('data-booted')) {
+      var el = document.getElementById('boot-fallback');
+      if (el) el.hidden = false;
+    }
+  }, 1200);
+</script>
+
+</body>
+</html>
