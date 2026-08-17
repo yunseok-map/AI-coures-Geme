@@ -41,7 +41,11 @@ export function renderTopbar(host, route) {
   prog.innerHTML =
     `<div class="progress__label">` +
       `<span class="progress__rank">${esc(rank.name)}</span>` +
-      `<span class="progress__stat">필수 <b>${done}</b>/${total} · 용어 <b>${state.unlockedCount}</b></span>` +
+      // 용어 카운터에 id 를 준다 — 딴 용어가 여기로 날아와 꽂힌다(sendTo 의 착지점).
+      // 보여 주는 숫자는 읽음이 아니라 **획득**이다. 도감을 열어 본 것까지 세면
+      // 숫자가 저절로 올라가서 모으는 느낌이 사라진다.
+      `<span class="progress__stat">필수 <b>${done}</b>/${total} · ` +
+      `용어 <b id="term-count">${state.earnedCount}</b></span>` +
     `</div>` +
     `<div class="progress__bar" role="progressbar" aria-valuemin="0" aria-valuemax="100"` +
     ` aria-valuenow="${pct}" aria-label="필수 코스 진행도">` +

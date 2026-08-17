@@ -170,10 +170,15 @@ function footer(done, total) {
   note.className = 'node__learn';
   note.style.flexBasis = '100%';
   note.style.margin = '0 0 var(--sp-2)';
+  // 획득과 읽음을 나눠 적는다. 합쳐 세면 도감을 열어 본 것까지 들어가서
+  // 숫자가 저절로 올라가고, 모으는 느낌이 사라진다. (shell/collect.js)
+  const tally = `딴 용어 ${state.earnedCount} / ${terms.length}` +
+                (state.unlockedCount > state.earnedCount
+                  ? ` (읽은 것까지 ${state.unlockedCount})` : '');
   note.textContent = done === total && total > 0
-    ? `필수 코스를 완주했다. 심화도 열려 있다. 모은 용어 ${state.unlockedCount} / ${terms.length}.`
+    ? `필수 코스를 완주했다. 심화도 열려 있다. ${tally}.`
     : `언제든 중단하고 나중에 이어서 할 수 있다. 진행도는 이 브라우저에만 저장된다. ` +
-      `모은 용어 ${state.unlockedCount} / ${terms.length}.`;
+      `${tally}.`;
   f.append(note);
 
   const codex = quiet('용어 도감', () => go('/codex'));

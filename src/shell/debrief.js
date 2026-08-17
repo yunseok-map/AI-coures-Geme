@@ -4,9 +4,14 @@
 // "당신이 방금 한 것 = 컨텍스트 엔지니어링" 처럼, 먼저 겪고 나서 이름을 알게 만든다.
 // 그래야 용어가 외울 것이 아니라 겪은 것의 이름이 된다.
 
-import { stamp, countUp, wait, enter, burst, shake } from '../core/motion.js';
-import { go } from '../core/router.js';
+import { stamp, countUp, wait, enter, burst, shake, sendTo, pulse, typeIn } from '../core/motion.js';
 import { esc, strong, plain } from '../core/text.js';
+import { terms } from '../data/terms.js';
+
+/** 용어 하나 찾기. 칩을 눌렀을 때 그 자리에서 뜻을 보여 주려고 쓴다. */
+function termOf(name) {
+  return terms.find(t => t.term === name) || null;
+}
 
 const LABEL = { pass: '승인', partial: '조건부', fail: '반려' };
 
@@ -79,18 +84,48 @@ export async function showDebrief(game, result, on) {
     inner.append(p);
   }
 
-  // ---- 해금된 용어 ----
+  // ---- 딴 용어 ----
+  //
+  // 예전에는 칩을 누르면 도감으로 **이동**했다. 모은 것이 쌓이는 게 아니라
+  // 화면을 떠나 버려서 수집이라는 느낌이 안 났다. 지금은 그 자리에서 뜻이 펼쳐지고,
+  // 칩은 상단바 카운터로 날아가 꽂힌다.
+  const chipEls = [];
+  // 이번에 처음 딴 것. main.js 가 state.record() 의 반환값을 넘겨 준다 —
+  // 기록이 패널보다 먼저 들어가므로 여기서 state 를 봐서는 알 수 없다.
+  const newSet = new Set(on.newTerms || []);
   if (result.unlocked && result.unlocked.length) {
     const chips = document.createElement('div');
     chips.className = 'terms';
     for (const t of result.unlocked) {
+      // 처음 딴 것과 이미 있던 것을 구분한다. 재도전에서 매번 축하하면 값이 떨어진다.
+      const fresh = newSet.has(t);
+
       const c = document.createElement('button');
       c.type = 'button';
-      c.className = 'term-chip';
-      c.textContent = `+ ${t}`;
-      c.title = '도감에서 보기';
-      c.addEventListener('click', () => { hideDebrief(); go(`/codex?q=${encodeURIComponent(t)}`); });
-      chips.append(c);
+      c.className = 'term-chip' + (fresh ? ' term-chip--new' : ' term-chip--had');
+      c.setAttribute('aria-expanded', 'false');
+      c.innerHTML = `<span class="term-chip__mark" aria-hidden="true">${fresh ? '+' : '✓'}</span>` +
+                    `<span class="term-chip__name">${esc(t)}</span>`;
+      c.setAttribute('aria-label', `${t}. ${fresh ? '새로 모았다' : '이미 모은 것'}. 눌러서 뜻 보기`);
+
+      const note = document.createElement('div');
+      note.className = 'term-note';
+      note.hidden = true;
+
+      c.addEventListener('click', () => {
+        const open = note.hidden;
+        note.hidden = !open;
+        c.setAttribute('aria-expanded', String(open));
+        if (!open) return;
+        const info = termOf(t);
+        // 뜻을 그 자리에서 보여 준다. 화면을 떠나지 않는 게 요점이다.
+        typeIn(note, info
+          ? `<b>${esc(info.term)}</b> — ${strong(info.analogy)}`
+          : `<b>${esc(t)}</b>`);
+      });
+
+      chips.append(c, note);
+      if (fresh) chipEls.push(c);
     }
     inner.append(chips);
   }
@@ -135,7 +170,31 @@ export async function showDebrief(game, result, on) {
 
   (failed ? retry : next).focus();
 
-  say(`${LABEL[grade]}. ${result.score}점. ${named || lines[0] || ''}`);
+  say(`${LABEL[grade]}. ${result.score}점. ${named || lines[0] || ''}` +
+      (chipEls.length ? ` 용어 ${chipEls.length}개를 새로 모았다.` : ''));
+
+  // 새로 딴 용어가 상단바 카운터로 하나씩 날아가 꽂힌다.
+  // 이 게임에서 "모았다"가 눈에 보이는 유일한 순간이므로 서두르지 않는다.
+  await collectRun(chipEls);
+}
+
+/**
+ * 칩 → 상단바 카운터. 한 개씩 순서대로 보낸다.
+ *
+ * 카운터를 매번 다시 찾는다. 상단바는 결과가 기록될 때 다시 그려지므로
+ * 시작할 때 잡아 둔 요소가 이미 화면에서 떨어져 나갔을 수 있다.
+ */
+async function collectRun(chips) {
+  if (!chips.length) return;
+  for (const chip of chips) {
+    const target = document.getElementById('term-count');
+    if (!target) return;                    // 상단바가 없는 화면이면 조용히 넘긴다
+    await sendTo(chip, target, chip.querySelector('.term-chip__name')?.textContent || '');
+    // 숫자는 이미 맞는 값이다(record 가 먼저 돌았다). 도착한 티만 낸다.
+    pulse(target, 1);
+    chip.classList.add('term-chip--sent');
+    await wait(90);
+  }
 }
 
 export function hideDebrief() {

@@ -145,11 +145,26 @@ export function countUp(el, to, opts = {}) {
   }).then(() => { clearTimeout(guard); show(); });
 }
 
-/** 진행도 막대 */
+/**
+ * 진행도 막대.
+ *
+ * 안전망이 있어야 한다. 애니메이션이 시작 프레임에 얼어붙으면 막대가 **0% 에 멈춘다** —
+ * 그러면 진행도가 있는데도 아무것도 안 한 것처럼 보인다. 실제로 겪었다:
+ * 창이 가려진 상태에서는 rAF 가 안 돌아서 4/68 인데 빈 막대가 나왔다.
+ * (PROGRESS.md 의 "모션에는 setTimeout 안전망을 같이 넣는다"와 같은 계열)
+ */
 export function fillBar(el, pct) {
   if (!el) return Promise.resolve();
-  if (isReduced()) { el.style.width = pct + '%'; return Promise.resolve(); }
-  return animate(el, { width: pct + '%', duration: 520, ease: 'outExpo' });
+  // 0 이 아니면 표시를 남긴다. 68개 중 1개는 1.5% 라 화면에서 안 보이는데,
+  // 빈 막대는 "아직 아무것도 없다"로 읽혀서 모으기를 포기하게 만든다.
+  // CSS 가 이 클래스에 최소 폭을 준다. 인라인 style 문자열을 선택자로 보는 방법은
+  // 공백 표기(`width:0%` vs `width: 0%`)에 따라 깨져서 쓰지 않는다.
+  el.classList.toggle('bar--some', pct > 0);
+  const show = () => { el.style.width = pct + '%'; };
+  if (isReduced()) { show(); return Promise.resolve(); }
+  const guard = setTimeout(show, 520 + 600);
+  return animate(el, { width: pct + '%', duration: 520, ease: 'outExpo' })
+    .then(() => { clearTimeout(guard); show(); });
 }
 
 // ---------------------------------------------------------------- 실행 로그
@@ -254,6 +269,42 @@ export function flyTo(fromEl, toEl) {
     opacity: [0.65, 1],
     duration: 420, ease: 'outCubic'
   }).then(() => { clearTimeout(guard); settle(); });
+}
+
+/**
+ * 딴 것이 모이는 곳으로 날아간다 — 용어 칩 → 상단바 카운터.
+ *
+ * flyTo 와 다르다. 저쪽은 **목표 요소 자체**를 출발 위치에서 끌어오는 FLIP 이고,
+ * 이쪽은 출발 요소는 그 자리에 두고 **복제본 하나만** 날려 보낸다.
+ * 모은 것이 어디로 쌓이는지 눈으로 잇는 게 목적이라 원본이 남아 있어야 한다.
+ *
+ * 복제본은 body 에 붙이고 끝나면 반드시 지운다. 애니메이션이 시작 프레임에
+ * 얼어붙는 경우가 있어서 setTimeout 안전망을 같이 둔다 — 안 그러면
+ * 화면 위에 조각이 영구히 남는다.
+ */
+export function sendTo(fromEl, toEl, label) {
+  if (!fromEl || !toEl || isReduced()) return Promise.resolve();
+  const a = fromEl.getBoundingClientRect();
+  const b = toEl.getBoundingClientRect();
+  if (!a.width || !b.width) return Promise.resolve();
+
+  const ghost = document.createElement('div');
+  ghost.className = 'flyer';
+  ghost.setAttribute('aria-hidden', 'true');
+  ghost.textContent = label == null ? fromEl.textContent : label;
+  ghost.style.left = a.left + 'px';
+  ghost.style.top = a.top + 'px';
+  document.body.append(ghost);
+
+  const drop = () => ghost.remove();
+  const guard = setTimeout(drop, 1200);
+  return animate(ghost, {
+    translateX: (b.left + b.width / 2) - (a.left + a.width / 2),
+    translateY: (b.top + b.height / 2) - (a.top + a.height / 2),
+    scale: [1, 0.45],
+    opacity: [1, 1, 0],
+    duration: 620, ease: 'inOutQuad'
+  }).then(() => { clearTimeout(guard); drop(); });
 }
 
 /** 눈길을 한 번 끌어야 할 때 — 실행 버튼이 살아났다든지 */

@@ -118,7 +118,9 @@ async function openGame(id) {
 
   engineMod.mount(stage, game, {
     finish(result) {
-      state.record(id, result);
+      // 이번에 처음 딴 용어. 해설 패널이 "새로 모았다"를 구분하는 데 쓴다 —
+      // 기록이 먼저 들어가므로 패널 쪽에서는 알 수 없다.
+      const newTerms = state.record(id, result);
       renderTopbar(topbarHost, parse());   // 진행도·랭크를 즉시 반영
 
       const next = nextOf(id, (x) => state.isCleared(x));
@@ -126,6 +128,7 @@ async function openGame(id) {
         .filter(m => m.required).every(m => state.isCleared(m.id));
 
       showDebrief(game, result, {
+        newTerms,
         retry: () => openGame(id),
         next: next ? () => go(`/game/${next.id}`) : () => go('/report'),
         nextLabel: next

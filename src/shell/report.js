@@ -5,8 +5,10 @@
 import { state } from '../core/state.js';
 import { manifest } from '../games/index.js';
 import { terms } from '../data/terms.js';
-import { countUp, enter } from '../core/motion.js';
+import { countUp, enter, fillBar } from '../core/motion.js';
 import { go } from '../core/router.js';
+import { status } from './collect.js';
+import { esc as escText } from '../core/text.js';
 
 /** 성향 — 어느 챕터를 잘했는지로 정한다. 순위가 아니라 경향이다 */
 const TRAITS = [
@@ -43,15 +45,21 @@ export function renderReport(root) {
     `<div class="report__grid">` +
       cell('t-node', `${cleared.length}`, `깬 코스 (전 ${manifest.length})`) +
       cell('t-req', `${reqDone}`, `필수 (전 ${req.length})`) +
-      cell('t-term', `${state.unlockedCount}`, `모은 용어 (전 ${terms.length})`) +
+      // 게임에서 직접 딴 것만 센다. 도감 열람까지 넣으면 숫자가 저절로 차서
+      // 결과 카드가 아무것도 증명하지 않는다. (shell/collect.js)
+      cell('t-term', `${state.earnedCount}`, `딴 용어 (전 ${terms.length})`) +
     `</div>` +
+    chapterStrip() +
     `<div class="report__trait"><b>${esc(trait.name)}</b><br>${esc(trait.body)}</div>`;
   root.append(card);
 
   // 숫자가 올라간다
   countUp(card.querySelector('#t-node'), cleared.length);
   countUp(card.querySelector('#t-req'), reqDone);
-  countUp(card.querySelector('#t-term'), state.unlockedCount);
+  countUp(card.querySelector('#t-term'), state.earnedCount);
+  for (const f of card.querySelectorAll('.strip__fill')) {
+    fillBar(f, Number(f.dataset.pct) || 0);
+  }
 
   const foot = document.createElement('div');
   foot.className = 'course__foot';
@@ -96,6 +104,25 @@ function cell(id, num, cap) {
   return `<div class="report__cell">` +
     `<span class="report__num" id="${id}">0</span>` +
     `<span class="report__cap">${esc(cap)}</span></div>`;
+}
+
+/**
+ * 챕터별로 얼마나 채웠는지 한 줄씩. 숫자 하나(6/68)는 멀어서 감이 안 오는데
+ * 챕터별로 보면 "챕터 2는 다 모았고 4는 비었다"가 바로 읽힌다.
+ * 다 채운 챕터에는 표시를 남긴다 — 캡처해서 공유하는 카드라 자랑거리가 있어야 한다.
+ */
+function chapterStrip() {
+  const s = status();
+  if (!s.chapters.length) return '';
+  const rows = s.chapters.map(c =>
+    `<div class="strip">` +
+      `<span class="strip__name">${escText(c.label)}</span>` +
+      `<span class="strip__bar">` +
+        `<span class="strip__fill${c.done ? ' strip__fill--done' : ''}" data-pct="${c.pct}"></span>` +
+      `</span>` +
+      `<span class="strip__n">${c.earned}/${c.total}${c.done ? ' ★' : ''}</span>` +
+    `</div>`).join('');
+  return `<div class="report__strips"><div class="report__cap">챕터별로 딴 용어</div>${rows}</div>`;
 }
 
 function btn(label, fn, primary) {

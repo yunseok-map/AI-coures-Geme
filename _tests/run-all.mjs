@@ -17,7 +17,8 @@ const SUITES = [
   ['13 사고 막기 (디펜스)', 'test-defense.mjs'],
   ['2 지어낸 답 찾기 (슈팅)', 'test-shoot.mjs'],
   ['15 이상 징후 찾기 (슈팅)', 'test-shoot15.mjs'],
-  ['14 결재 반려 (검토 라인)', 'test-qc.mjs']
+  ['14 결재 반려 (검토 라인)', 'test-qc.mjs'],
+  ['용어 수집 (획득/읽음)', 'test-collect.mjs']
 ];
 
 let bad = 0;

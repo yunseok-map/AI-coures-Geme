@@ -61,6 +61,82 @@
 .term__row { margin-top: var(--sp-3); }
 .term__key { display: block; font-size: var(--fs-aux); color: var(--muted); margin-bottom: 2px; }
 .term__myth { border-left: 3px solid var(--partial); padding-left: var(--sp-3); }
+/* ---------- 수집 현황 ----------
+   용어 상태는 셋이다. 세 개가 한눈에 구분돼야 도감이 컬렉션판이 된다.
+     획득(earned) — 게임에서 딴 것. 유일하게 보상색(--accent)을 쓴다
+     읽음(read)   — 도감에서 펼쳐 본 것
+     미열람(new)  — 아직 안 열어 본 것
+   획득에만 보상색을 쓰는 이유: tokens.css 가 --accent 를 "보상 신호에만"으로
+   정해 뒀다. 읽음까지 물들이면 딴 것이 눈에 안 띈다. */
+
+.collect {
+  background: var(--card);
+  border: 1px solid var(--ink-12);
+  border-radius: var(--radius);
+  padding: var(--sp-3);
+  margin-bottom: var(--sp-3);
+}
+.collect__top { display: flex; align-items: baseline; gap: var(--sp-2); flex-wrap: wrap; }
+.collect__n { font-size: var(--fs-title); }
+.collect__n b { color: var(--accent-deep); font-size: var(--fs-display); line-height: 1; }
+.collect__cap { font-size: var(--fs-aux); color: var(--muted); }
+.collect__bar {
+  height: 8px; margin-top: var(--sp-2);
+  background: var(--ink-06); border-radius: var(--radius-pill); overflow: hidden;
+}
+.collect__fill {
+  height: 100%; width: 0;
+  background: var(--accent); border-radius: var(--radius-pill);
+}
+/* 하나라도 모았으면 막대가 눈에 띄어야 한다. 클래스는 motion.js 의 fillBar 가 붙인다. */
+.collect__fill.bar--some { min-width: 6px; }
+.grp__fill.bar--some { min-width: 4px; }
+.collect__sub { margin: var(--sp-2) 0 0; font-size: var(--fs-aux); color: var(--muted); }
+
+/* 챕터 머리글 — 이름 · 획득 수 · 막대 · "3개 남았다"
+   360px 에서 최악 케이스("챕터 6 — 더 알아두면 좋은 것" + "10/10 · 10개 보임")가
+   355px 를 요구해서 실제로 넘쳤다. 이름을 줄이고, 그래도 모자라면 줄을 바꾼다. */
+.grp__line {
+  display: flex; align-items: baseline; gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+.grp__name {
+  flex: 1 1 auto;
+  min-width: 0;                 /* 없으면 flex 항목이 내용 폭 아래로 안 줄어든다 */
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.grp__n { flex: 0 0 auto; font-variant-numeric: tabular-nums; color: var(--muted); }
+.grp__bar {
+  height: 4px; margin-top: 6px;
+  background: var(--ink-06); border-radius: var(--radius-pill); overflow: hidden;
+}
+.grp__fill { height: 100%; background: var(--accent); border-radius: var(--radius-pill); }
+.grp__note { margin-top: 4px; font-size: var(--fs-aux); color: var(--muted); font-weight: 400; }
+.codex__groupname--done .grp__n { color: var(--accent-deep); font-weight: 700; }
+.codex__groupname--done .grp__note { color: var(--accent-deep); font-weight: 700; }
+
+/* 카드 상태. 왼쪽 띠 하나로 구분한다 — 목록에서 훑을 때 이게 가장 빨리 읽힌다. */
+.term--earned { border-left: var(--lip) solid var(--accent); }
+.term--read   { border-left: var(--lip) solid var(--ink-20); }
+.term--new    { border-left: var(--lip) solid transparent; }
+
+.term__got  { margin-left: auto; font-size: var(--fs-aux); color: var(--accent-deep); font-weight: 700; }
+.term__read { margin-left: auto; font-size: var(--fs-aux); color: var(--muted); }
+
+/* 못 딴 용어에 "몇 번 판에서 딸 수 있다" — 미획득 칸을 보고 뭘 할지 알게 한다 */
+.term__go {
+  min-height: var(--tap-min);
+  width: 100%;
+  padding: var(--sp-2) var(--sp-3);
+  text-align: left;
+  font-size: var(--fs-label);
+  color: var(--mark-deep);
+  background: var(--mark-08);
+  border: 1px solid var(--mark-16);
+  border-radius: var(--radius-sm);
+}
+.term__whereno { font-size: var(--fs-aux); color: var(--muted); }
+
 .term__src { font-size: var(--fs-aux); color: var(--muted); }
 /* 갈래를 설명하는 용어는 출처가 여러 개다(회사마다 하나씩).
    360px 에서 세 링크가 한 줄에 안 들어가므로 줄바꿈을 허용한다. */

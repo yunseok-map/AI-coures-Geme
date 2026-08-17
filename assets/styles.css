@@ -148,7 +148,7 @@ a { color: var(--mark); }
 .progress__fill::after {
   content: ''; position: absolute;
   left: 4px; right: 4px; top: 22%; height: 28%;
-  background: #FFFFFF; opacity: .28;
+  background: var(--on-mark); opacity: .28;
   border-radius: var(--radius-pill);
 }
 /* width:0 이면 left/right 여백 때문에 광택 폭도 0 이 된다 — 따로 숨길 필요가 없다 */
@@ -470,15 +470,57 @@ a { color: var(--mark); }
 .why__item--bad .why__name  { color: var(--fail); }
 .why__item--good .why__name { color: var(--pass); }
 
-.terms { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-bottom: var(--sp-3); }
+/* ---------- 딴 용어 칩 ----------
+   예전에는 누르면 도감으로 이동했다. 모은 것이 화면을 떠나서 수집이 안 됐다.
+   지금은 그 자리에서 뜻이 펼쳐지고, 새로 딴 것은 상단바 카운터로 날아간다. */
+.terms {
+  display: flex; flex-wrap: wrap; gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+}
 .term-chip {
-  font-size: var(--fs-aux);
-  padding: var(--sp-1) var(--sp-2);
-  border: 1px solid var(--pass);
-  color: var(--pass);
-  border-radius: var(--radius-sm);
-  background: var(--pass-10);
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: var(--tap-min);            /* 조작 대상이라 44px 규칙을 따른다 */
+  padding: var(--sp-1) var(--sp-3);
+  font-size: var(--fs-label);
+  border-radius: var(--radius-pill);
   cursor: pointer;
+}
+.term-chip__mark { font-weight: 800; }
+/* 새로 딴 것만 보상색. 재도전에서 매번 축하하면 값이 떨어진다. */
+.term-chip--new {
+  border: var(--border-w) solid var(--accent);
+  color: var(--accent-deep);
+  background: var(--accent-12);
+  font-weight: 700;
+}
+.term-chip--had {
+  border: 1px solid var(--ink-20);
+  color: var(--muted);
+  background: var(--card);
+}
+/* 카운터로 보낸 뒤 — 이미 꽂혔다는 표시 */
+.term-chip--sent { border-style: dashed; }
+
+/* 칩을 누르면 그 자리에서 뜻이 펼쳐진다. 화면을 떠나지 않는 게 요점이다. */
+.term-note {
+  flex-basis: 100%;
+  margin: 0 0 var(--sp-1);
+  font-size: var(--fs-aux); color: var(--muted);
+  border-left: 3px solid var(--accent-12); padding-left: var(--sp-3);
+}
+.term-note[hidden] { display: none; }
+
+/* 카운터로 날아가는 조각. body 에 붙고 끝나면 지워진다 (motion.js sendTo) */
+.flyer {
+  position: fixed; z-index: 90;
+  pointer-events: none;
+  max-width: 40vw;
+  padding: var(--sp-1) var(--sp-3);
+  font-size: var(--fs-aux); font-weight: 700;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  color: var(--on-mark); background: var(--accent);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--lift-2);
 }
 
 .debrief__hint {
@@ -516,6 +558,39 @@ a { color: var(--mark); }
   font-family: var(--font-mono); font-size: var(--fs-hero); font-weight: 700;
 }
 .report__cap { font-size: var(--fs-aux); color: var(--muted); }
+/* 챕터별로 얼마나 채웠는지. 6/68 하나는 감이 안 오는데
+   챕터별로 보면 "2는 다 모았고 4는 비었다"가 바로 읽힌다. */
+.report__strips {
+  border-top: 1px dashed var(--ink-12);
+  padding-top: var(--sp-3); margin-bottom: var(--sp-4);
+}
+.report__strips .report__cap { display: block; margin-bottom: var(--sp-2); }
+.strip {
+  display: flex; align-items: center; gap: var(--sp-2);
+  margin-bottom: 6px;
+  font-size: var(--fs-aux);
+}
+.strip__name {
+  flex: 1 1 auto; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: var(--muted);
+}
+.strip__bar {
+  flex: 0 0 72px; height: 6px;
+  background: var(--ink-06); border-radius: var(--radius-pill); overflow: hidden;
+}
+.strip__fill {
+  display: block; height: 100%; width: 0;
+  background: var(--ink-20); border-radius: var(--radius-pill);
+}
+.strip__fill--done { background: var(--accent); }
+.strip__fill.bar--some { min-width: 4px; }
+.strip__n {
+  flex: 0 0 auto;
+  font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
 .report__trait {
   border-top: 1px dashed var(--ink-12);
   padding-top: var(--sp-3);
