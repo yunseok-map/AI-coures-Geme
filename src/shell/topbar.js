@@ -41,7 +41,7 @@ export function renderTopbar(host, route) {
   prog.innerHTML =
     `<div class="progress__label">` +
       `<span class="progress__rank">${esc(rank.name)}</span>` +
-      `<span>필수 ${done}/${total} · 용어 ${state.unlockedCount}</span>` +
+      `<span class="progress__stat">필수 <b>${done}</b>/${total} · 용어 <b>${state.unlockedCount}</b></span>` +
     `</div>` +
     `<div class="progress__bar" role="progressbar" aria-valuemin="0" aria-valuemax="100"` +
     ` aria-valuenow="${pct}" aria-label="필수 코스 진행도">` +

@@ -12,6 +12,9 @@ const CHAPTER_ORDER = [1, 2, 3, 4, 5, 9];
 export function renderCourse(root) {
   const { done, total } = state.progress(manifest);
 
+  // "지금 여기" 표시는 이어서 하기 카드가 가리키는 판과 반드시 같아야 한다.
+  const nextGame = nextUp();
+
   root.innerHTML =
     `<h1 class="stage__title">AI 연수원</h1>` +
     `<p class="stage__sub">읽는 곳이 아니라 해보는 곳이다. 한 판 약 2분 · 필수 ${total}판이면 완주.</p>`;
@@ -22,7 +25,7 @@ export function renderCourse(root) {
   for (const ch of CHAPTER_ORDER) {
     const games = manifest.filter(g => g.chapter === ch);
     if (!games.length) continue;
-    const block = chapterBlock(ch, games);
+    const block = chapterBlock(ch, games, nextGame);
     blocks.push(block);
     root.append(block);
   }
@@ -34,13 +37,19 @@ export function renderCourse(root) {
   enter(blocks.map(b => b.querySelector('.chapter__head')), { each: 30 });
 }
 
+/** 지금 눌러야 할 판 하나. 이어서 하기 카드와 코스맵의 "지금 여기"가 같은 곳을 가리키게 한다. */
+function nextUp() {
+  return manifest.find(g => g.ready && g.required && !state.isCleared(g.id))
+      || manifest.find(g => g.ready && !state.isCleared(g.id))
+      || null;
+}
+
 /** 맨 위 "이어서 하기" — 다음에 뭘 눌러야 할지 고민하지 않게 한다. */
 function resume(done, total) {
   const box = document.createElement('div');
   box.className = 'resume';
 
-  const next = manifest.find(g => g.required && !state.isCleared(g.id))
-            || manifest.find(g => !state.isCleared(g.id));
+  const next = nextUp();
 
   if (!next) {
     box.innerHTML =
@@ -82,14 +91,16 @@ function bigBtn(label, fn) {
   return b;
 }
 
-function chapterBlock(ch, games) {
+function chapterBlock(ch, games, nextGame) {
   const wrap = document.createElement('section');
   wrap.className = 'chapter';
 
   const allOptional = games.every(g => !g.required);
   const label = ch === 9 ? '번외' : `챕터 ${ch}`;
 
-  const allDone = games.every(g => state.isCleared(g.id));
+  const cleared = games.filter(g => state.isCleared(g.id)).length;
+  const allDone = cleared === games.length;
+  const pct = Math.round(cleared / games.length * 100);
 
   const head = document.createElement('div');
   head.className = 'chapter__head' + (allDone ? ' chapter__head--done' : '');
@@ -97,18 +108,21 @@ function chapterBlock(ch, games) {
     `<span class="chapter__no">${esc(label)}</span>` +
     `<span class="chapter__name">${esc(chapterNames[ch] || '')}</span>` +
     (allDone ? `<span class="chapter__tag chapter__tag--done">완료</span>`
-     : allOptional ? `<span class="chapter__tag">심화</span>` : '');
+     : allOptional ? `<span class="chapter__tag">심화</span>` : '') +
+    // 챕터마다 몇 판 남았는지 — 코스맵을 스크롤하는 동안 진행이 눈에 보이게 한다
+    `<span class="chapter__count">${cleared}<span>/${games.length}</span></span>` +
+    `<span class="chapter__meter"><i style="width:${pct}%"></i></span>`;
   wrap.append(head);
 
   const list = document.createElement('div');
   list.className = 'nodes';
 
-  for (const g of games) list.append(node(g));
+  for (const g of games) list.append(node(g, nextGame && g.id === nextGame.id));
   wrap.append(list);
   return wrap;
 }
 
-function node(g) {
+function node(g, isNow) {
   const result = state.resultOf(g.id);
   const passed = state.isCleared(g.id);
   const rejected = Boolean(result) && !passed;
@@ -116,9 +130,11 @@ function node(g) {
   const b = document.createElement('button');
   b.type = 'button';
   b.className = 'node ' + (g.required ? 'node--required' : 'node--optional') +
-                (passed ? ' node--done' : '') + (rejected ? ' node--rejected' : '');
+                (passed ? ' node--done' : '') + (rejected ? ' node--rejected' : '') +
+                (isNow ? ' node--now' : '');
 
-  const mark = passed ? '✓' : rejected ? '↻' : (g.required ? '●' : '○');
+  // 배지 안에는 번호를 보여주고, 깬 것만 체크로 바꾼다
+  const mark = passed ? '✓' : rejected ? '↻' : String(g.no);
   const meta = !g.ready ? '준비 중'
              : result ? gradeLabel(result.grade)
              : g.required ? '필수' : '심화';
@@ -129,7 +145,8 @@ function node(g) {
       `<span class="node__name">${g.no}. ${esc(g.title)}</span>` +
       `<span class="node__learn">${esc(g.learn)}</span>` +
     `</span>` +
-    `<span class="node__meta">${esc(meta)}</span>`;
+    (isNow ? `<span class="node__here">지금 여기</span>`
+           : `<span class="node__meta">${esc(meta)}</span>`);
 
   b.setAttribute('aria-label',
     `${g.no}번 ${g.title}. ${g.required ? '필수' : '심화'}. ${g.learn}. ` +

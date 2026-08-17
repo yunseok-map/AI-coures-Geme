@@ -23,21 +23,32 @@ export async function showDebrief(game, result, on) {
   const inner = document.createElement('div');
   inner.className = 'debrief__inner';
 
-  // ---- 도장 + 점수 ----
+  // ---- 점수 고리 + 도장 ----
+  // 숫자만 적어 두면 성적표가 된다. 고리가 채워져야 "판이 끝났다"로 읽힌다.
   const head = document.createElement('div');
   head.className = 'debrief__head';
+
+  const ring = document.createElement('div');
+  ring.className = `ring ring--${grade}`;
+  ring.style.setProperty('--v', '0');
+  const num = document.createElement('span');
+  num.className = 'ring__num';
+  num.textContent = '0';
+  ring.append(num, Object.assign(document.createElement('span'),
+    { className: 'ring__unit', textContent: '점' }));
+
+  const side = document.createElement('div');
+  side.className = 'debrief__side';
   const mark = document.createElement('span');
   mark.className = `stamp stamp--${grade}`;
   mark.textContent = LABEL[grade];
-  const score = document.createElement('span');
-  score.className = 'debrief__score';
-  const num = document.createElement('span');
-  num.textContent = '0';
-  score.append(num, document.createTextNode(
-    `점 · ${fmt(result.elapsed)}` +
-    (result.stats || []).map(s => ` · ${s.label} ${s.value}`).join('')
-  ));
-  head.append(mark, score);
+  const meta = document.createElement('span');
+  meta.className = 'debrief__score';
+  meta.textContent = fmt(result.elapsed) +
+    (result.stats || []).map(s => ` · ${s.label} ${s.value}`).join('');
+  side.append(mark, meta);
+
+  head.append(ring, side);
   inner.append(head);
 
   // ---- 방금 한 것의 이름 ----
@@ -112,12 +123,15 @@ export async function showDebrief(game, result, on) {
   await wait(120);
   stamp(mark);
   countUp(num, result.score);
+  // 고리는 숫자와 같은 속도로 찬다 — 둘이 따로 놀면 어색하다
+  ring.style.setProperty('--v', String(result.score));
 
   // 도장이 찍힌 다음 아래 내용이 차례로 올라온다
   enter([...inner.children].slice(1), { each: 55, start: 180, from: 14 });
 
   if (grade === 'fail') shake(head);
-  if (result.score >= 100) { await wait(260); burst(mark); }
+  // 통과는 그 자체로 축하할 일이다. 만점일 때만 터뜨리면 대부분은 아무것도 못 본다.
+  if (grade === 'pass') { await wait(300); burst(ring, result.score >= 100 ? 26 : 16); }
 
   (failed ? retry : next).focus();
 

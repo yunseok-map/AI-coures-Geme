@@ -6,8 +6,16 @@
 | 항목 | 값 |
 |---|---|
 | 확인 시점 | `checkedAt: '2026-08'` (2026-08-17) |
-| 용어 수 | 45개 (요구: 35개 이상) |
-| 검증 원칙 | 출처가 불확실하면 넣지 않는다. 아래 모든 항목에 출처가 있다 |
+| 용어 수 | **68개** (요구: 35개 이상) — `data/terms.js` + `terms-work.js` + `terms-extra.js` + `terms-law.js` 합계 |
+| 챕터별 | 챕터1 **14** · 챕터2 **18** · 챕터3 **9** · 챕터4 **14** · 챕터6 **10** · 번외 **3** |
+| 검증 원칙 | 출처가 불확실하면 넣지 않는다. 공식 정의 자체가 없는 **2개**는 링크를 억지로 붙이지 않고 없는 채로 두되 그 사실을 밝힌다 — **AI 번아웃 · AI 피로**, **카테고리로 기억하기** |
+
+### 이 문서와 데이터가 아직 어긋나는 곳
+
+| 곳 | 내용 |
+|---|---|
+| 챕터 2 **채팅 (Chat)** | 이 문서에만 있고 `data/*.js` 에는 없다. 도감 화면에 나오지 않는다 |
+| 챕터 3 **멀티 에이전트 · 에이전트 팀** | 데이터 쪽 항목 이름은 **`서브에이전트 vs 에이전트 팀`** 이다. 이름만 다르고 가리키는 내용은 같다 |
 
 ## 검증 중 발견한 것 — 프롬프트 내용과 다른 부분
 
@@ -50,14 +58,14 @@
 - **설명**: AI가 사실이 아닌 내용을 자신 있는 말투로 만들어내는 현상이다. 문장이 자연스러울수록 알아채기 어렵다. **말투의 확신과 내용의 정확도는 아무 상관이 없다.**
 - **실무 예시**: 존재하지 않는 법 조항 번호, 없는 논문 제목, 틀린 통계 수치를 정확한 형식으로 제시
 - **오해**: "좋은 모델은 안 그런다" → 줄어들 뿐 없어지지 않는다. 근거 확인은 사용자 몫이다
-- **출처**: [platform.claude.com — Glossary](https://platform.claude.com/docs/en/about-claude/glossary)
+- **출처**: [platform.claude.com — Reduce hallucinations](https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/reduce-hallucinations) *(용어집은 이 말을 정의하지 않아 교체)*
 
 ### 시스템 프롬프트 (System Prompt)
 - **비유**: 일 시작 전에 미리 붙여둔 근무 수칙
 - **설명**: 대화가 시작되기 전에 AI에게 주어지는 기본 지침이다. 역할, 말투, 하지 말아야 할 것이 여기 들어간다. 사용자가 매번 쓰는 질문(사용자 프롬프트)과는 층이 다르다.
 - **실무 예시**: "너는 우리 회사 인사 규정 담당자다. 규정에 없는 건 없다고 답한다"
 - **오해**: "대화창에 쓰는 첫 문장이 시스템 프롬프트다" → 다르다. 시스템 프롬프트는 그보다 위층이다
-- **출처**: [platform.claude.com — Glossary](https://platform.claude.com/docs/en/about-claude/glossary)
+- **출처**: [platform.claude.com — Messages API (`system` 파라미터)](https://platform.claude.com/docs/en/api/messages) *(용어집은 이 말을 정의하지 않아 교체)*
 
 ### 프롬프트 엔지니어링 (Prompt Engineering)
 - **비유**: 신입에게 일 시킬 때 지시를 얼마나 정확히 쓰느냐
@@ -71,7 +79,7 @@
 - **설명**: 2025년부터 프롬프트 엔지니어링의 다음 단계로 불린다. 무엇을 넣을지보다 **무엇을 빼야 정확해지는지**가 핵심이다. 컨텍스트 로트 때문에 "다 넣기"는 실패한다.
 - **실무 예시**: AI에게 줄 지침서를 만들 때 규칙 30개를 다 넣지 않고 핵심 8개만 남긴다
 - **오해**: "프롬프트 엔지니어링의 새 이름" → 다르다. 지시문 한 줄이 아니라 **정보 환경 전체**를 다룬다
-- **출처**: [Claude Code 용어집 — Context window / CLAUDE.md](https://code.claude.com/docs/en/glossary)
+- **출처**: [Anthropic — Effective context engineering for AI agents](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents) *(용어집은 이 말을 정의하지 않아 교체)*
 
 ### RAG (검색 기반 답변, Retrieval-Augmented Generation)
 - **비유**: 시험 볼 때 외운 걸로 답하지 말고 자료집을 찾아보고 답하게 하는 것
@@ -85,7 +93,7 @@
 - **설명**: 글의 의미를 숫자 목록으로 바꾼 것이 임베딩이고, 그걸 모아 검색하는 저장소가 벡터DB다. RAG가 "관련 문서"를 찾을 때 쓰는 방식이다. 단어가 안 겹쳐도 뜻이 비슷하면 찾아낸다.
 - **실무 예시**: "연차 남은 거"로 검색해도 "잔여 휴가 일수" 문서가 걸린다
 - **오해**: "검색어가 정확히 들어가야 찾는다" → 아니다. 뜻으로 찾는다
-- **출처**: [platform.claude.com — Glossary](https://platform.claude.com/docs/en/about-claude/glossary)
+- **출처**: [Pinecone — What is a Vector Database?](https://www.pinecone.io/learn/vector-database/) *(용어집은 이 말을 정의하지 않아 교체)*
 
 ### 멀티모달 (Multimodal)
 - **비유**: 글만 읽는 게 아니라 그림도 보고 소리도 듣는 것
@@ -99,7 +107,7 @@
 - **설명**: 답하기 전에 단계적으로 생각하는 과정을 거치는 모델이다. 느리고 비싸지만 복잡한 문제에서 정확도가 오른다. 얼마나 오래 생각할지를 **노력 수준(effort level)** 으로 조절한다.
 - **실무 예시**: 단순 요약은 빠른 모델, 계약서 조항 충돌 검토는 추론 모델
 - **오해**: "항상 추론 모델이 낫다" → 단순 작업엔 느리고 비싸기만 하다
-- **출처**: [Claude Code 용어집 — Extended thinking / Effort level](https://code.claude.com/docs/en/glossary)
+- **출처**: [platform.claude.com — Extended thinking](https://platform.claude.com/docs/en/build-with-claude/thinking) *(Claude Code 용어집이 아니라 이 기능을 정의한 문서로 교체)*
 
 ### 파인튜닝 vs 프롬프팅
 - **비유**: 직원을 새로 교육시키는 것(파인튜닝) vs 업무 지시를 잘 쓰는 것(프롬프팅)
@@ -107,6 +115,20 @@
 - **실무 예시**: "우리 회사 문체로 써줘"는 예시 3개를 주는 게 파인튜닝보다 빠르고 싸다
 - **오해**: "우리 데이터로 학습시켜야 우리 일을 안다" → 대부분 필요 없다. 자료를 찾아 읽게 하는 편이 낫다
 - **출처**: [platform.claude.com — Glossary (Fine-tuning)](https://platform.claude.com/docs/en/about-claude/glossary)
+
+### 지식 컷오프 (Knowledge Cutoff)
+- **비유**: 어느 날짜까지의 신문만 읽고 나온 사람
+- **설명**: 모델이 학습한 자료가 끊기는 시점이다. 공식 안내는 모델마다 학습 자료가 특정 시점까지라고 밝히고, 그 이후에 일어난 일이나 정보는 알지 못할 수 있다고 적어 두었다. 모델이 바뀌면 이 시점도 함께 바뀐다.
+- **실무 예시**: 최근에 바뀐 규정을 물었는데 옛 기준으로 답한다면 컷오프 이후 내용일 수 있다
+- **오해**: "AI는 늘 최신 정보를 안다" → 아니다. 만든 쪽도 컷오프 이후에 일어난 일은 모를 수 있다고 밝힌다
+- **출처**: [support.claude.com — How up to date is Claude's training data?](https://support.claude.com/en/articles/8114494-how-up-to-date-is-claude-s-training-data)
+
+### AI 검색 요약 (AI Overviews)
+- **비유**: 검색 결과 맨 위에 붙는 요약 카드
+- **설명**: 검색 결과 위에 AI가 만든 요약이 함께 뜨는 기능이다. 링크를 하나씩 열지 않아도 대강을 알 수 있어 빠르다. 다만 요약을 만든 것도 AI라서 원문과 어긋날 수 있다.
+- **실무 예시**: 요약만 보고 보고서에 옮기지 말고, 아래 붙은 링크를 열어 원문을 확인한다
+- **오해**: "검색 결과니까 사실이다" → 아니다. 만든 쪽이 직접 AI 요약은 실수를 한다고 적었고, 중요한 정보는 한 곳 이상에서 확인하라고 안내한다
+- **출처**: [Google 검색 고객센터 — AI Overviews](https://support.google.com/websearch/answer/13572151?hl=en)
 
 ---
 

@@ -32,7 +32,9 @@ export default {
       { id: 'collect', label: '메일 수집', dur: 1 },
       { id: 'classify', label: '유형 분류', dur: 1 },
       { id: 'draft', label: '답변 초안', dur: 2 },
-      { id: 'send', label: '고객 발송', dur: 1 }
+      // 되돌릴 수 없는 단계. 엔진이 이 칸을 다르게 그려서 배치하는 동안에도 눈에 띈다 —
+      // 이 판의 요령이 "되돌릴 수 없는 것 앞에만 확인을 둔다"이므로 그게 보여야 한다.
+      { id: 'send', label: '고객 발송', dur: 1, irreversible: true }
     ],
     gates: [
       { id: 'check1', label: '사람 확인', dur: 1 },

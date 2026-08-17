@@ -8,7 +8,7 @@ export const manifest = [
   // ---- 챕터 1 — AI 기본기 ----
   { id: 'context-bag',      no: 1,  chapter: 1, engine: 'C', required: true,  ready: true,
     title: '가방 싸기',        learn: '토큰 · 컨텍스트 윈도우 · 컨텍스트 로트' },
-  { id: 'hallucination',    no: 2,  chapter: 1, engine: 'B', required: true,  ready: true,
+  { id: 'hallucination',    no: 2,  chapter: 1, engine: 'G', required: true,  ready: true,
     title: '지어낸 답 찾기',    learn: '할루시네이션 · 근거 확인' },
   { id: 'rewrite-prompt',   no: 3,  chapter: 1, engine: 'E', required: true,  ready: true,
     title: '지시문 고쳐쓰기',   learn: '프롬프트 4요소' },
@@ -29,18 +29,18 @@ export const manifest = [
 
   // ---- 챕터 3 — 일 시키기 (전체 심화) ----
   { id: 'onboarding-doc',   no: 10, chapter: 3, engine: 'C', required: false, ready: true,
-    title: '신입 온보딩 문서',   learn: 'CLAUDE.md · AGENTS.md · 컨텍스트 엔지니어링' },
+    title: '신입 온보딩 문서 만들기', learn: 'CLAUDE.md · AGENTS.md · 컨텍스트 엔지니어링' },
   { id: 'team-layout',      no: 11, chapter: 3, engine: 'D', required: false, ready: true,
     title: '팀 배치',           learn: '서브에이전트 · 오케스트레이션' },
   { id: 'auto-line',        no: 12, chapter: 3, engine: 'D', required: false, ready: true,
     title: '자동화 라인',       learn: '에이전트 루프 · 휴먼 인 더 루프' },
 
   // ---- 챕터 4 — 안전장치 ----
-  { id: 'prevent-accident', no: 13, chapter: 4, engine: 'D', required: false, ready: true,
+  { id: 'prevent-accident', no: 13, chapter: 4, engine: 'F', required: false, ready: true,
     title: '사고 막기',         learn: '훅 · 하네스 엔지니어링 · 가드레일 · 샌드박스' },
-  { id: 'reject-approval',  no: 14, chapter: 4, engine: 'B', required: false, ready: true,
+  { id: 'reject-approval',  no: 14, chapter: 4, engine: 'H', required: false, ready: true,
     title: '결재 반려',         learn: '워크슬롭 · 검증 부채' },
-  { id: 'spot-risk',        no: 15, chapter: 4, engine: 'B', required: true,  ready: true,
+  { id: 'spot-risk',        no: 15, chapter: 4, engine: 'G', required: true,  ready: true,
     title: '이상 징후 찾기',    learn: '프롬프트 인젝션 · 섀도우 AI · 자동화 편향' },
 
   // ---- 챕터 5 — 실전 종합 ----

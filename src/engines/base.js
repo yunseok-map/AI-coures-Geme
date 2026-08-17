@@ -81,6 +81,98 @@ export function runner(caption = 'AI 작업 로그') {
   };
 }
 
+/**
+ * 진행 HUD — 문항 수만큼 칸을 깔아두고 푼 만큼 색을 채운다.
+ *
+ * "3 / 10" 같은 숫자보다 칸이 채워지는 편이 훨씬 잘 읽힌다.
+ * 남은 칸이 눈에 보여야 "이만큼만 하면 끝난다"가 전달된다.
+ *
+ *   const h = hud(total);  root.append(h.node);
+ *   h.mark(true);          // 맞음 → 칸 하나 초록
+ *   h.set({ label: '연속 3' });
+ */
+export function hud(total, opts = {}) {
+  const node = el('div', 'hud');
+  const pips = el('div', 'hud__pips');
+  pips.setAttribute('aria-hidden', 'true');   // 같은 정보를 .hud__num 이 글자로 말한다
+
+  const cells = [];
+  for (let i = 0; i < total; i++) {
+    const p = el('i', 'pip');
+    pips.append(p);
+    cells.push(p);
+  }
+
+  const num = el('span', 'hud__num', `<b>0</b><span>/${total}</span>`);
+  const tag = el('span', 'hud__tag', esc(opts.label || ''));
+  if (!opts.label) tag.hidden = true;
+
+  node.append(pips, num, tag);
+
+  let at = 0;
+  return {
+    node,
+    /** 다음 칸을 칠한다. right=true 면 초록, false 면 빨강 */
+    mark(right) {
+      const p = cells[at];
+      at = Math.min(at + 1, total);
+      num.innerHTML = `<b>${at}</b><span>/${total}</span>`;
+      if (!p) return;
+      p.className = 'pip ' + (right ? 'pip--ok' : 'pip--no');
+      // 칸이 채워질 때 살짝 튄다 — 이게 없으면 그냥 표가 된다
+      p.style.animation = 'none';
+      void p.offsetWidth;
+      p.style.animation = '';
+    },
+    /** 콤보 같은 부가 표시 */
+    set(label) {
+      tag.hidden = !label;
+      tag.textContent = label || '';
+      if (label) { tag.style.animation = 'none'; void tag.offsetWidth; tag.style.animation = ''; }
+    },
+    /** drill 처럼 문항이 늘어나는 모드용 */
+    reset() { at = 0; for (const p of cells) p.className = 'pip'; num.innerHTML = `<b>0</b><span>/${total}</span>`; }
+  };
+}
+
+/**
+ * 판정 패널 — 맞았는지 틀렸는지가 화면 아래에서 통째로 올라온다.
+ *
+ * 작은 회색 글상자로 알려주면 아무도 안 읽는다. 색이 깔린 판이 올라와야 읽는다.
+ * 틀렸을 때 화면 전체를 빨갛게 칠하지는 않는다 — 벌 받는 기분이 들면 다음 판을 안 한다.
+ * 색은 아이콘과 제목에만 싣고, 판 자체는 옅게 둔다.
+ *
+ *   verdict(feedback, { ok, title, body, actions: [{id,label,primary}] })
+ *     → { node, btn }
+ */
+export function verdict(host, { ok, title, body, actions: list }) {
+  const sheet = el('section', 'sheet ' + (ok ? 'sheet--ok' : 'sheet--no'));
+  sheet.setAttribute('role', 'status');
+
+  const head = el('div', 'sheet__head');
+  head.innerHTML =
+    `<span class="sheet__icon" aria-hidden="true">${ok ? '✓' : '!'}</span>` +
+    `<span class="sheet__title">${esc(title)}</span>`;
+
+  const text = el('div', 'sheet__body');
+  text.innerHTML = body;
+
+  const bar = actions(list);
+  bar.node.classList.add('sheet__bar');
+
+  sheet.append(head, text, bar.node);
+  host.innerHTML = '';
+  host.append(sheet);
+
+  // 판이 화면 밖에 있으면 아무 소용이 없다
+  requestAnimationFrame(() => {
+    try { sheet.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+    catch { /* 구형 브라우저 */ }
+  });
+
+  return { node: sheet, btn: bar.btn };
+}
+
 /** 아래쪽 버튼 줄 */
 export function actions(list) {
   const bar = el('div', 'actionbar');

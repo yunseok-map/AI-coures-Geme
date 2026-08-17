@@ -1,0 +1,41 @@
+// 전체 검사 한 번에 — 배포하기 전에 이걸 돌린다.
+//
+//   node _tests/run-all.mjs
+//
+// 여기서 확인하는 것은 **DOM 없이 확인할 수 있는 것**이다:
+//   판정 규칙 · 점수 · 실패 사유 이름 · 콘텐츠 짜임새 · 미니게임 17판의 구조.
+// 화면·조작·실시간 흐름은 브라우저에서 눈으로 확인해야 한다(PROGRESS.md 참고).
+
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+
+const here = dirname(fileURLToPath(import.meta.url));
+
+const SUITES = [
+  ['17판 전수 구조', 'test-all.mjs'],
+  ['13 사고 막기 (디펜스)', 'test-defense.mjs'],
+  ['2 지어낸 답 찾기 (슈팅)', 'test-shoot.mjs'],
+  ['15 이상 징후 찾기 (슈팅)', 'test-shoot15.mjs'],
+  ['14 결재 반려 (검토 라인)', 'test-qc.mjs']
+];
+
+let bad = 0;
+for (const [name, file] of SUITES) {
+  const r = spawnSync(process.execPath, [join(here, file)], { encoding: 'utf8' });
+  const line = (r.stdout || '').split('\n')
+    .filter(l => /^결과|^검사 /.test(l.trim())).pop() || '(출력 없음)';
+  const ok = r.status === 0;
+  if (!ok) bad++;
+  console.log(`${ok ? 'OK  ' : 'FAIL'}  ${name.padEnd(26)} ${line.trim()}`);
+  if (!ok) {
+    // 실패한 줄만 보여 준다 — 전체를 다시 읽을 필요가 없게
+    for (const l of (r.stdout || '').split('\n')) {
+      if (/FAIL|✗/.test(l)) console.log('        ' + l.trim());
+    }
+    if (r.stderr && r.stderr.trim()) console.log('        ' + r.stderr.trim().split('\n')[0]);
+  }
+}
+
+console.log(bad ? `\n${bad}개 묶음 실패\n` : '\n전부 통과\n');
+process.exit(bad ? 1 : 0);

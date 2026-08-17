@@ -14,13 +14,22 @@ import { stageIn, ripple } from './core/motion.js';
 // 모듈이 실행됐다는 표시. index.html 의 file:// 안내가 이 값을 본다.
 document.documentElement.setAttribute('data-booted', '1');
 
-// 엔진 5종. 진입할 때만 불러온다 — 첫 화면에서 5개를 다 받지 않는다.
+// index.html 의 안내는 1.2초 안에 부팅을 못 보면 뜨는데, 한 번 뜨면 스스로 사라지지 않는다.
+// 느린 기기나 캐시가 빈 첫 방문에서는 정상 배포본에서도 뜬다 — 여기서 직접 지운다.
+// 숨기는 것으로는 부족하다: 남아 있으면 화면 아래에 빈 공간이 생겨 게임 화면이 스크롤된다.
+document.getElementById('boot-fallback')?.remove();
+
+// 엔진. 진입할 때만 불러온다 — 첫 화면에서 전부 받지 않는다.
+// A~E 는 세팅형(고르고 제출), F~H 는 실시간 액션형이다.
 const ENGINES = {
   A: () => import('./engines/sort.js'),      // 분류
   B: () => import('./engines/spot.js'),      // 찾기·판별
   C: () => import('./engines/build.js'),     // 조립
   D: () => import('./engines/timeline.js'),  // 배치
-  E: () => import('./engines/preview.js')    // 미리보기
+  E: () => import('./engines/preview.js'),   // 미리보기
+  F: () => import('./engines/defense.js'),   // 디펜스 — 내려오는 것을 막는다
+  G: () => import('./engines/shoot.js'),     // 슈팅 — 문제 있는 것만 쏜다
+  H: () => import('./engines/qcline.js')     // 검토 라인 — 창구에서 승인/반려를 찍는다
 };
 
 const app = document.getElementById('app');
@@ -32,7 +41,8 @@ app.append(topbarHost, stage);
 let activeEngine = null;
 
 // 눌린 자리에서 파문이 퍼진다. 한 곳에서 위임 처리하므로 엔진은 이걸 몰라도 된다.
-const TAPPABLE = '.bin,.part,.cell,.toggle,.target,.board__row,.node,.btn-primary,.btn-quiet,.tab';
+const TAPPABLE = '.bin,.part,.cell,.toggle,.target,.board__row,.node,.btn-primary,.btn-quiet,.tab,' +
+                 '.def__slot,.ax__tool';
 document.addEventListener('pointerdown', (e) => {
   const t = e.target.closest && e.target.closest(TAPPABLE);
   if (!t || t.disabled) return;

@@ -12,6 +12,49 @@
 }
 .counter b { color: var(--ink); }
 
+/* ---------- 진행 HUD ----------
+   문항 수만큼 칸을 미리 깔아 둔다. "몇 개 남았나"가 숫자가 아니라 길이로 보여야
+   중간에 그만두지 않는다. 칸은 하나씩 색이 차오르고, 채워질 때 한 번 튄다. */
+.hud {
+  display: flex; align-items: center; gap: var(--sp-3);
+  margin: var(--sp-3) 0 var(--sp-4);
+}
+.hud__pips { display: flex; gap: 3px; flex: 1; min-width: 0; }
+.pip {
+  flex: 1; height: 10px;
+  background: var(--ink-12);
+  border-radius: var(--radius-pill);
+  transform-origin: center bottom;
+}
+.pip--ok { background: var(--pass); animation: pipFill 300ms var(--ease-back) both; }
+.pip--no { background: var(--fail); animation: pipFill 300ms var(--ease-back) both; }
+@keyframes pipFill {
+  from { transform: scaleY(.3); opacity: .3; }
+  60%  { transform: scaleY(1.9); }
+  to   { transform: scaleY(1); opacity: 1; }
+}
+
+.hud__num {
+  flex: none;
+  font-family: var(--font-mono); font-size: var(--fs-label);
+  color: var(--muted); font-variant-numeric: tabular-nums;
+}
+.hud__num b { font-size: var(--fs-title); color: var(--ink); font-weight: 700; }
+
+/* 콤보 같은 부가 표시. 평소엔 숨어 있다가 붙었을 때만 튀어나온다 */
+.hud__tag {
+  flex: none;
+  font-size: var(--fs-aux); font-weight: 700;
+  color: var(--on-mark); background: var(--accent);
+  border-radius: var(--radius-pill);
+  padding: 3px var(--sp-2);
+  animation: tagPop 340ms var(--ease-back) both;
+}
+@keyframes tagPop {
+  from { transform: scale(.5) rotate(-8deg); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+
 .hint {
   margin-top: var(--sp-3);
   padding: var(--sp-3);
@@ -25,6 +68,53 @@
 
 .actionbar { display: flex; gap: var(--sp-2); margin-top: var(--sp-4); }
 .actionbar button { flex: 1; }
+
+/* ---------- 판정 패널 ----------
+   맞았는지 틀렸는지가 화면 폭 전체를 쓰며 아래에서 올라온다.
+   회색 글상자로 알려주면 아무도 안 읽는다.
+   틀렸다고 화면을 빨갛게 칠하지는 않는다 — 벌 받는 기분이 들면 다음 판을 안 누른다.
+   색은 아이콘·제목·윗선에만 싣는다. */
+.sheet {
+  margin: var(--sp-4) calc(var(--sp-3) * -1) calc(var(--sp-7) * -1);
+  padding: var(--sp-4) var(--sp-3) var(--sp-5);
+  border-top: 3px solid var(--pass);
+  background: var(--pass-10);
+  animation: sheetUp var(--dur-move) var(--ease-out) both;
+}
+.sheet--no { border-top-color: var(--fail); background: var(--ink-06); }
+
+@keyframes sheetUp {
+  from { transform: translateY(16px); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+
+.sheet__head { display: flex; align-items: center; gap: var(--sp-3); }
+.sheet__icon {
+  flex: none;
+  display: grid; place-items: center;
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: var(--pass); color: var(--on-mark);
+  font-size: 20px; font-weight: 700; line-height: 1;
+  animation: sheetPop 320ms var(--ease-back) both 60ms;
+}
+.sheet--no .sheet__icon { background: var(--fail); }
+@keyframes sheetPop {
+  from { transform: scale(.4); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+
+.sheet__title {
+  font-size: var(--fs-title); font-weight: 700;
+  color: var(--pass-deep);
+}
+.sheet--no .sheet__title { color: var(--fail-deep); }
+
+.sheet__body {
+  margin-top: var(--sp-2);
+  font-size: var(--fs-label); line-height: 1.55;
+}
+.sheet__bar { margin-top: var(--sp-3); }
 
 /* ---------- 시그니처: 작업 지시서(티켓) ---------- */
 .ticket {
@@ -48,6 +138,19 @@
 .ticket__body { font-size: var(--fs-body); }
 .ticket--held { border-color: var(--mark); box-shadow: 0 0 0 2px var(--mark-16), var(--lift-2); }
 
+/* 답을 낸 티켓. 화면 밖으로 날려 버리면 해설을 읽는 동안 질문이 사라지고
+   그 자리가 빈 구멍으로 남는다. 그래서 가라앉히기만 한다 (core/motion.settle). */
+.ticket--ok, .ticket--no { box-shadow: var(--lift-1); }
+.ticket--ok { border-color: var(--pass); }
+.ticket--no { border-color: var(--fail); }
+.ticket--ok::after, .ticket--no::after {
+  content: "처리 완료";
+  position: absolute; right: var(--sp-3); top: var(--sp-3);
+  font-size: var(--fs-aux); font-weight: 700;
+  color: var(--pass);
+}
+.ticket--no::after { content: "반려"; color: var(--fail); }
+
 /* ---------- A 분류형: 통 ---------- */
 .bins {
   display: grid;
@@ -55,26 +158,50 @@
   gap: var(--sp-2);
   margin-top: var(--sp-4);
 }
+/* 도구함 = 눌러서 던져 넣는 물체. 얇은 카드로 두면 표의 한 칸으로 읽힌다.
+   아랫면(lip)을 깔아 두께를 주고, 누르면 그만큼 내려간다. */
 .bin {
   display: flex; flex-direction: column; align-items: flex-start;
   gap: 2px;
-  min-height: 72px;
+  min-height: 84px;
   padding: var(--sp-3);
   text-align: left;
   background: var(--card);
-  border: 1px solid var(--ink-12);
-  border-top: 3px solid var(--ink-12);
-  border-radius: 0 0 var(--radius) var(--radius);
+  border: var(--border-w) solid var(--ink-12);
+  border-top: 4px solid var(--ink-20);
+  border-bottom-width: var(--lip);
+  border-radius: var(--radius);
   box-shadow: var(--lift-1);
+  transition: transform var(--dur-press) var(--ease),
+              background var(--dur-tap) var(--ease),
+              border-color var(--dur-tap) var(--ease),
+              border-bottom-width var(--dur-press) var(--ease);
+}
+.bin:active:not(:disabled) {
+  transform: translateY(calc(var(--lip) - var(--border-w)));
+  border-bottom-width: var(--border-w);
 }
 .bin__label { font-weight: 700; font-size: var(--fs-label); line-height: 1.35; }
 .bin__hint  { font-size: var(--fs-aux); color: var(--muted); line-height: 1.35; }
 
+/* 카드가 올라와 있는 동안만 통이 "열린다" — 누를 수 있을 때와 아닐 때가 달라야 한다 */
 .bins--armed .bin { border-top-color: var(--mark); }
-.bins--armed .bin:hover:not(:disabled) { border-color: var(--mark); background: var(--mark-08); }
+.bins--armed .bin:hover:not(:disabled) {
+  border-color: var(--mark); background: var(--mark-08);
+  transform: translateY(-2px);
+  box-shadow: var(--lift-2);
+}
 
-.bin--right { border-top-color: var(--pass); background: var(--pass-10); }
-.bin--wrong { border-top-color: var(--fail); background: var(--fail-10); }
+.bin--right {
+  border-color: var(--pass); border-top-color: var(--pass); background: var(--pass-10);
+  animation: binHit 380ms var(--ease-back) both;
+}
+.bin--wrong { border-color: var(--fail); border-top-color: var(--fail); background: var(--fail-10); }
+@keyframes binHit {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
 
 .combo {
   display: inline-block; margin-left: auto;
@@ -275,6 +402,28 @@
   font-family: var(--font-mono); font-size: 11px; color: var(--muted);
   text-align: center;
 }
+/* 마감 칸 — 배치하는 동안 계속 보여야 한다 */
+.tick--deadline {
+  color: var(--fail); font-weight: 700;
+  border-right: 2px solid var(--fail);
+}
+
+/* 마감을 넘긴 칸은 놓을 수는 있지만 늦는다는 걸 바탕으로 알려 준다 */
+.cell--late { background: repeating-linear-gradient(
+  45deg, var(--fail-10) 0 4px, transparent 4px 8px); }
+
+/* 되돌릴 수 없는 단계 */
+.cell--final {
+  border-color: var(--fail); border-width: 2px;
+  background: var(--fail-10); color: var(--fail-deep); font-weight: 700;
+}
+
+/* 재생 — 지금 흐르고 있는 칸 */
+.cell--now {
+  box-shadow: inset 0 0 0 2px var(--mark);
+  background: var(--mark-16);
+}
+.cell--ran { border-style: solid; }
 
 .tray { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-3); }
 

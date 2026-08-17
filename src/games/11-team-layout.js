@@ -25,6 +25,7 @@ export default {
            `마감은 ${DEADLINE}칸. 취합은 조사 셋이 모두 끝난 뒤에 시작해야 한다.`,
     lanes: 2,
     ticks: 8,
+    deadline: DEADLINE,   // 엔진이 이 칸에 마감선을 긋는다 — 글로만 알려주면 배치하다 잊는다
     laneNames: ['1번 줄', '2번 줄'],
     trayLabel: '배치할 일감 — 눌러서 집고, 칸을 눌러 놓는다',
     runLabel: '이 배치로 돌리기',

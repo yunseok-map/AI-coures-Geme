@@ -6,9 +6,9 @@
 //   rapid   연속 정답 콤보 · 빠른 리듬                          (게임 6)
 //   drill   틀린 카드를 뒤에 한 번 더 내보낸다                    (게임 8)
 
-import { el, esc, strong, say, Bin, header, brief, actions } from './base.js';
+import { el, esc, strong, say, Bin, header, brief, actions, verdict, hud } from './base.js';
 import { hasBatchim } from '../core/ko.js';
-import { press, shake, cardOut, enter } from '../core/motion.js';
+import { press, shake, settle, enter } from '../core/motion.js';
 
 let bin = new Bin();
 
@@ -31,8 +31,11 @@ export function mount(root, game, ctx) {
   root.innerHTML = '';
   root.append(header(game));
 
+  // drill 은 틀린 카드가 뒤에 다시 붙으므로 칸 수가 total 보다 많아질 수 있다 —
+  // 그 모드만 칸 대신 "남은 카드"를 글자로 센다.
+  const gauge = mode === 'drill' ? null : hud(total);
   const counter = el('div', 'counter');
-  root.append(counter);
+  root.append(gauge ? gauge.node : counter);
 
   let ticket = brief('', '업무 요청 01');
   root.append(ticket);
@@ -64,11 +67,9 @@ export function mount(root, game, ctx) {
   function render() {
     const card = queue[0];
     // drill 은 카드가 다시 나오므로 "몇 장 남았나"로 센다
-    counter.innerHTML = mode === 'rapid'
-      ? `<span>${answered} / ${total}</span><span class="combo">연속 ${combo}</span>`
-      : mode === 'drill'
-      ? `<span>남은 카드 ${queue.length}</span><span>맞은 개수 <b>${correct}</b></span>`
-      : `<span>${answered} / ${total}</span><span>맞은 개수 <b>${correct}</b></span>`;
+    if (gauge) gauge.set(mode === 'rapid' && combo >= 2 ? `${combo}연속` : '');
+    else counter.innerHTML =
+      `<span>남은 카드 ${queue.length}</span><span>맞은 개수 <b>${correct}</b></span>`;
 
     if (!card) return;
 
@@ -108,33 +109,36 @@ export function mount(root, game, ctx) {
       if (mode === 'drill' && !retried.has(card.id)) { retried.add(card.id); queue.push(card); }
     }
 
-    cardOut(ticket, right);
+    if (gauge) gauge.mark(right);
+    settle(ticket, right);
     showResult(right, card, b);
   }
 
   function showResult(right, card, chosen) {
     const target = bins.find(x => x.id === card.bin);
-    const box = el('div', right ? 'hint hint--ok' : 'hint');
 
     // 조사는 계산해서 붙인다 — "채팅다"가 아니라 "채팅이다"
-    box.innerHTML = right
+    const body = right
       ? `<b>${esc(target.label)}</b>로 보냈다. ${strong(card.why)}`
       : `<b>${esc(chosen.label)}</b>${hasBatchim(chosen.label) ? '이' : '가'} 아니라 ` +
         `<b>${esc(target.label)}</b>${hasBatchim(target.label) ? '이다' : '다'}.<br>${strong(card.why)}`;
 
     const last = queue.length === 0;
-    const bar = actions([
-      { id: 'next', label: last ? '결과 보기' : '다음 요청', primary: true }
-    ]);
-    bin.on(bar.btn.next, 'click', () => {
+    const title = right
+      ? (combo >= 3 ? `${combo}연속 정답` : '맞다')
+      : '아니다';
+
+    const v = verdict(feedback, {
+      ok: right, title, body,
+      actions: [{ id: 'next', label: last ? '결과 보기' : '다음 요청', primary: true }]
+    });
+    bin.on(v.btn.next, 'click', () => {
       clearMarks();
       feedback.innerHTML = '';
       if (queue.length) render(); else finish();
     });
 
-    feedback.innerHTML = '';
-    feedback.append(box, bar.node);
-    bar.btn.next.focus();
+    v.btn.next.focus();
     say(right ? '정답입니다.' : `오답입니다. 정답은 ${target.label}입니다.`);
   }
 

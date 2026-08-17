@@ -99,6 +99,21 @@ export const state = {
 
   get unlockedCount() { return data.unlockedTerms.length; },
 
+  /**
+   * 환경 설정(효과음 켜기 등). 저장 키를 새로 만들지 않고 같은 칸 안에 넣는다 —
+   * "localStorage 키 하나만 쓴다"는 약속이 깨지면 '처음부터'가 전부 지우지 못한다.
+   */
+  setting(key, fallback = null) {
+    const v = data.settings ? data.settings[key] : undefined;
+    return v === undefined ? fallback : v;
+  },
+
+  setSetting(key, value) {
+    if (!data.settings) data.settings = {};
+    data.settings[key] = value;
+    save();
+  },
+
   /** 필수 코스 진행도. 코스맵과 상단바가 같은 값을 쓴다. */
   progress(games) {
     const required = games.filter(g => g.required);

@@ -1,0 +1,401 @@
+/* ============================================================
+   액션 엔진 화면 — F 디펜스 · G 슈팅 · H 벨트
+   값은 전부 tokens.css 에서 온다. 여기에 색값을 직접 쓰지 않는다.
+
+   방향: 실시간으로 움직이는 판이므로 "지금 무엇이 위험한가"가
+        0.5초 안에 읽혀야 한다. 색은 역할대로만 쓴다 —
+        위험은 fail, 막힌 것은 pass, 보상 신호는 accent.
+
+   이름 규칙:
+     ax__*   세 엔진이 함께 쓰는 부품 (계기판 · 판 · 덮개 · 트레이 · 카드)
+     def__*  디펜스 전용 (길을 가로지르는 문)
+   ============================================================ */
+
+/* 인라인 SVG 아이콘 공통 */
+.ico { width: 20px; height: 20px; flex: none; display: block; }
+
+/* ---------- 액션 화면은 한 화면에 딱 맞춘다 ----------
+   스크롤하며 하는 게임이 아니다. 지켜야 할 곳(아래)과 놓을 장치(트레이)가
+   동시에 보여야 하고, 내려오는 것을 보려고 스크롤을 잡고 있을 수는 없다.
+   엔진이 mount 에서 이 클래스를 붙이고 unmount 에서 뗀다. */
+.stage--arcade {
+  display: flex; flex-direction: column;
+  height: calc(100dvh - var(--shell-top));
+  padding-bottom: 0;
+  overflow: hidden;
+}
+/* 화면이 짧으면 설명이 먼저 줄어든다 — 판을 깎으면 게임이 안 된다 */
+.stage--arcade .ticket {
+  flex: 0 1 auto;
+  max-height: 26%;
+  overflow-y: auto;
+}
+.stage--arcade .ax__field {
+  flex: 1 1 auto;
+  height: auto; min-height: 120px; max-height: none;
+}
+/* 조작대는 판에 바로 붙고 **절대 줄어들지 않는다.**
+   좁은 휴대폰에서 트레이가 두 줄로 접히면 화면이 넘치는데, 그때 줄어드는 쪽이
+   조작대가 되면 실행 버튼이 잘려 게임을 끝낼 수 없다. 줄어드는 것은 판이어야 한다. */
+.stage--arcade .ax__dock { margin-top: 0; flex: 0 0 auto; }
+
+/* 세로가 짧은 기기(작은 휴대폰·가로 모드) — 설명을 먼저 줄인다 */
+@media (max-height: 700px) {
+  .stage--arcade .ticket { max-height: 20%; }
+  .stage--arcade .ax__field { min-height: 96px; }
+}
+
+/* ---------- 상단 계기판 ---------- */
+.ax__hud {
+  display: flex; align-items: center; flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-3);
+  margin: var(--sp-3) 0 var(--sp-2);
+  font-family: var(--font-mono); font-size: var(--fs-mono);
+  color: var(--muted);
+}
+.ax__stat b { color: var(--ink); font-size: var(--fs-label); }
+.ax__stat--ok b { color: var(--pass); }
+.ax__stat--bad b { color: var(--fail); }
+
+/* 연속 성공 — 보상 신호는 accent 로만. 흔해지면 의미가 없다 */
+.ax__combo {
+  color: var(--on-mark); background: var(--accent);
+  font-weight: 700; letter-spacing: .02em;
+  padding: 2px var(--sp-2);
+  border-radius: var(--radius-pill);
+  animation: comboPop 260ms var(--ease-back) both;
+}
+@keyframes comboPop {
+  from { transform: scale(.6); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+
+.ax__mute {
+  margin-left: auto;
+  /* 글자는 작지만 누르는 곳은 작으면 안 된다 — 조작 대상은 전부 44px 이상 */
+  min-height: var(--tap-min); padding: 0 var(--sp-3);
+  font-size: var(--fs-aux); color: var(--muted);
+  background: none; border-width: var(--border-w);
+  border-bottom-width: var(--border-w);
+}
+
+/* ---------- 판 ---------- */
+.ax__field {
+  position: relative;
+  display: flex; flex-direction: column;
+  height: 42dvh;
+  min-height: 260px;
+  max-height: 420px;
+  overflow: hidden;
+  background: var(--card);
+  border: var(--border-w) solid var(--ink-12);
+  border-radius: var(--radius);
+  box-shadow: var(--lift-2);
+}
+
+/* 배경 그림. color 를 여기서 정하면 SVG 의 currentColor 가 따라온다 */
+.ax__art {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  color: var(--mark);
+  pointer-events: none;
+}
+
+.ax__track { position: relative; flex: 1; min-height: 0; }
+
+/* 판 아래쪽 띠 — 디펜스는 지켜야 하는 곳, 슈팅은 판독선이 된다 */
+.ax__foot {
+  position: relative; z-index: 3;
+  display: flex; align-items: center; justify-content: center; gap: var(--sp-2);
+  min-height: 52px;
+  font-weight: 700;
+  color: var(--mark-deep);
+  background: var(--mark-08);
+  border-top: var(--border-w) solid var(--mark-28);
+  transition: background var(--dur-tap) var(--ease), color var(--dur-tap) var(--ease);
+}
+.ax__foot .ico { width: 22px; height: 22px; }
+.ax__foot--hit {
+  background: var(--fail-20);
+  color: var(--fail-deep);
+  border-top-color: var(--fail);
+}
+
+/* ---------- 내려오는 카드 (일감 · 주장) ---------- */
+.ax__card {
+  position: absolute; z-index: 2;
+  left: 50%; top: 0;
+  width: min(80%, 260px);
+  transform: translate(-50%, -50%);
+  display: grid; grid-template-columns: auto 1fr; gap: var(--sp-2);
+  align-items: center;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--radius-sm);
+  border: var(--border-w) solid var(--ink-20);
+  background: var(--card);
+  box-shadow: var(--lift-2);
+  font-size: var(--fs-aux); line-height: 1.3;
+  text-align: left;
+}
+.ax__card__label { min-width: 0; }
+/* 디펜스의 일감은 눌러서 조작하는 대상이 아니다 */
+.ax__card--inert { pointer-events: none; }
+.ax__card--bad {
+  border-color: var(--fail);
+  background: var(--fail-10);
+  color: var(--fail-deep);
+  font-weight: 700;
+}
+.ax__card--ok { border-color: var(--ink-20); color: var(--muted); }
+
+/* ---------- 그 자리에서 뜨는 사유 ---------- */
+.ax__pop {
+  position: absolute; z-index: 4;
+  left: 50%; transform: translate(-50%, -50%);
+  white-space: nowrap;
+  padding: 2px var(--sp-2);
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-aux); font-weight: 700;
+  pointer-events: none;
+}
+.ax__pop--ok   { background: var(--pass);    color: var(--on-mark); }
+.ax__pop--bad  { background: var(--fail);    color: var(--on-mark); }
+.ax__pop--over { background: var(--partial); color: var(--on-mark); }
+.ax__pop--pass { background: var(--ink-06);  color: var(--muted); }
+
+/* ---------- 덮개: 카운트다운 · 멈춤 ---------- */
+.ax__veil {
+  position: absolute; inset: 0; z-index: 9;
+  display: grid; place-content: center; justify-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-4);
+  text-align: center;
+  background: var(--card);
+  /* 카운트다운 중에도 판이 살짝 보여야 뭘 기다리는지 안다 */
+  opacity: .94;
+}
+/* [hidden] 의 display:none 은 우선순위가 낮아서 위의 display:grid 에 진다.
+   이 한 줄이 없으면 숨긴 덮개가 판 위에 계속 깔려 화면이 흐옇게 보인다. */
+.ax__veil[hidden] { display: none; }
+.ax__veil__t { font-size: var(--fs-display); font-weight: 800; }
+.ax__veil__b { font-size: var(--fs-aux); color: var(--muted); max-width: 30ch; }
+
+/* ---------- 아래 고정 조작대 ----------
+   트레이를 눌러 집고 판을 눌러 놓는 조작이므로
+   트레이가 스크롤 밖으로 나가면 게임을 할 수 없다. */
+.ax__dock {
+  position: sticky; bottom: 0; z-index: 12;
+  /* .stage 의 좌우 여백만큼 밖으로 빼서 화면 폭을 꽉 쓴다 */
+  margin: var(--sp-3) calc(var(--sp-3) * -1) 0;
+  padding: var(--sp-2) var(--sp-3) var(--sp-3);
+  padding-bottom: calc(var(--sp-3) + env(safe-area-inset-bottom));
+  background: var(--card);
+  border-top: var(--border-w) solid var(--ink-12);
+  box-shadow: var(--lift-3);
+}
+.ax__dock .actionbar { margin-top: var(--sp-2); }
+
+.ax__traycap {
+  margin: 0 0 var(--sp-2);
+  font-size: var(--fs-aux); color: var(--muted);
+}
+.ax__tray { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+
+.ax__tool {
+  display: inline-flex; align-items: center; gap: var(--sp-2);
+  min-height: var(--tap-min);
+  padding: var(--sp-2) var(--sp-3);
+  font-size: var(--fs-label);
+  background: var(--card);
+  border: var(--border-w) solid var(--ink-20);
+  border-bottom-width: var(--lip);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--lift-1);
+  overflow: hidden;
+}
+.ax__tool__n { font-weight: 600; }
+.ax__tool__c {
+  font-family: var(--font-mono); font-size: var(--fs-aux);
+  color: var(--muted);
+  min-width: 1.4em; text-align: center;
+  border-left: 1px solid var(--ink-12);
+  padding-left: var(--sp-2);
+}
+/* 집은 것 — 테두리만 바꾸면 집었는지조차 헷갈린다 */
+.ax__tool--armed {
+  border-color: var(--mark);
+  background: var(--mark-16);
+  color: var(--mark-deep);
+  font-weight: 700;
+  box-shadow: 0 0 0 3px var(--mark-08), var(--lift-2);
+}
+.ax__tool--out { opacity: .4; }
+
+/* ============================================================
+   F 디펜스 전용 — 길을 가로지르는 문
+   ============================================================ */
+.def__slot {
+  position: absolute; z-index: 1;
+  left: var(--sp-2); right: var(--sp-2);
+  transform: translateY(-50%);
+  display: flex; align-items: center; justify-content: center; gap: var(--sp-2);
+  min-height: var(--tap-min);          /* 손가락으로 누른다 */
+  padding: 0 var(--sp-2);
+  font-size: var(--fs-aux);
+  background: var(--card);
+  border: var(--border-w) dashed var(--ink-20);
+  border-bottom-width: var(--border-w);
+  border-radius: var(--radius-sm);
+  opacity: 0;                          /* motion.enter 가 올려 준다 */
+  overflow: hidden;                    /* 파문이 밖으로 안 나가게 */
+  transition: border-color var(--dur-tap) var(--ease),
+              background var(--dur-tap) var(--ease);
+}
+.def__slot__n { font-weight: 700; }
+.def__slot__n--empty { color: var(--muted); font-weight: 400; }
+
+/* 장치를 집은 상태 — 어디에 놓을 수 있는지가 보여야 한다 */
+.def__slot--open {
+  border-color: var(--mark);
+  background: var(--mark-08);
+  animation: slotWait 1.6s var(--ease) infinite;
+}
+@keyframes slotWait {
+  0%, 100% { box-shadow: 0 0 0 0 var(--mark-16); }
+  55%      { box-shadow: 0 0 0 7px var(--mark-08); }
+}
+
+.def__slot--set {
+  border-style: solid;
+  border-color: var(--pass);
+  background: var(--pass-10);
+  color: var(--pass-deep);
+}
+/* 한 번 막은 뒤 다시 준비되는 동안 — 장치 하나로 다 막히지 않는다 */
+.def__slot--cool {
+  border-color: var(--ink-20);
+  background: var(--ink-06);
+  color: var(--muted);
+  opacity: .6;
+}
+.def__slot--fire { border-color: var(--pass); background: var(--pass-20); }
+.def__slot--miss { border-color: var(--partial); background: var(--partial-10); }
+.def__slot--over { border-color: var(--fail); background: var(--fail-10); }
+
+/* ============================================================
+   G 슈팅 전용 — 내려오는 주장을 쏜다
+   ============================================================ */
+
+/* 판정 전에는 전부 똑같이 생긴다. 색으로 정답이 새면 판별 게임이 아니게 된다. */
+.sh__card {
+  width: min(94%, 420px);
+  align-items: start;
+  font-size: var(--fs-label);
+  cursor: pointer;
+  border-color: var(--ink-20);
+  transition: border-color var(--dur-tap) var(--ease),
+              background var(--dur-tap) var(--ease),
+              box-shadow var(--dur-tap) var(--ease);
+}
+.sh__card:hover:not(:disabled) { border-color: var(--mark); box-shadow: 0 0 0 3px var(--mark-08), var(--lift-2); }
+.sh__card:active:not(:disabled) { transform: translate(-50%, -50%) scale(.98); }
+.sh__card:disabled { cursor: default; opacity: 1; }
+.sh__card .ax__card__ico { margin-top: 2px; }
+
+/* 판정 뒤에만 색이 붙는다 */
+.sh__card--hit  { border-color: var(--pass);    background: var(--pass-10); }
+.sh__card--miss { border-color: var(--fail);    background: var(--fail-10); }
+.sh__card--over { border-color: var(--partial); background: var(--partial-10); }
+.sh__card--pass { border-color: var(--ink-20);  background: var(--ink-06); }
+
+/* 카드 왼쪽 꼬리표 (시각 등). 꼬리표가 있는 판에서만 칸을 하나 더 쓴다 —
+   무조건 3칸으로 두면 꼬리표 없는 판에 빈 칸이 생긴다. */
+.sh__card--tagged { grid-template-columns: auto auto 1fr; }
+.sh__tag {
+  font-family: var(--font-mono); font-size: var(--fs-aux);
+  color: var(--muted); white-space: nowrap;
+  padding-right: var(--sp-2);
+  border-right: 1px solid var(--ink-12);
+}
+
+/* 왜 그런지를 카드에 바로 붙인다 — 나중에 몰아서 보면 안 읽는다 */
+.sh__why {
+  display: block; margin-top: var(--sp-1);
+  font-size: var(--fs-aux); font-weight: 400; color: var(--muted);
+  line-height: 1.35;
+}
+
+/* 판독선에서 카드로 뻗는 광선 */
+.sh__beam {
+  position: absolute; z-index: 1;
+  left: 50%; width: 4px;
+  transform: translateX(-50%);
+  background: var(--mark);
+  border-radius: var(--radius-pill);
+  pointer-events: none;
+}
+
+/* 판독선 — 지나가면 사실로 인정된다 */
+.ax__foot--line {
+  font-size: var(--fs-aux); font-weight: 600;
+  color: var(--muted);
+  background: var(--ink-06);
+  border-top: var(--border-w) dashed var(--ink-20);
+}
+.ax__foot--line.ax__foot--hit {
+  color: var(--fail-deep); background: var(--fail-20);
+  border-top-color: var(--fail); border-top-style: solid;
+}
+
+/* ============================================================
+   H 검토 라인 전용 — 창구를 지나가는 동안만 도장을 찍을 수 있다
+   ============================================================ */
+
+/* 창구. 여기 있는 서류만 판단할 수 있다 — 경계가 눈에 보여야 규칙이 이해된다. */
+.qc__band {
+  position: absolute; z-index: 0;
+  left: 0; right: 0;
+  background: var(--mark-08);
+  border-top: var(--border-w) dashed var(--mark-28);
+  border-bottom: var(--border-w) dashed var(--mark-28);
+  pointer-events: none;
+  transition: background var(--dur-tap) var(--ease);
+}
+.qc__band--busy { background: var(--mark-16); }
+.qc__band__cap {
+  position: absolute; left: var(--sp-2); top: var(--sp-1);
+  font-family: var(--font-mono); font-size: var(--fs-aux);
+  color: var(--mark-deep); font-weight: 700;
+}
+
+.qc__card {
+  width: min(94%, 420px);
+  align-items: start;
+  font-size: var(--fs-label);
+}
+.qc__card .ax__card__ico { margin-top: 2px; }
+/* 지금 판단할 수 있는 서류 — 하나만 이렇게 보인다 */
+.qc__card--active {
+  border-color: var(--mark);
+  box-shadow: 0 0 0 3px var(--mark-16), var(--lift-2);
+}
+.qc__card--hit  { border-color: var(--pass);    background: var(--pass-10); }
+.qc__card--miss { border-color: var(--fail);    background: var(--fail-10); }
+.qc__card--over { border-color: var(--partial); background: var(--partial-10); }
+.qc__card--pass { border-color: var(--ink-20);  background: var(--ink-06); }
+
+/* 승인 / 반려 두 버튼 — 반반으로 나눈다. 어느 쪽도 기본값이 아니다. */
+.qc__judge { margin-top: var(--sp-2); }
+.qc__judge button { flex: 1; min-height: 48px; font-weight: 700; }
+
+/* ---------- 데스크톱 ---------- */
+@media (min-width: 720px) {
+  .ax__field { height: 46dvh; min-height: 320px; max-height: 560px; }
+  .ax__card { width: min(64%, 320px); font-size: var(--fs-label); }
+  .def__slot { left: 22%; right: 22%; font-size: var(--fs-label); }
+}
+
+/* 움직임을 줄여 달라는 설정 — 깜빡이는 것부터 끈다 */
+@media (prefers-reduced-motion: reduce) {
+  .def__slot--open, .ax__combo { animation: none; }
+}

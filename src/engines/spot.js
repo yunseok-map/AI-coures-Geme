@@ -7,7 +7,7 @@
 // game.simulate(picked) 가 있으면 판정 뒤에 실행 로그가 흐른다 —
 // 내가 고른 것 때문에 결과가 어떻게 달라지는지 눈으로 보여주는 부분.
 
-import { el, esc, strong, say, Bin, header, actions, runner } from './base.js';
+import { el, esc, strong, say, Bin, header, actions, runner, verdict, hud } from './base.js';
 import { press, shake, enter, cardIn } from '../core/motion.js';
 
 let bin = new Bin();
@@ -157,8 +157,8 @@ function mountMyth(root, game, ctx) {
   root.innerHTML = '';
   root.append(header(game));
 
-  const counter = el('div', 'counter');
-  root.append(counter);
+  const gauge = hud(total);
+  root.append(gauge.node);
 
   const holder = el('div');
   root.append(holder);
@@ -170,8 +170,6 @@ function mountMyth(root, game, ctx) {
 
   function step() {
     const it = items[i];
-    counter.innerHTML = `<span>${i} / ${total}</span><span>맞은 개수 <b>${correct}</b></span>`;
-
     const card = el('article', 'ticket');
     card.innerHTML =
       `<div class="ticket__no">흔히 듣는 말 ${String(i + 1).padStart(2, '0')}</div>` +
@@ -197,20 +195,20 @@ function mountMyth(root, game, ctx) {
 
     if (right) { correct++; press(saidTrue ? bar.btn.true : bar.btn.false); }
     else { shake(saidTrue ? bar.btn.true : bar.btn.false); mistakes.push({ itemId: it.id, hint: it.truth }); }
-
-    const box = el('div', right ? 'hint hint--ok' : 'hint');
-    box.innerHTML = `<b>${it.isTrue ? '맞는 말이다.' : '오해다.'}</b><br>${strong(it.truth)}`;
+    gauge.mark(right);
 
     i++;
-    const nav = actions([{ id: 'n', label: i < total ? '다음' : '결과 보기', primary: true }]);
-    bin.on(nav.btn.n, 'click', () => {
+    const v = verdict(feedback, {
+      ok: right,
+      title: right ? '맞다' : '아니다',
+      body: `<b>${it.isTrue ? '맞는 말이다.' : '오해다.'}</b><br>${strong(it.truth)}`,
+      actions: [{ id: 'n', label: i < total ? '다음' : '결과 보기', primary: true }]
+    });
+    bin.on(v.btn.n, 'click', () => {
       feedback.innerHTML = '';
       if (i < total) step(); else finish();
     });
-
-    feedback.innerHTML = '';
-    feedback.append(box, nav.node);
-    nav.btn.n.focus();
+    v.btn.n.focus();
   }
 
   function finish() {
