@@ -200,10 +200,13 @@ export async function runLog(host, steps, opts = {}) {
       const g = setTimeout(settle, 700);      // 로그 줄이 투명한 채로 남지 않게
       animate(line, { opacity: [0, 1], translateY: [6, 0], duration: 180, ease: 'outQuad' })
         .then(() => { clearTimeout(g); settle(); });
-      // 글자가 찍히는 동안 커서가 깜빡인다 — "지금 AI가 쓰고 있다"는 느낌의 전부다
+      // 글자가 찍히는 동안 커서가 깜빡인다 — "지금 AI가 쓰고 있다"는 느낌의 전부다.
+      // 애니메이션이 얼어붙으면 이 클래스가 안 벗겨져서 **모든 줄에 커서가 남는다.**
+      // 글자는 typeIn 의 안전망이 채워 주므로 여기서 커서만 따로 걷어 낸다.
       line.classList.add('is-typing');
+      const untype = setTimeout(() => line.classList.remove('is-typing'), ms + 900);
       typeIn(body, html, { duration: Math.min(ms * 0.7, step.text.length * 22) })
-        .then(() => line.classList.remove('is-typing'));
+        .then(() => { clearTimeout(untype); line.classList.remove('is-typing'); });
     } else {
       body.innerHTML = html;
     }

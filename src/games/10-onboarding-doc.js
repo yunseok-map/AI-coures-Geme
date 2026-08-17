@@ -48,7 +48,13 @@ export default {
     const has = id => kept.includes(id);
     const r = new Run();
 
-    r.read(`지침서를 읽는다 — 규칙 ${setup.kept.length}개`);
+    // 지침서는 **매 세션 처음에 통째로** 읽힌다. 그걸 한 줄로 요약하면
+    // "규칙 6개" 라는 숫자만 남는다. 규칙을 하나하나 읽는 줄로 보여 주면
+    // "문서 폰트는 맑은 고딕으로" 같은 줄이 **매번** 읽히는 것을 눈으로 보게 되고,
+    // 그때 분량이 왜 비용인지 설명이 필요 없어진다.
+    // 길수록 실행이 실제로 더 오래 걸린다 — 그것도 이 판이 가르치는 것이다.
+    r.read(`지침서를 펼친다 — 규칙 ${setup.kept.length}개 · ${setup.used}칸`, 300);
+    for (const p of setup.kept) r.read(`“${p.label}”`, 180);
 
     if (evicted.length) {
       r.warn(`분량을 넘겨 뒤로 밀린 규칙: ${setup.evicted.map(p => p.label).join(', ')}`);
