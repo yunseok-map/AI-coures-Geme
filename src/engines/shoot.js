@@ -13,7 +13,7 @@
 //
 // 엔진은 특정 미니게임을 모른다. game.simulate(setup) 이 판정한다. (CLAUDE.md §1-3)
 
-import { el, esc, strong, say, Bin, header, actions, runner } from './base.js';
+import { el, esc, strong, say, Bin, header, actions, runner, scarLine } from './base.js';
 import { icon } from '../core/art.js';
 import { createLoop } from '../core/loop.js';
 import { sfx } from '../core/sfx.js';
@@ -224,6 +224,9 @@ export function mount(root, game, ctx) {
       mark(it, 'miss', L.miss, 'bad');
       foot.classList.add('ax__foot--hit');
       setTimeout(() => foot.classList.remove('ax__foot--hit'), 600);
+      // 판독선을 그냥 지나간 것은 "사실로 인정된" 것이다. 그 자국이 선에 남는다 —
+      // 깜빡임만 있으면 세 번 놓쳐도 화면은 매번 원래대로 돌아온다.
+      scarLine(foot, out.missed.length, L.miss);
       say(L.sayMiss);
     } else {
       out.clean.push(it.id);

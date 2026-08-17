@@ -121,6 +121,29 @@
   border-top-color: var(--fail);
 }
 
+/* 맞은 자국 — **쌓인다.**
+   ax__foot--hit 은 0.6초 뒤 사라지지만 이건 판이 끝날 때까지 남는다.
+   깜빡임만 있으면 사고가 세 번 나도 화면은 매번 원래대로 돌아와서
+   "쌓인다"가 계기판 숫자로만 존재한다. 숫자는 다음 일감이 내려오는 동안 안 읽힌다. */
+.ax__foot--hurt {
+  border-top-color: var(--fail);
+  border-top-style: solid;
+}
+.ax__scars {
+  display: flex; align-items: center; gap: 3px;
+  margin-left: var(--sp-2);
+}
+.ax__scar {
+  display: block; width: 7px; height: 16px;
+  background: var(--fail);
+  border-radius: 2px;
+  transform: rotate(-12deg);
+}
+.ax__scars__n {
+  font-family: var(--font-mono); font-size: var(--fs-aux); font-weight: 700;
+  color: var(--fail-deep);
+}
+
 /* ---------- 내려오는 카드 (일감 · 주장) ---------- */
 .ax__card {
   position: absolute; z-index: 2;
@@ -344,6 +367,11 @@
 }
 .ax__foot--line.ax__foot--hit {
   color: var(--fail-deep); background: var(--fail-20);
+  border-top-color: var(--fail); border-top-style: solid;
+}
+/* 판독선은 기본이 회색 점선이라, 뒤에 오는 이 규칙이 없으면 자국이 남아도
+   선은 멀쩡한 채로 있다 (.ax__foot--hurt 가 파일 앞쪽에 있어서 진다) */
+.ax__foot--line.ax__foot--hurt {
   border-top-color: var(--fail); border-top-style: solid;
 }
 

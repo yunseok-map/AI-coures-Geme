@@ -61,13 +61,17 @@ export function cardIn(el) {
   }).then(() => { clearTimeout(guard); show(); });
 }
 
-/** 처리 끝난 티켓이 옆으로 빠진다 */
 /**
  * 답을 낸 카드를 "처리 완료" 상태로 가라앉힌다.
  *
  * 카드를 화면 밖으로 날려 버리면 질문이 사라져서, 해설을 읽는 동안
  * 뭘 물어봤는지 다시 위로 올라가 확인해야 한다. 게다가 카드가 있던 자리가
  * 빈 구멍으로 남는다. 그래서 날리지 않고 살짝 밀린 채 흐려지게만 한다.
+ *
+ * 예전에 `cardOut`(카드를 옆으로 날려 지우는 것)이 여기 같이 있었다. 위 이유로
+ * 이 함수가 그것을 대체했고, 지운 뒤 아무도 안 쓰는 채로 남아 있었다.
+ * **다시 만들지 말 것** — 슈팅 판의 카드도 날리지 않는다. 거기서는 카드에 붙은
+ * "왜 그런지"를 읽을 시간(1.6초)을 주면서 서서히 흐려지게 한다(`shoot.js` 의 `fade`).
  */
 export function settle(node, ok = true) {
   if (!node) return Promise.resolve();
@@ -78,17 +82,6 @@ export function settle(node, ok = true) {
     scale: [1, .97],
     opacity: [1, .62],
     duration: 220, ease: 'outQuad'
-  });
-}
-
-export function cardOut(el, ok = true) {
-  if (!el) return Promise.resolve();
-  if (isReduced()) return Promise.resolve();
-  return animate(el, {
-    opacity: [1, 0],
-    translateX: ok ? [0, 40] : [0, -40],
-    rotate: ok ? [0, 2] : [0, -2],
-    duration: 200, ease: 'inQuad'
   });
 }
 

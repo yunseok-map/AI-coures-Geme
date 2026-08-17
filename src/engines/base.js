@@ -193,6 +193,40 @@ export function actions(list) {
 export function reveal(nodes) { return enter(nodes); }
 
 /**
+ * 아래쪽 선(우리 팀 · 판독선)에 맞은 흔적을 **쌓아서** 남긴다. 액션 엔진 공용.
+ *
+ * 예전에는 맞을 때 0.6초 깜빡이고 끝이었다. 그래서 사고가 세 번 나도 화면은
+ * 매번 원래대로 돌아왔고, 쌓이는 것은 계기판 숫자뿐이었다. 숫자는 안 읽힌다 —
+ * 특히 다음 일감이 이미 내려오고 있을 때는.
+ *
+ * 게임오버는 없다(사용자 확정 — 부드러운 압박). 대신 **흔적이 남는다.**
+ * 사고 하나가 자국 하나다. 판이 끝날 때 그 선을 보면 오늘 무슨 일이 있었는지가
+ * 한눈에 보인다. 그게 "사고는 쌓인다"를 가르치는 방법이다.
+ *
+ * 자국은 `n` 개를 다시 그린다(증분이 아니다) — 되돌리기·재도전에서 어긋나지 않는다.
+ *
+ * @param {HTMLElement} foot  선 요소 (`.ax__foot`)
+ * @param {number} n          지금까지 맞은 횟수
+ * @param {string} [label]    낭독용 이름 (예: '사고')
+ */
+export function scarLine(foot, n, label = '사고') {
+  if (!foot) return;
+  let rail = foot.querySelector('.ax__scars');
+  if (!rail) {
+    rail = el('div', 'ax__scars');
+    rail.setAttribute('aria-hidden', 'true');   // 숫자는 계기판이 이미 읽어 준다
+    foot.append(rail);
+  }
+  foot.classList.toggle('ax__foot--hurt', n > 0);
+  rail.innerHTML = '';
+  // 자국이 열 개를 넘으면 선을 다 먹는다. 그 뒤로는 숫자로 적는다.
+  const shown = Math.min(n, 10);
+  for (let i = 0; i < shown; i++) rail.append(el('i', 'ax__scar'));
+  if (n > shown) rail.append(el('span', 'ax__scars__n', `+${n - shown}`));
+  foot.setAttribute('data-hurt', n > 0 ? `${label} ${n}` : '');
+}
+
+/**
  * 등급 계산 — 모든 엔진이 같은 척도를 쓴다.
  * 결과 화면과 결과 카드가 하나로 통일되어야 하기 때문이다.
  */

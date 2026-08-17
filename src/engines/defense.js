@@ -13,7 +13,7 @@
 //
 // 화면 부품 중 `ax__` 로 시작하는 것은 액션 엔진 공용이다(arcade.css).
 
-import { el, esc, strong, say, Bin, header, actions, runner } from './base.js';
+import { el, esc, strong, say, Bin, header, actions, runner, scarLine } from './base.js';
 import { icon, roadArt } from '../core/art.js';
 import { createLoop } from '../core/loop.js';
 import { sfx } from '../core/sfx.js';
@@ -340,6 +340,8 @@ export function mount(root, game, ctx) {
       pop(1, '사고', 'bad');
       foot.classList.add('ax__foot--hit');
       setTimeout(() => foot.classList.remove('ax__foot--hit'), 600);
+      // 깜빡임은 사라지지만 자국은 남는다 — 사고가 쌓이는 것이 보여야 한다
+      scarLine(foot, out.leaked.length, '사고');
       if (!isReduced()) shake(field);
       say(`${f.label} — 막지 못했습니다.`);
     } else {
