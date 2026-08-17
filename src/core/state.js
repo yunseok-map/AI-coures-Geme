@@ -1,7 +1,13 @@
-// 진행도 저장. localStorage 키 하나만 쓴다.
-// 수집·전송·로그인 없음. 이 키 외에 아무것도 저장하지 않는다.
+// 진행도 저장. 수집·전송·로그인 없음. localStorage 밖으로 아무것도 나가지 않는다.
+//
+// 키는 **지금 학습자 한 명당 하나**다 (core/who.js). 혼자 쓰면 예전과 똑같이
+// 'ai-course-v1' 하나뿐이고, 공용 PC 에서 사람을 나눌 때만 칸이 늘어난다.
+// 키를 모듈 로드 시점에 한 번만 읽는 이유: 사람을 바꾸면 화면을 새로고침한다.
+// 그래야 이미 그려진 화면에 앞사람 숫자가 섞여 남지 않는다.
 
-const KEY = 'ai-course-v1';
+import { who } from './who.js';
+
+const KEY = who.key();
 const VERSION = 1;
 
 const RANKS = [
@@ -156,8 +162,9 @@ export const state = {
   get unlockedCount() { return data.unlockedTerms.length; },
 
   /**
-   * 환경 설정(효과음 켜기 등). 저장 키를 새로 만들지 않고 같은 칸 안에 넣는다 —
-   * "localStorage 키 하나만 쓴다"는 약속이 깨지면 '처음부터'가 전부 지우지 못한다.
+   * 환경 설정(효과음 켜기 등). 저장 키를 새로 만들지 않고 이 사람 칸 안에 넣는다 —
+   * 바깥에 따로 두면 '처음부터'가 전부 지우지 못하고, 공용 PC 에서
+   * 앞사람이 켜 둔 효과음이 다음 사람에게 그대로 넘어간다.
    */
   setting(key, fallback = null) {
     const v = data.settings ? data.settings[key] : undefined;
@@ -193,6 +200,7 @@ export const state = {
     return RANKS[0];
   },
 
+  /** 지금 사람만 처음부터. 같은 브라우저의 다른 사람 기록은 건드리지 않는다. */
   reset() {
     data = blank();
     try { localStorage.removeItem(KEY); } catch { /* 무시 */ }

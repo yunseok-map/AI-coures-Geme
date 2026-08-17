@@ -5,6 +5,7 @@ import { state } from '../core/state.js';
 import { manifest } from '../games/index.js';
 import { back, go } from '../core/router.js';
 import { fillBar, pulse, cardIn, burst, wait } from '../core/motion.js';
+import { who } from '../core/who.js';
 
 let lastPct = null;    // 진행도가 실제로 오를 때만 막대를 움직인다
 let lastRank = null;   // 등급이 바뀌는 순간은 한 번만 축하한다
@@ -38,8 +39,11 @@ export function renderTopbar(host, route) {
 
   const prog = document.createElement('div');
   prog.className = 'topbar__progress';
+  // 사람을 나눠 쓸 때만 이름을 붙인다. 게임 안에서도 "지금 내 판이 맞나"를
+  // 확인할 수 있는 유일한 자리다 — 남의 기록 위에 20분을 쌓고 나서야 아는 건 늦다.
   prog.innerHTML =
     `<div class="progress__label">` +
+      (who.many ? `<span class="progress__who">${esc(who.active.name)}</span>` : '') +
       `<span class="progress__rank">${esc(rank.name)}</span>` +
       // 용어 카운터에 id 를 준다 — 딴 용어가 여기로 날아와 꽂힌다(sendTo 의 착지점).
       // 보여 주는 숫자는 읽음이 아니라 **획득**이다. 도감을 열어 본 것까지 세면

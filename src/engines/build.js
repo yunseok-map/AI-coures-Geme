@@ -10,7 +10,8 @@
 // 판정은 game.simulate(setup) 가 한다. 엔진은 세팅만 모아서 넘긴다.
 
 import { el, esc, say, Bin, header, actions, runner } from './base.js';
-import { press, shake, enter, animate, isReduced, flyTo, pulse } from '../core/motion.js';
+import { press, shake, enter, animate, isReduced, flyTo, pulse, wipeIn, dropOut }
+  from '../core/motion.js';
 import { hasBatchim, eulReul } from '../core/ko.js';
 
 let bin = new Bin();
@@ -42,13 +43,23 @@ export function mount(root, game, ctx) {
   }
 
   // ---- 예산 표시 (예산형) ----
-  let budgetBar = null, budgetNum = null, budgetBox = null;
+  //
+  // 예전에는 막대 하나 + "3 / 6칸" 숫자였다. 그러면 밀려나는 것이 **부품함에서**
+  // 흐려지기만 해서, 정작 "책상이 꽉 차서 뭔가 떨어졌다"가 안 보였다.
+  // 지금은 칸을 실제 그릇으로 그린다 — 올린 것이 자기 비용만큼 칸을 차지하고,
+  // 넘치면 그 자리에서 떨어져 나간다. 이 판이 가르치는 세 용어가 여기 다 들어 있다:
+  //   토큰(비용) · 컨텍스트 윈도우(칸 수) · 컨텍스트 로트(밀려남)
+  let budgetNum = null, budgetBox = null, deskGrid = null;
   if (!useSlots) {
     budgetBox = el('div', 'budget');
     budgetNum = el('span', 'budget__num');
-    budgetBar = el('div', 'budget__bar');
-    budgetBox.append(el('span', null, esc(d.budgetLabel || '가방')), budgetBar, budgetNum);
-    root.append(budgetBox);
+    budgetBox.append(
+      el('span', 'budget__cap', esc(d.budgetLabel || '가방')),
+      budgetNum
+    );
+    deskGrid = el('div', 'desk');
+    deskGrid.style.setProperty('--cells', String(d.budget ?? 6));
+    root.append(budgetBox, deskGrid);
   }
 
   // ---- 슬롯 (슬롯형) ----
@@ -174,7 +185,46 @@ export function mount(root, game, ctx) {
     return (part.tags || []).some(t => slot.accepts.includes(t));
   }
 
-  /** 예산 초과 시 먼저 넣은 것이 밀려난다 — 이 게임에서 컨텍스트 로트를 보여주는 자리 */
+  /**
+   * 책상을 그린다 — 올린 것이 자기 비용만큼 칸을 차지한다.
+   *
+   * 빈 칸까지 다 그리는 게 요점이다. "남은 칸이 얼마"가 눈에 보여야
+   * 4칸짜리를 올리기 전에 망설이게 된다. 숫자만 있으면 그 망설임이 없다.
+   *
+   * 남아 있는 것(keep)만 그린다 — 밀려난 것은 이미 책상 밖이다.
+   */
+  function drawDesk(keep, cap, used) {
+    if (!deskGrid) return;
+    const before = new Map(
+      [...deskGrid.querySelectorAll('.desk__item')].map(n => [n.dataset.id, n]));
+    const staying = new Set(keep.map(p => p.id));
+
+    // 지우기 전에 먼저 떨어뜨린다. 좌표는 아직 책상에 있을 때만 잴 수 있다.
+    for (const [id, node] of before) {
+      if (!staying.has(id)) dropOut(node, node.querySelector('.desk__name')?.textContent);
+    }
+
+    deskGrid.innerHTML = '';
+    for (const p of keep) {
+      const item = el('div', 'desk__item');
+      item.dataset.id = p.id;
+      item.style.setProperty('--span', String(Math.min(p.cost ?? 1, cap)));
+      item.innerHTML = `<span class="desk__name">${esc(p.label)}</span>` +
+                       `<span class="desk__cost">${p.cost ?? 1}칸</span>`;
+      deskGrid.append(item);
+      // 방금 올라온 것만 등장 연출을 준다 — 매번 전부 다시 튀면 산만하다
+      if (!before.has(p.id)) wipeIn(item);
+    }
+    for (let i = used; i < cap; i++) {
+      const gap = el('div', 'desk__free');
+      gap.setAttribute('aria-hidden', 'true');
+      deskGrid.append(gap);
+    }
+    deskGrid.setAttribute('aria-label',
+      `${d.budgetLabel || '가방'} ${used} / ${cap}칸 사용. ` +
+      (keep.length ? `올린 것: ${keep.map(p => p.label).join(', ')}` : '아직 없다'));
+  }
+
   /** 실행 버튼이 방금 살아났으면 한 번 알려 준다 */
   function armRun(enabled) {
     const was = bar.btn.run.disabled;
@@ -196,13 +246,7 @@ export function mount(root, game, ctx) {
       else evicted.unshift(pool[i]);
     }
 
-    budgetBar.innerHTML = '';
-    for (let i = 0; i < cap; i++) {
-      const seg = el('span', 'budget__seg');
-      seg.style.flex = '1';
-      if (i >= used) seg.style.background = 'transparent';
-      budgetBar.append(seg);
-    }
+    drawDesk(keep, cap, used);
     budgetNum.textContent = `${used} / ${cap}칸`;
     budgetBox.classList.toggle('budget--over', evicted.length > 0);
 
@@ -212,11 +256,17 @@ export function mount(root, game, ctx) {
     }
 
     // 조사는 마지막 이름에 맞춰 붙인다 — "30건가 밀려났다"가 되면 안 된다
+    //
+    // 남은 칸 수를 같이 알려 준다. 빈 칸이 1칸 남았는데 2칸짜리가 밀려나는 경우가
+    // 있어서, 그냥 "칸이 모자라"라고만 하면 "자리 있는데 왜?"로 읽힌다.
     const names = evicted.map(p => p.label);
+    const free = cap - used;
     notice.innerHTML = evicted.length
-      ? `<p class="evicted-note">칸이 모자라 먼저 넣은 ` +
-        `<b>${names.map(esc).join(', ')}</b>${hasBatchim(names[names.length - 1]) ? '이' : '가'} 밀려났다. ` +
-        `AI는 이걸 못 본다.</p>`
+      ? `<p class="evicted-note">먼저 넣은 ` +
+        `<b>${names.map(esc).join(', ')}</b>${hasBatchim(names[names.length - 1]) ? '이' : '가'} ` +
+        `책상에서 밀려났다. ` +
+        (free ? `남은 칸은 ${free}칸 — ` : '') +
+        `AI는 밀려난 것을 못 본다.</p>`
       : '';
 
     if (evicted.length && !isReduced()) {

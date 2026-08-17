@@ -307,6 +307,42 @@ export function sendTo(fromEl, toEl, label) {
   }).then(() => { clearTimeout(guard); drop(); });
 }
 
+/**
+ * 자리에서 떨어져 나간다 — 칸이 모자라 밀려나는 것.
+ *
+ * sendTo 와 짝이다. 저쪽은 모은 것이 카운터로 올라가고, 이쪽은 넘친 것이
+ * 아래로 떨어진다. 둘 다 **복제본**을 쓴다: 원본은 곧 다시 그려지면서
+ * 사라지기 때문에 떨어지는 걸 보여 줄 몸이 따로 필요하다.
+ *
+ * 그래서 호출은 **지우기 전에** 해야 한다 — 좌표는 아직 화면에 있을 때만 잰다.
+ * 복제본은 body 에 붙으므로 setTimeout 안전망 없이는 조각이 영구히 남는다.
+ */
+export function dropOut(fromEl, label) {
+  if (!fromEl || isReduced()) return Promise.resolve();
+  const a = fromEl.getBoundingClientRect();
+  if (!a.width) return Promise.resolve();
+
+  const ghost = document.createElement('div');
+  ghost.className = 'flyer flyer--drop';
+  ghost.setAttribute('aria-hidden', 'true');
+  ghost.textContent = label == null ? fromEl.textContent : label;
+  ghost.style.left = a.left + 'px';
+  ghost.style.top = a.top + 'px';
+  ghost.style.width = a.width + 'px';
+  document.body.append(ghost);
+
+  const drop = () => ghost.remove();
+  const guard = setTimeout(drop, 1400);
+  // 옆으로 떠밀리면서 떨어진다 — "밀려났다"는 말 그대로 보이게
+  return animate(ghost, {
+    translateX: [0, -34],
+    translateY: [0, 58],
+    rotate: [0, -8],
+    opacity: [1, 1, 0],
+    duration: 560, ease: 'inQuad'
+  }).then(() => { clearTimeout(guard); drop(); });
+}
+
 /** 눈길을 한 번 끌어야 할 때 — 실행 버튼이 살아났다든지 */
 export function pulse(el, times = 2) {
   if (!el || isReduced()) return Promise.resolve();

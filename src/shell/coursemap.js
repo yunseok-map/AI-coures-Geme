@@ -6,6 +6,8 @@ import { manifest } from '../games/index.js';
 import { chapterNames, terms } from '../data/terms.js';
 import { go } from '../core/router.js';
 import { enter } from '../core/motion.js';
+import { renderLearners } from './learners.js';
+import { who } from '../core/who.js';
 
 const CHAPTER_ORDER = [1, 2, 3, 4, 5, 9];
 
@@ -19,6 +21,9 @@ export function renderCourse(root) {
     `<h1 class="stage__title">AI 연수원</h1>` +
     `<p class="stage__sub">읽는 곳이 아니라 해보는 곳이다. 한 판 약 2분 · 필수 ${total}판이면 완주.</p>`;
 
+  // 사람 줄이 "이어서 하기" 위에 온다. 공용 PC 에서 앞사람 진도를 보고
+  // 그대로 눌러 버리는 것을 막는 유일한 지점이라 카드보다 먼저 읽혀야 한다.
+  root.append(renderLearners());
   root.append(resume(done, total));
 
   const blocks = [];
@@ -175,10 +180,10 @@ function footer(done, total) {
   const tally = `딴 용어 ${state.earnedCount} / ${terms.length}` +
                 (state.unlockedCount > state.earnedCount
                   ? ` (읽은 것까지 ${state.unlockedCount})` : '');
+  // "어디에 저장되나"는 맨 위 사람 줄이 이미 말한다 — 여기서 또 말하지 않는다
   note.textContent = done === total && total > 0
     ? `필수 코스를 완주했다. 심화도 열려 있다. ${tally}.`
-    : `언제든 중단하고 나중에 이어서 할 수 있다. 진행도는 이 브라우저에만 저장된다. ` +
-      `${tally}.`;
+    : `언제든 중단하고 나중에 이어서 할 수 있다. ${tally}.`;
   f.append(note);
 
   const codex = quiet('용어 도감', () => go('/codex'));
@@ -188,7 +193,9 @@ function footer(done, total) {
   const reset = document.createElement('button');
   reset.type = 'button';
   reset.className = 'btn-quiet';
-  reset.textContent = '처음부터';
+  // 여러 명이 쓰면 누구 기록이 날아가는지 버튼에 적어 둔다 —
+  // 공용 PC 에서 남의 기록을 지우는 사고가 제일 아프다
+  reset.textContent = who.many ? `${who.active.name} 처음부터` : '처음부터';
   reset.addEventListener('click', () => {
     // 브라우저 기본 대화상자를 쓰지 않는다 — 확인 버튼을 그 자리에 만든다.
     reset.replaceWith(confirmReset());
