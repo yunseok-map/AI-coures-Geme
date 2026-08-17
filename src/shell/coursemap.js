@@ -4,6 +4,7 @@
 import { state } from '../core/state.js';
 import { manifest } from '../games/index.js';
 import { chapterNames, terms } from '../data/terms.js';
+import { strong } from '../core/text.js';
 import { go } from '../core/router.js';
 import { enter } from '../core/motion.js';
 import { renderLearners } from './learners.js';
@@ -24,6 +25,7 @@ export function renderCourse(root) {
   // 사람 줄이 "이어서 하기" 위에 온다. 공용 PC 에서 앞사람 진도를 보고
   // 그대로 눌러 버리는 것을 막는 유일한 지점이라 카드보다 먼저 읽혀야 한다.
   root.append(renderLearners());
+  if (!state.setting('seenIntro', false)) root.append(intro());
   root.append(resume(done, total));
 
   const blocks = [];
@@ -47,6 +49,46 @@ function nextUp() {
   return manifest.find(g => g.ready && g.required && !state.isCleared(g.id))
       || manifest.find(g => g.ready && !state.isCleared(g.id))
       || null;
+}
+
+/**
+ * 처음 온 사람에게 세 줄.
+ *
+ * 왜 필요한가: 첫 화면이 곧바로 "1. 가방 싸기 [시작하기]" 다. 무엇을 하는 곳인지
+ * 모르는 사람에게는 그게 시험처럼 읽힌다 — 강요된 교육을 받는 사무직이 대상이라
+ * 그 순간 창을 닫는다. 특히 **"틀려도 게임오버가 없다"** 를 먼저 알아야 누른다.
+ *
+ * 덮개(모달)로 만들지 않는다. 시작 전에 뭘 닫아야 하는 화면은 그 자체로 벽이다.
+ * 카드로 두면 읽지 않고 지나가도 아무 손해가 없다.
+ *
+ * 세 줄을 넘기지 않는다 (CLAUDE.md §2). 각 줄은 "이 게임에서 뭘 겪게 되나" 하나씩.
+ * 표시 여부는 지금 학습자 칸 안에 남는다 — 공용 PC 에서 다음 사람도 한 번 본다.
+ */
+function introLines() {
+  return [
+    '읽는 자료가 아니다. 직접 자료를 골라 AI에게 시키고, 그래서 어떻게 되는지를 본다.',
+    '틀려도 게임오버가 없다. 판은 끝까지 흐르고 **왜 그렇게 됐는지가 화면에 남는다.**',
+    `판을 깨면 그 판에서 실제로 겪은 용어가 도감에 쌓인다. 모을 수 있는 것은 ${terms.length}개다.`
+  ];
+}
+
+function intro() {
+  const box = document.createElement('section');
+  box.className = 'intro';
+  box.innerHTML =
+    `<div class="intro__cap">처음이라면</div>` +
+    introLines().map(l => `<p class="intro__line">${strong(l)}</p>`).join('');
+
+  const ok = document.createElement('button');
+  ok.type = 'button';
+  ok.className = 'btn-quiet intro__ok';
+  ok.textContent = '알겠다';
+  ok.addEventListener('click', () => {
+    state.setSetting('seenIntro', true);
+    box.remove();
+  });
+  box.append(ok);
+  return box;
 }
 
 /** 맨 위 "이어서 하기" — 다음에 뭘 눌러야 할지 고민하지 않게 한다. */
@@ -189,6 +231,13 @@ function footer(done, total) {
   const codex = quiet('용어 도감', () => go('/codex'));
   const tools = quiet('AI 도구 도감', () => go('/tools'));
   const report = quiet('결과 카드', () => go('/report'));
+  // 처음 세 줄을 닫은 뒤에도 다시 볼 수 있어야 한다 — 한 번만 뜨는 안내를
+  // 되돌릴 방법이 없으면 "그게 뭐라고 했지"가 영구 미해결로 남는다
+  const again = quiet('이게 뭔가요', () => {
+    state.setSetting('seenIntro', false);
+    go('/');
+    location.reload();
+  });
 
   const reset = document.createElement('button');
   reset.type = 'button';
@@ -201,7 +250,7 @@ function footer(done, total) {
     reset.replaceWith(confirmReset());
   });
 
-  f.append(codex, tools, report, reset);
+  f.append(codex, tools, report, again, reset);
   return f;
 }
 

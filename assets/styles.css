@@ -284,6 +284,38 @@ input { caret-color: var(--mark); }
 }
 .who__input:focus-visible { border-color: var(--mark); outline: none; }
 
+/* 처음이라면 — 첫 방문에 한 번. 덮개가 아니라 카드다 (shell/coursemap.js).
+   표면 2단계: 아래 "이어서 하기"(3단계)보다 가벼워야 한다. 안내가 주인공이면
+   시작 버튼을 못 찾는다. */
+.intro {
+  margin-top: var(--sp-4);
+  padding: var(--sp-4);
+  background: var(--card);
+  border: 1px solid var(--hair);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius);
+  box-shadow: var(--lift-1);
+}
+.intro__cap {
+  font-family: var(--font-mono); font-size: var(--fs-mono);
+  color: var(--accent-deep); font-weight: 700;
+  letter-spacing: .02em;
+  margin-bottom: var(--sp-2);
+}
+.intro__line {
+  position: relative;
+  margin: 0 0 var(--sp-2) var(--sp-4);
+  font-size: var(--fs-label); line-height: 1.55;
+}
+.intro__line::before {
+  content: "";
+  position: absolute; left: calc(var(--sp-4) * -1);
+  top: .55em; width: 7px; height: 7px;
+  background: var(--accent);
+  border-radius: 50%;
+}
+.intro__ok { margin-top: var(--sp-1); }
+
 .resume {
   margin-top: var(--sp-4);
   padding: var(--sp-4);
