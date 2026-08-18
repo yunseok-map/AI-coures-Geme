@@ -1,7 +1,12 @@
 /* ============================================================
-   미니게임 화면 — 세팅형 엔진이 쓰는 부품.
-   A 분류형 · B 판별형 · C 조립형 · E 미리보기형
-   (새 메커닉 엔진은 mech.css, 배선형은 wire.css, 실시간형은 arcade.css)
+   미니게임 화면 — 여러 엔진이 같이 쓰는 부품.
+   진행 HUD · 판정 패널 · 작업 지시서(티켓) · 실행 로그
+   + C 조립형(부품·슬롯·예산) · E 미리보기형(블록 토글)
+
+   엔진 전용 부품은 각자 파일에 있다:
+   mech.css(L·P) · wire.css(W) · evidence.css(V) · library.css(S) ·
+   dispatch.css(R) · timeline.css(T) · gate.css(M) · inject.css(I) ·
+   map.css(N) · bag.css(C 가방) · arcade.css(F·H 실시간)
    ============================================================ */
 
 /* ---------- 공통: 진행 표시 ---------- */
@@ -48,17 +53,6 @@
   from { transform: scale(.5) rotate(-8deg); opacity: 0; }
   to   { transform: none; opacity: 1; }
 }
-
-.hint {
-  margin-top: var(--sp-3);
-  padding: var(--sp-3);
-  font-size: var(--fs-label);
-  border-left: 3px solid var(--fail);
-  background: var(--fail-10);
-  border-radius: 0 var(--radius) var(--radius) 0;
-}
-.hint--ok { border-left-color: var(--pass); background: var(--pass-10); }
-.hint--info { border-left-color: var(--mark); background: var(--mark-08); }
 
 .actionbar { display: flex; gap: var(--sp-2); margin-top: var(--sp-4); }
 .actionbar button { flex: 1; }
@@ -148,24 +142,7 @@
 }
 .ticket--no::after { content: "반려"; color: var(--fail); }
 
-/* ---------- A 분류형: 통 ---------- */
-/* 도구함 = 눌러서 던져 넣는 물체. 얇은 카드로 두면 표의 한 칸으로 읽힌다.
-   아랫면(lip)을 깔아 두께를 주고, 누르면 그만큼 내려간다. */
-
-/* 카드가 올라와 있는 동안만 통이 "열린다" — 누를 수 있을 때와 아닐 때가 달라야 한다 */
-
-@keyframes binHit {
-  0%   { transform: scale(1); }
-  35%  { transform: scale(1.05); }
-  100% { transform: scale(1); }
-}
-
-.combo {
-  display: inline-block; margin-left: auto;
-  font-weight: 700; color: var(--mark);
-}
-
-/* ---------- B 판별형: 근거 문서 + 클릭 대상 ---------- */
+/* ---------- 판단 기준 문서 (H 검토 라인) ---------- */
 .source {
   background: var(--card);
   border: 1px solid var(--ink-12);
@@ -178,27 +155,6 @@
 .source__cap {
   font-size: var(--fs-aux); color: var(--mark); font-weight: 700;
   margin-bottom: var(--sp-1);
-}
-
-/* 사무실 화면형(미니게임 15) — 좌표 배치 */
-.board {
-  position: relative;
-  background: var(--card);
-  border: 1px solid var(--ink-12);
-  border-radius: var(--radius);
-  padding: var(--sp-3);
-  display: grid; gap: var(--sp-2);
-}
-.board__row {
-  display: grid; grid-template-columns: 1fr auto; gap: var(--sp-2);
-  align-items: center;
-  padding: var(--sp-2) var(--sp-3);
-  border: 1px dashed var(--ink-12);
-  border-radius: var(--radius-sm);
-  font-size: var(--fs-label);
-  text-align: left;
-  background: none;
-  min-height: var(--tap-min);
 }
 
 /* ---------- C 조립형: 부품 + 슬롯 + 예산 ---------- */
@@ -338,11 +294,9 @@
 }
 /* 뜨는 높이는 --rise 하나로 맞춘다. 물건마다 다르게 뜨면 손맛이 어긋난다. */
 .part:hover:not(:disabled),
-.toggle:hover:not(:disabled),
-.board__row:hover:not(:disabled) { transform: translateY(var(--rise)); box-shadow: var(--lift-2); }
+.toggle:hover:not(:disabled) { transform: translateY(var(--rise)); box-shadow: var(--lift-2); }
 .part:active:not(:disabled),
-.toggle:active:not(:disabled),
-.board__row:active:not(:disabled) { transform: scale(.97); }
+.toggle:active:not(:disabled) { transform: scale(.97); }
 
 .part {
   display: inline-flex; align-items: center; gap: var(--sp-2);
@@ -452,6 +406,12 @@
 .toggle--clash { border-color: var(--fail); background: var(--fail-10); }
 .toggle__tag {
   font-family: var(--font-mono); font-size: var(--fs-aux); color: var(--muted);
+}
+/* 블록 이름 아래에 그 블록이 무엇을 시키는지를 적는다.
+   한 줄로 붙어 있으면 "역할누구의 입장에서" 처럼 읽혀서 이름이 사라진다. */
+.toggle__why {
+  display: block; margin-top: var(--sp-1);
+  font-size: var(--fs-aux); color: var(--muted); font-weight: var(--w-body);
 }
 
 /* ---------- 실행 로그: "AI가 일하는 중" ---------- */

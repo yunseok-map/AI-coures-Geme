@@ -73,7 +73,7 @@ export function mount(root, game, ctx) {
     b.setAttribute('aria-pressed', 'false');
     b.innerHTML =
       `<span class="toggle__box" aria-hidden="true"></span>` +
-      `<span>${esc(t.label)}<span class="target__why">${esc(t.desc || '')}</span></span>` +
+      `<span>${esc(t.label)}<span class="toggle__why">${esc(t.desc || '')}</span></span>` +
       `<span class="toggle__tag">${esc(t.tag || '')}</span>`;
     bin.on(b, 'click', () => toggle(t, b));
     list.append(b);
