@@ -25,6 +25,7 @@ const SUITES = [
   ['8 언제 발동하나 (타임라인)', 'test-timeline.mjs'],
   ['5 어디서 할까 (실시간 관제)', 'test-dispatch.mjs'],
   ['4 자료 찾아오기 (서고)', 'test-library.mjs'],
+  ['9 배선 연결 (권한 게이트)', 'test-gate.mjs'],
   ['3 지시문 (실시간 대조)', 'test-preview.mjs'],
   ['용어 수집 (획득/읽음)', 'test-collect.mjs'],
   ['학습자 칸 (공용 PC)', 'test-who.mjs'],

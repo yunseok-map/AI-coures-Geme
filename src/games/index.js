@@ -24,7 +24,7 @@ export const manifest = [
     title: '이름에 속지 마라',   learn: 'CLI 에이전트 · Codex의 정체' },
   { id: 'when-fires',       no: 8,  chapter: 2, engine: 'T', required: true,  ready: true,
     title: '언제 발동하나',     learn: '커맨드 · 스킬 · 서브에이전트 · 훅 · 플러그인' },
-  { id: 'wiring',           no: 9,  chapter: 2, engine: 'C', required: false, ready: true,
+  { id: 'wiring',           no: 9,  chapter: 2, engine: 'M', required: false, ready: true,
     title: '배선 연결',         learn: 'MCP · 커넥터 · 최소 권한' },
 
   // ---- 챕터 3 — 일 시키기 (전체 심화) ----

@@ -1,0 +1,269 @@
+/* 엔진 M — 권한 게이트. 접두사 gt__
+   케이블 위에 문이 얹혀 있고, 연 문 개수만큼 케이블이 굵어진다.
+   굵어지는 것을 눈으로 보게 하는 것이 이 화면의 전부다. */
+
+.gt__hint {
+  margin: 0 0 var(--sp-3);
+  color: var(--muted);
+  font-size: var(--fs-aux);
+}
+
+.gt__board {
+  background: var(--surface-well);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius);
+  padding: var(--sp-4) var(--sp-3);
+  margin-bottom: var(--sp-4);
+}
+
+/* ---- 에이전트 — 모든 케이블이 여기서 나간다 ---- */
+.gt__agent {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  background: var(--mark);
+  color: var(--on-mark);
+  border-radius: var(--radius-pill);
+  padding: var(--sp-2) var(--sp-4);
+  font-size: var(--fs-label);
+  font-weight: 700;
+  box-shadow: var(--lift-1), var(--gloss);
+}
+
+.gt__agent__dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--on-mark);
+}
+
+/* ---- 세로 줄기. 시스템 줄들이 여기서 갈라져 나간다 ---- */
+.gt__rows {
+  position: relative;
+  margin-top: var(--sp-3);
+  padding-left: var(--sp-5);
+}
+
+.gt__rows::before {
+  content: '';
+  position: absolute;
+  left: 13px;
+  top: calc(var(--sp-4) * -1);
+  bottom: 24px;
+  width: 4px;
+  background: var(--ink-45);
+  border-radius: 4px;
+}
+
+.gt__row {
+  position: relative;
+  background: var(--card);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-3);
+  margin-bottom: var(--sp-3);
+}
+
+.gt__row:last-child { margin-bottom: 0; }
+
+/* 줄기에서 이 줄로 들어오는 가지 */
+.gt__row::before {
+  content: '';
+  position: absolute;
+  left: calc(var(--sp-5) * -1 + 13px);
+  top: 25px;
+  width: calc(var(--sp-5) - 13px);
+  height: 4px;
+  background: var(--ink-45);
+}
+
+.gt__row--live { border-color: var(--mark-28); }
+.gt__row--live::before { background: var(--mark); }
+
+.gt__row__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-2);
+}
+
+.gt__sys {
+  font-size: var(--fs-label);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.gt__count {
+  font-size: var(--fs-aux);
+  color: var(--mark);
+  font-weight: 700;
+}
+
+/* ---- 케이블 + 그 위의 문들 ---- */
+.gt__cable {
+  position: relative;
+  display: flex;
+  gap: var(--sp-2);
+}
+
+/* 케이블 본체. data-w 가 굵기다 — 0 이면 가느다란 점선 */
+.gt__cable::before {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  top: 20px;
+  height: 2px;
+  background: var(--edge);
+  border-radius: 2px;
+  transition: height var(--dur-move), background var(--dur-move), top var(--dur-move);
+}
+
+/* 굵기가 곧 열어 준 폭이다. 셋 다 열면 색까지 바뀐다 —
+   "이만큼 열었다"를 숫자로 말하는 대신 눈으로 보게 하려고 넣었다. */
+.gt__cable[data-w="0"]::before {
+  height: 0;
+  border-top: 2px dashed var(--edge);
+  background: none;
+}
+.gt__cable[data-w="1"]::before { height: 4px;  top: 19px; background: var(--mark-28); }
+.gt__cable[data-w="2"]::before { height: 8px;  top: 17px; background: var(--mark); }
+.gt__cable[data-w="3"]::before { height: 14px; top: 14px; background: var(--fail); }
+/* 그 시스템의 문을 하나도 남기지 않고 다 열었다 — 문이 둘뿐이어도 마찬가지다 */
+.gt__cable[data-full="1"]::before { background: var(--fail); }
+
+/* 문은 케이블 **위에 얹힌 밸브**다. 그래서 버튼에 면을 주지 않는다 —
+   면을 주면 케이블이 버튼 밑으로 숨어서 사이사이 토막으로만 보인다. */
+.gt__gate {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: var(--tap-min);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: 0 2px var(--sp-1);
+  background: none;
+  border: 0;
+  color: var(--muted);
+  font-size: var(--fs-aux);
+  font-weight: 700;
+  cursor: pointer;
+  transition: color var(--dur-tap);
+}
+
+.gt__gate:disabled { cursor: default; }
+
+/* 닫힌 문 = 속이 빈 고리. 열린 문 = 꽉 찬 고리 */
+.gt__gate__ring {
+  width: 26px; height: 26px;
+  margin-top: 8px;
+  border-radius: 50%;
+  border: var(--border-w) solid var(--edge);
+  background: var(--card);
+  box-shadow: 0 0 0 4px var(--card);   /* 고리 둘레에서 케이블을 끊어 준다 */
+  transition: border-color var(--dur-tap), background var(--dur-tap),
+              transform var(--dur-tap);
+}
+
+.gt__gate:active:not(:disabled) .gt__gate__ring { transform: scale(.92); }
+
+.gt__gate__name {
+  line-height: 1.2;
+  background: var(--card);
+  padding: 0 2px;
+  border-radius: var(--radius-sm);
+}
+
+.gt__gate--on { color: var(--mark-deep); }
+
+.gt__gate--on .gt__gate__ring {
+  border-color: var(--mark-deep);
+  background: var(--mark);
+  box-shadow: 0 0 0 4px var(--card), var(--gloss);
+}
+
+.gt__gate:focus-visible { outline: none; }
+.gt__gate:focus-visible .gt__gate__ring {
+  outline: 3px solid var(--mark);
+  outline-offset: 3px;
+}
+
+.gt__gate__mark {
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+}
+.gt__gate__mark--ok   { color: var(--pass); }
+.gt__gate__mark--no   { color: var(--fail); }
+.gt__gate__mark--idle { color: var(--partial); }
+
+/* 판정 뒤 — 공격이 지나간 고리는 빨갛게 남는다 */
+.gt__gate--on:has(.gt__gate__mark--no) .gt__gate__ring {
+  border-color: var(--fail-deep);
+  background: var(--fail);
+}
+.gt__gate--on:has(.gt__gate__mark--ok) .gt__gate__ring {
+  border-color: var(--pass-deep);
+  background: var(--pass);
+}
+.gt__gate--on:has(.gt__gate__mark--idle) .gt__gate__ring {
+  border-color: var(--partial-deep);
+  background: var(--partial);
+}
+
+/* ---- 마지막 정리표 ---- */
+.gt__feedback { margin-bottom: var(--sp-4); }
+
+.gt__sheet {
+  background: var(--card);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius);
+  padding: var(--sp-4);
+  margin-top: var(--sp-3);
+}
+
+.gt__sheet__cap {
+  margin: 0 0 var(--sp-3);
+  font-size: var(--fs-title);
+}
+
+.gt__grp { margin-bottom: var(--sp-3); }
+.gt__grp:last-child { margin-bottom: 0; }
+
+.gt__grp__cap {
+  font-size: var(--fs-aux);
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: var(--sp-1);
+}
+
+.gt__grp__row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--sp-2) var(--sp-3);
+  border-left: 3px solid var(--edge);
+  background: var(--surface-well);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  margin-bottom: var(--sp-1);
+}
+
+.gt__grp__row b { font-size: var(--fs-label); }
+.gt__grp__row span { font-size: var(--fs-aux); color: var(--muted); }
+
+.gt__grp--ok    .gt__grp__row { border-left-color: var(--pass);    background: var(--pass-10); }
+.gt__grp--no    .gt__grp__row { border-left-color: var(--fail);    background: var(--fail-10); }
+.gt__grp--stuck .gt__grp__row { border-left-color: var(--partial); background: var(--partial-10); }
+.gt__grp--idle  .gt__grp__row { border-left-color: var(--partial); }
+
+/* ---- 좁은 화면 — 문 세 개가 한 줄에 안 들어가면 이름을 줄인다 ---- */
+@media (max-width: 400px) {
+  .gt__rows { padding-left: var(--sp-4); }
+  .gt__rows::before { left: 7px; }
+  .gt__row::before { left: calc(var(--sp-4) * -1 + 7px); width: calc(var(--sp-4) - 7px); }
+  .gt__gate { font-size: 12px; padding-left: 0; padding-right: 0; }
+  .gt__board { padding: var(--sp-3) var(--sp-2); }
+}
