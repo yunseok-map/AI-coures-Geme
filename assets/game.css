@@ -69,10 +69,6 @@
 
 .actionbar { display: flex; gap: var(--sp-2); margin-top: var(--sp-4); }
 .actionbar button { flex: 1; }
-/* `display: flex` 는 브라우저 기본 규칙의 `[hidden] { display: none }` 보다 세다.
-   그래서 hidden 을 걸어도 버튼 줄이 그대로 보인다 — 실제로 예측형 판에서
-   아직 걸지도 않았는데 "다음" 이 떠 있었다. 여기서 한 번 되돌려 둔다. */
-.actionbar[hidden] { display: none; }
 
 /* ---------- 판정 패널 ----------
    맞았는지 틀렸는지가 화면 폭 전체를 쓰며 아래에서 올라온다.

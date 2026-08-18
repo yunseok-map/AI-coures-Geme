@@ -89,6 +89,13 @@ button:disabled {
   box-shadow: none;
 }
 
+/* hidden 은 언제나 숨긴다.
+   브라우저 기본 규칙은 `[hidden] { display: none }` 인데, 우리가 어딘가에
+   `display: flex` 나 `grid` 를 적어 두면 그쪽이 더 세서 **hidden 을 걸어도 안 사라진다.**
+   두 번 겪었다 — 아직 걸지도 않았는데 떠 있던 "다음" 버튼(.actionbar),
+   그리고 결과 화면에서 안 없어지던 조립대. 자리마다 다시 적지 않도록 여기서 못 박는다. */
+[hidden] { display: none !important; }
+
 a { color: var(--mark); }
 
 /* 포커스 링을 절대 없애지 않는다.

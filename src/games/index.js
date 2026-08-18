@@ -18,7 +18,7 @@ export const manifest = [
   // ---- 챕터 2 — 도구 구분 ★ ----
   { id: 'where-to-work',    no: 5,  chapter: 2, engine: 'A', required: true,  ready: true,
     title: '어디서 할까?',      learn: '프로젝트 · 아티팩트 · CLI 에이전트 · Cowork' },
-  { id: 'model-or-product', no: 6,  chapter: 2, engine: 'A', required: true,  ready: true,
+  { id: 'model-or-product', no: 6,  chapter: 2, engine: 'L', required: true,  ready: true,
     title: '모델이냐 제품이냐',  learn: '모델 · 제품 · 표면' },
   { id: 'name-trap',        no: 7,  chapter: 2, engine: 'P', required: true,  ready: true,
     title: '이름에 속지 마라',   learn: 'CLI 에이전트 · Codex의 정체' },
