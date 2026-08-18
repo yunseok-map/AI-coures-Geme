@@ -1,0 +1,232 @@
+/* ============================================================
+   엔진 R — 실시간 관제 (dp__*)
+
+   화면이 말해야 하는 것 셋:
+     ① 시간이 간다        → 위쪽 시계 막대가 오른쪽으로 찬다
+     ② 대기줄은 세 칸뿐   → 빈 칸이 보여야 "넘친다"가 위협이 된다
+     ③ 창구에 남는 것     → 프로젝트에 올린 자료가 이름으로 남아야
+                            "두 번째부터 빨라진다"가 눈으로 이어진다
+   ============================================================ */
+
+.dp__top { margin-top: var(--sp-4); }
+
+.dp__clock {
+  position: relative;
+  height: 10px;
+  background: var(--surface-well);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+.dp__clock__fill {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--mark);
+  border-radius: var(--radius-pill);
+  transition: width 120ms linear;
+}
+.dp__clock.is-late .dp__clock__fill { background: var(--accent); }
+
+.dp__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  margin-top: var(--sp-2);
+  font-size: var(--fs-aux);
+  color: var(--muted);
+}
+.dp__stat b { font-size: var(--fs-label); color: var(--ink); }
+.dp__stat--bad b { color: var(--fail-deep); }
+.dp__stat--time {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  color: var(--ink);
+}
+
+/* ---------- 대기줄 ---------- */
+
+.dp__queue { position: relative; margin-top: var(--sp-4); }
+.dp__cap {
+  font-size: var(--fs-aux);
+  color: var(--muted);
+  margin-bottom: var(--sp-2);
+}
+.dp__rail {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-2);
+}
+/* 빈 칸이 보여야 넘치는 것이 위협이 된다 */
+.dp__slot--empty {
+  min-height: 64px;
+  border: 2px dashed var(--hair);
+  border-radius: var(--radius-sm);
+}
+.dp__rail.is-full .dp__slot--empty { border-color: var(--accent); }
+
+.dp__job {
+  min-height: 64px;
+  padding: var(--sp-2);
+  font: inherit;
+  text-align: left;
+  color: var(--ink);
+  background: var(--card);
+  border: var(--border-w) solid var(--edge);
+  border-bottom-width: var(--lip);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--lift-1);
+  cursor: pointer;
+  transition: transform var(--dur-press) var(--ease),
+              border-color var(--dur-tap) var(--ease);
+}
+.dp__job:hover { border-color: var(--mark); transform: translateY(var(--rise)); }
+.dp__job:active { transform: translateY(2px); border-bottom-width: var(--border-w); }
+.dp__job__text {
+  display: block;
+  font-size: var(--fs-aux);
+  line-height: 1.4;
+}
+/* 집어 든 것. 클래스를 겹쳐 쓰는 이유는 mech.css 의 .bt__pick 주석과 같다. */
+.dp__job.dp__job--armed {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--on-mark);
+  box-shadow: var(--gloss), var(--lift-2);
+}
+/* 되돌아온 것 — 오답 표시가 아니라 "시간만 먹고 왔다"는 자국이다 */
+.dp__job.dp__job--back { border-color: var(--accent); background: var(--accent-12); }
+.dp__job__back {
+  display: inline-block;
+  margin-top: 2px;
+  font-size: var(--fs-aux);
+  font-weight: 700;
+  color: var(--accent-deep);
+}
+
+/* ---------- 창구 ---------- */
+
+.dp__desks {
+  position: relative;
+  display: grid;
+  /* 200px 인 이유: 창구가 다섯이라 3+2 로 떨어져야 줄이 고르다.
+     148·160px 로 두었더니 넓은 화면에서 4+1 이 되어 마지막 하나가 외따로 남았다. */
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--sp-2);
+  margin-top: var(--sp-5);
+}
+.dp__desk {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-height: 96px;
+  padding: var(--sp-3);
+  font: inherit;
+  text-align: left;
+  color: var(--ink);
+  background: var(--card);
+  border: var(--border-w) solid var(--edge);
+  border-bottom-width: var(--lip);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: border-color var(--dur-tap) var(--ease),
+              box-shadow var(--dur-tap) var(--ease);
+}
+.dp__desk__name { font-size: var(--fs-label); font-weight: 700; }
+.dp__desk__note { font-size: var(--fs-aux); color: var(--muted); line-height: 1.35; }
+.dp__desk__now {
+  margin-top: auto;
+  font-size: var(--fs-aux);
+  font-weight: 600;
+  color: var(--mark-deep);
+}
+.dp__desk__now:empty { display: none; }
+
+.dp__desk__bar {
+  align-self: stretch;
+  height: 6px;
+  margin-top: var(--sp-1);
+  background: var(--surface-well);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+.dp__desk__bar i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--mark);
+  transition: width 120ms linear;
+}
+/* 창구에 남아 있는 것 — 이 줄이 이 판의 절반이다 */
+.dp__desk__keep {
+  font-size: var(--fs-aux);
+  font-weight: 600;
+  color: var(--pass-deep);
+}
+.dp__desk__keep:empty { display: none; }
+
+.dp__desk--busy { border-color: var(--mark); box-shadow: var(--lift-2); }
+/* 일감을 집은 동안에만 "여기 놓을 수 있다"가 켜진다 */
+.dp__desk--open { border-style: dashed; border-color: var(--mark); background: var(--mark-08); }
+
+/* ---------- 떠오르는 글자 ---------- */
+
+.dp__pop {
+  position: absolute;
+  left: 50%;
+  top: var(--sp-2);
+  transform: translateX(-50%);
+  z-index: 3;
+  padding: 2px var(--sp-2);
+  font-size: var(--fs-aux);
+  font-weight: 700;
+  white-space: nowrap;
+  border-radius: var(--radius-pill);
+  pointer-events: none;
+}
+.dp__pop--go  { background: var(--ink); color: var(--on-mark); }
+.dp__pop--ok  { background: var(--pass); color: var(--on-mark); }
+.dp__pop--bad { background: var(--fail); color: var(--on-mark); }
+.dp__pop--say {
+  max-width: 92%;
+  white-space: normal;
+  text-align: center;
+  background: var(--ink);
+  color: var(--on-mark);
+  box-shadow: var(--lift-2);
+}
+.dp__desk { position: relative; }
+
+/* ---------- 멈춤 안내 ---------- */
+
+.dp__veil {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-6);
+  text-align: center;
+  background: var(--ink-45);
+  backdrop-filter: blur(2px);
+}
+.dp__veil__t { font-size: var(--fs-hero); color: var(--on-mark); }
+.dp__veil__b {
+  max-width: 34ch;
+  font-size: var(--fs-label);
+  line-height: 1.6;
+  color: var(--on-mark);
+}
+
+/* 좁은 화면에서는 창구 다섯 줄이 화면 아래로 넘어간다. 실시간 판이라
+   안 보이는 창구는 없는 창구다 — 그래서 여기서만 칸을 눌러 접는다.
+   360×640 에서 창구 마지막 줄이 화면 안에 들어오는 것을 기준으로 잡았다. */
+@media (max-width: 420px) {
+  .dp__desks { grid-template-columns: 1fr 1fr; margin-top: var(--sp-3); }
+  .dp__desk { min-height: 72px; padding: var(--sp-2); }
+  .dp__desk__note { line-height: 1.25; }
+  .dp__job, .dp__slot--empty { min-height: 54px; }
+}

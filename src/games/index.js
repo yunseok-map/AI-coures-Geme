@@ -16,7 +16,7 @@ export const manifest = [
     title: '자료 찾아오기',     learn: 'RAG · 임베딩·벡터DB' },
 
   // ---- 챕터 2 — 도구 구분 ★ ----
-  { id: 'where-to-work',    no: 5,  chapter: 2, engine: 'A', required: true,  ready: true,
+  { id: 'where-to-work',    no: 5,  chapter: 2, engine: 'R', required: true,  ready: true,
     title: '어디서 할까?',      learn: '프로젝트 · 아티팩트 · CLI 에이전트 · Cowork' },
   { id: 'model-or-product', no: 6,  chapter: 2, engine: 'L', required: true,  ready: true,
     title: '모델이냐 제품이냐',  learn: '모델 · 제품 · 표면' },
