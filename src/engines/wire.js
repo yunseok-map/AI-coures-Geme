@@ -13,7 +13,7 @@
 // 판정은 game.simulate({ links, nodes, sched }) 가 한다. 엔진은 무슨 일인지 모른다.
 
 import { el, esc, say, Bin, header, actions, runner } from './base.js';
-import { shake, enter, pulse, wait, isReduced } from '../core/motion.js';
+import { shake, enter, pulse, wait, isReduced, drawLine } from '../core/motion.js';
 import { eulReul } from '../core/ko.js';
 import { schedule, wouldCycle, normalize } from '../core/graph.js';
 
@@ -222,6 +222,10 @@ export function mount(root, game, ctx) {
            `C ${b.x - R} ${midY}, ${b.x - R} ${b.y}, ${b.x} ${b.y}`;
   }
 
+  /** 이미 그어 본 선의 모양(d). 창 크기가 바뀌어 다시 그릴 때는
+      같은 모양이면 다시 긋지 않는다 — 안 그러면 스크롤할 때마다 전부 다시 그어진다. */
+  const drawn = new Set();
+
   function drawWires() {
     const r = board.getBoundingClientRect();
     if (!r.width) return;
@@ -258,6 +262,9 @@ export function mount(root, game, ctx) {
       line.dataset.to = l.to;
 
       wireLayer.append(hit, line);
+      // 새로 생긴 선만 그어진다. 이미 있던 선까지 다시 그으면
+      // 하나 이을 때마다 화면 전체가 다시 그려져서 어느 것이 새 것인지 모른다.
+      if (!drawn.has(dPath)) { drawn.add(dPath); drawLine(line, { ms: 380 }); }
     }
   }
 

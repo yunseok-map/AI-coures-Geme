@@ -24,13 +24,21 @@
 import gsap from '../../assets/vendor/gsap/gsap.esm.js';
 import Flip from '../../assets/vendor/gsap/Flip.esm.js';
 import SplitText from '../../assets/vendor/gsap/SplitText.esm.js';
+import DrawSVGPlugin from '../../assets/vendor/gsap/DrawSVGPlugin.esm.js';
+import CustomEase from '../../assets/vendor/gsap/CustomEase.esm.js';
 import { strong } from './text.js';
 
-gsap.registerPlugin(Flip, SplitText);
+gsap.registerPlugin(Flip, SplitText, DrawSVGPlugin, CustomEase);
+
+// 이 게임의 곡선. 기성 이징을 그대로 쓰면 움직임도 남의 것처럼 보인다.
+//   swift  — 빠르게 튀어나가 길게 눕는다. 화면에 들어오는 것 전부가 이걸 쓴다.
+//   settle — 목표를 아주 살짝 지나쳤다가 앉는다. 물건이 자리를 잡는 느낌.
+CustomEase.create('swift',  'M0,0 C0.12,0.62 0.18,1 1,1');
+CustomEase.create('settle', 'M0,0 C0.16,0.84 0.24,1.06 1,1');
 
 // GSAP 기본값을 이 게임의 성격에 맞춘다. 교육 자료라 움직임이 빠르고 짧아야 한다 —
 // 느린 연출은 두 번째 판부터 기다리는 시간이 된다.
-gsap.defaults({ duration: 0.32, ease: 'power2.out', overwrite: 'auto' });
+gsap.defaults({ duration: 0.34, ease: 'swift', overwrite: 'auto' });
 
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
 export const isReduced = () => reduced.matches;
@@ -253,15 +261,78 @@ export function spin(el, on) {
 
 // ---------------------------------------------------------------- 화면 전환
 
-/** 화면이 바뀔 때. 왼쪽에서 들어오면 전진, 오른쪽이면 뒤로 가는 느낌이다. */
+/**
+ * 화면이 바뀔 때. 왼쪽에서 들어오면 전진, 오른쪽이면 뒤로 가는 느낌이다.
+ *
+ * 예전에는 화면 전체가 통째로 한 덩어리로 슥 들어왔다. 그러면 어디를 봐야 하는지가
+ * 안 정해진다 — 모든 것이 같은 순간에 같은 속도로 오기 때문이다.
+ * 지금은 **제목이 먼저 서고, 그 아래가 뒤따른다.** 제목은 글자 단위로 선다
+ * (SplitText). 0.1초 남짓 차이인데 시선이 시작점을 갖는다.
+ *
+ * SplitText 는 되돌리기(revert)를 반드시 불러야 한다. 안 그러면 쪼갠 span 이
+ * 남아서 다음 화면의 글자 선택·줄바꿈이 이상해진다.
+ */
 export function stageIn(el, back = false) {
   if (!el) return Promise.resolve();
   const show = () => gsap.set(el, { opacity: 1, x: 0, clearProps: 'transform' });
   if (isReduced()) { show(); return Promise.resolve(); }
-  const guard = setTimeout(show, 900);
-  return gsap.fromTo(el,
-    { opacity: 0, x: back ? -18 : 18 },
-    { opacity: 1, x: 0, duration: sec(300), ease: 'power2.out' }
+
+  const title = el.querySelector('.stage__title');
+  // 제목을 품고 있는 덩어리(머리글)는 빼고 나머지가 뒤따른다.
+  // 머리글까지 같이 흔들면 제목이 글자 단위로 서는 것이 안 보인다.
+  const rest = [...el.children].filter(n => !title || !n.contains(title));
+
+  let split = null;
+
+  // 안전망은 **el 만이 아니라 이 연출이 건드린 것 전부**를 되돌려야 한다.
+  // 처음에는 el 만 되돌렸다. 그랬더니 창이 가려진 채로 화면을 넘기면
+  // 머리글만 뜨고 나머지가 통째로 투명한 채 남았다 — 판이 안 보였다.
+  const showAll = () => {
+    show();
+    if (rest.length) gsap.set(rest, { opacity: 1, y: 0, clearProps: 'transform' });
+    if (split) { try { split.revert(); } catch { /* 이미 지워짐 */ } split = null; }
+  };
+  const guard = setTimeout(showAll, 1100);
+
+  const tl = gsap.timeline({ defaults: { ease: 'swift' } });
+
+  tl.fromTo(el, { opacity: 0, x: back ? -14 : 14 },
+                { opacity: 1, x: 0, duration: sec(260) });
+
+  if (title && title.textContent.trim().length <= 24) {
+    try {
+      split = new SplitText(title, { type: 'chars' });
+      tl.fromTo(split.chars,
+        { opacity: 0, yPercent: 55 },
+        { opacity: 1, yPercent: 0, duration: sec(340), stagger: sec(22), ease: 'settle' }, 0.04);
+    } catch { split = null; }
+  }
+
+  if (rest.length) {
+    tl.fromTo(rest, { opacity: 0, y: 10 },
+      { opacity: 1, y: 0, duration: sec(300), stagger: sec(38) }, 0.12);
+  }
+
+  return tl.then(() => { clearTimeout(guard); showAll(); });
+}
+
+/**
+ * SVG 선이 **그려진다.** 배선판·증거판처럼 "잇는다"가 조작인 판에서,
+ * 선이 툭 나타나는 것과 끝에서 끝으로 그어지는 것은 전혀 다르게 읽힌다 —
+ * 후자만 "내가 이었다"가 된다.
+ *
+ * @param {SVGPathElement|SVGPathElement[]} paths
+ * @param {{ ms?: number, each?: number, from?: boolean }} opts from=false 면 지운다
+ */
+export function drawLine(paths, opts = {}) {
+  const list = toList(paths);
+  if (!list.length) return Promise.resolve();
+  const ms = opts.ms ?? 420;
+  const show = () => gsap.set(list, { drawSVG: '100%' });
+  if (isReduced()) { show(); return Promise.resolve(); }
+  const guard = setTimeout(show, ms + (opts.each ?? 0) * list.length + 500);
+  return gsap.fromTo(list, { drawSVG: '0%' },
+    { drawSVG: '100%', duration: sec(ms), stagger: sec(opts.each ?? 0), ease: 'swift' }
   ).then(() => { clearTimeout(guard); show(); });
 }
 
@@ -572,4 +643,4 @@ export function animate(target, opts = {}) {
   return tween.then(() => {});
 }
 
-export { gsap, Flip, SplitText };
+export { gsap, Flip, SplitText, DrawSVGPlugin, CustomEase };

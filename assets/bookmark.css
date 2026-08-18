@@ -1,0 +1,177 @@
+/* 떠 있는 도감책. 접두사 bk__
+   화면 오른쪽에 붙어 있고, 눌리면 왼쪽으로 펼쳐진다. */
+
+.bk {
+  position: fixed;
+  right: var(--sp-3);
+  bottom: calc(var(--sp-5) + env(safe-area-inset-bottom));
+  z-index: 40;
+  /* 날개는 위쪽 두 귀퉁이, 책은 아래 가운데. transform 으로 가운데를 잡지 않는다 —
+     GSAP 이 책과 날개의 transform 을 애니메이션해서 통째로 덮어쓰기 때문이다. */
+  display: flex; align-items: flex-end; justify-content: center;
+  width: 88px; height: 56px;
+  padding: 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  cursor: pointer;
+  /* 떠 있는 물건이라 hover 로 더 뜨지 않는다 — 이미 떠 있다 */
+  transition: filter var(--dur-tap);
+}
+.bk:hover:not(:disabled) { transform: none; box-shadow: none; filter: brightness(1.05); }
+.bk:active:not(:disabled) { transform: none; border-bottom-width: 0; }
+
+/* ---- 날개 ----
+   깃털 세 장짜리 한 장을 그려 두고 왼쪽은 뒤집어 쓴다.
+   책 **뒤가 아니라 위쪽**으로 벌린다 — 뒤에 두면 책에 가려서 몸통은 안 보이고
+   바깥 끝만 남아 홑화살괄호처럼 읽혔다. */
+.bk__wing {
+  position: absolute;
+  top: 0;
+  width: 34px; height: 30px;
+  fill: var(--card);
+  stroke: var(--ink);
+  stroke-width: 2.6;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+.bk__wing--l { left: 0;  transform-origin: right bottom; }
+.bk__wing--r { right: 0; transform-origin: left bottom; }
+
+/* ---- 책 ---- */
+.bk__book {
+  position: relative;
+  display: flex; align-items: center;
+  width: 52px; height: 38px;
+  padding: 0 5px 0 0;
+  background: var(--ink);
+  color: var(--on-mark);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  box-shadow: var(--lift-2);
+  z-index: 1;
+}
+.bk__spine {
+  width: 5px; align-self: stretch;
+  background: var(--mark);
+  border-right: 1px solid var(--mark-deep);
+}
+.bk__face {
+  display: flex; flex-direction: column; align-items: center;
+  padding-left: 5px;
+  line-height: 1;
+}
+.bk__face b { font-size: var(--fs-label); font-weight: var(--w-black); }
+.bk__face i {
+  font-style: normal;
+  font-size: 8px; letter-spacing: .02em; white-space: nowrap;
+  opacity: .72; margin-top: 3px;
+}
+
+/* 아직 하나도 못 땄을 때 — 조용히 있는다 */
+.bk--empty .bk__book { background: var(--muted); }
+.bk--empty .bk__spine { background: var(--ink-45); border-right-color: var(--ink); }
+
+/* 새로 땄을 때 등에 불이 들어온다 */
+.bk--cheer .bk__spine { background: var(--accent); border-right-color: var(--accent-deep); }
+
+.bk--open .bk__book { background: var(--mark-deep); }
+
+/* ---- 펼친 면 ---- */
+.bk__panel {
+  position: fixed;
+  right: calc(88px + var(--sp-2));
+  bottom: calc(var(--sp-5) + env(safe-area-inset-bottom));
+  z-index: 39;
+  width: min(340px, calc(100vw - 88px - var(--sp-4)));
+  max-height: min(62dvh, 460px);
+  display: flex; flex-direction: column;
+  background: var(--card);
+  border: var(--border-w) solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: var(--lift-2);
+  overflow: hidden;
+}
+
+.bk__head {
+  display: flex; align-items: baseline; gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--ink);
+  color: var(--on-mark);
+}
+.bk__head b { font-size: var(--fs-title); font-weight: var(--w-black); }
+.bk__head span { font-size: var(--fs-aux); opacity: .78; }
+.bk__more {
+  margin-left: auto;
+  color: var(--on-mark);
+  font-size: var(--fs-aux); font-weight: 700;
+  text-decoration: underline;
+  min-height: var(--tap-min);
+  display: flex; align-items: center;
+}
+
+.bk__list { overflow-y: auto; padding: var(--sp-2); }
+
+.bk__ch {
+  font-size: var(--fs-tag); font-weight: 800;
+  letter-spacing: .06em; color: var(--muted);
+  padding: var(--sp-2) var(--sp-1) var(--sp-1);
+  border-bottom: 1px solid var(--hair);
+  margin-bottom: var(--sp-1);
+}
+.bk__ch b { color: var(--mark); }
+
+.bk__row {
+  display: flex; flex-direction: column; align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  min-height: var(--tap-min);
+  padding: var(--sp-2);
+  margin-bottom: 2px;
+  text-align: left;
+  background: none;
+  border: 0; border-left: 3px solid var(--mark-28);
+  border-radius: 0;
+  box-shadow: none;
+}
+.bk__row:hover:not(:disabled) {
+  transform: none; box-shadow: none;
+  background: var(--surface-well);
+  border-left-color: var(--mark);
+}
+.bk__row:active:not(:disabled) { transform: none; }
+.bk__row--open { background: var(--surface-well); border-left-color: var(--mark); }
+
+.bk__t { font-weight: 800; font-size: var(--fs-label); }
+.bk__a { font-size: var(--fs-aux); color: var(--muted); line-height: 1.45; }
+.bk__x {
+  display: block;
+  overflow: hidden;
+  margin-top: var(--sp-1);
+  padding-top: var(--sp-1);
+  border-top: 1px dashed var(--hair);
+  font-size: var(--fs-aux); line-height: 1.55;
+}
+
+.bk__none {
+  padding: var(--sp-5) var(--sp-3);
+  text-align: center;
+  color: var(--muted); font-size: var(--fs-aux); line-height: 1.7;
+}
+
+/* 좁은 화면 — 책을 작게 하고 면은 화면 폭에 맞춘다 */
+@media (max-width: 420px) {
+  .bk { width: 80px; height: 52px; right: var(--sp-2); }
+  .bk__book { width: 48px; height: 36px; }
+  .bk__wing { width: 31px; height: 28px; }
+  .bk__panel {
+    right: var(--sp-2); left: var(--sp-2);
+    width: auto;
+    bottom: calc(var(--sp-5) + 58px + env(safe-area-inset-bottom));
+  }
+}
+
+/* 움직임을 줄여 달라고 하면 날개는 가만히 있는다 */
+@media (prefers-reduced-motion: reduce) {
+  .bk__wing { transform: none !important; }
+}

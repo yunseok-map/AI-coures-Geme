@@ -9,6 +9,7 @@ import { renderCodex } from './shell/codex.js';
 import { renderToolbook } from './shell/toolbook.js';
 import { renderReport } from './shell/report.js';
 import { showDebrief, hideDebrief } from './shell/debrief.js';
+import { mountBookmark, refresh as refreshBook } from './shell/bookmark.js';
 import { stageIn, ripple } from './core/motion.js';
 
 // 모듈이 실행됐다는 표시. index.html 의 file:// 안내가 이 값을 본다.
@@ -43,6 +44,9 @@ const topbarHost = document.createElement('header');
 const stage = document.createElement('main');
 stage.className = 'stage';
 app.append(topbarHost, stage);
+
+// 화면 옆에 떠 있는 도감책. 셸 바깥(body)에 붙여서 화면이 바뀌어도 살아 있다.
+mountBookmark(document.body);
 
 let activeEngine = null;
 
@@ -133,6 +137,7 @@ async function openGame(id) {
       // 기록이 먼저 들어가므로 패널 쪽에서는 알 수 없다.
       const newTerms = state.record(id, result);
       renderTopbar(topbarHost, parse());   // 진행도·랭크를 즉시 반영
+      refreshBook();                       // 떠 있는 책이 퍼덕인다
 
       const next = nextOf(id, (x) => state.isCleared(x));
       const allRequiredDone = manifest

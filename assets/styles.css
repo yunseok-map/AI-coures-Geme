@@ -31,16 +31,11 @@ body {
   overscroll-behavior-y: none;
   word-break: keep-all;      /* 한글이 단어 중간에서 잘리지 않게 */
 
-  /* 도면지. 잔눈금(8px)과 굵은 눈금(40px) 두 겹이다 —
-     한 겹짜리 모눈은 그냥 배경 무늬로 보이는데, 두 겹이 되면 눈금자로 읽힌다.
-     이미지 없이 그라디언트로만 만든다(바깥 요청 0건). */
+  /* 모눈은 뺐다. 바탕에 격자를 깔면 그 위의 모든 것이 격자와 어긋나 보이고,
+     화면이 값싸 보인다 — 무늬는 내용이 아닌데 시선을 가장 먼저 가져간다.
+     지금은 종이 한 장이다. 위에서 빛이 든 것처럼 아주 옅게만 밝다. */
   background-color: var(--paper);
-  background-image:
-    linear-gradient(var(--ink-12) 1px, transparent 1px),
-    linear-gradient(90deg, var(--ink-12) 1px, transparent 1px),
-    linear-gradient(var(--ink-04) 1px, transparent 1px),
-    linear-gradient(90deg, var(--ink-04) 1px, transparent 1px);
-  background-size: 50px 50px, 50px 50px, 10px 10px, 10px 10px;
+  background-image: radial-gradient(120% 80% at 50% 0%, var(--paper-lit), var(--paper) 60%);
   background-attachment: fixed;
 }
 

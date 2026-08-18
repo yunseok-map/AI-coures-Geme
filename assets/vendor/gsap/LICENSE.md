@@ -9,13 +9,20 @@ GSAP is distributed under GreenSock's standard "no charge" license:
 
 | 파일 | 크기 | 무엇 |
 |---|---|---|
-| `gsap.esm.js` | 70,276 B | 코어 |
-| `Flip.esm.js` | 24,298 B | 물건이 A자리에서 B자리로 옮겨가는 연출 |
-| `SplitText.esm.js` | 7,074 B | 글자를 한 자씩 세우는 연출 |
+| `gsap.esm.js` | 70,182 B | 코어 |
+| `Flip.esm.js` | 24,204 B | 물건이 A자리에서 B자리로 옮겨가는 연출 |
+| `SplitText.esm.js` | 6,980 B | 글자를 한 자씩 세우는 연출 |
+| `DrawSVGPlugin.esm.js` | 4,060 B | 선이 끝에서 끝으로 **그어지는** 연출 (배선·증거판) |
+| `CustomEase.esm.js` | 6,641 B | 이 게임 전용 곡선(`swift` · `settle`) |
+
 
 버전 **3.13.0**. jsDelivr 가 만든 ESM 묶음을 받아 저장소에 넣었다 —
 빌드 단계 없이 `import` 로 바로 쓰기 위해서다.
-받은 주소는 `https://cdn.jsdelivr.net/npm/gsap@3.13.0/+esm` (그리고 `/Flip/+esm`, `/SplitText/+esm`).
+받은 주소는 `https://cdn.jsdelivr.net/npm/gsap@3.13.0/+esm` 와 같은 꼴이다
+(`/Flip/+esm` · `/SplitText/+esm` · `/DrawSVGPlugin/+esm` · `/CustomEase/+esm`).
+
+**받은 뒤 `//# sourceMappingURL=` 주석을 지운다.** 그 줄이 남아 있으면 개발자도구를 여는
+순간 브라우저가 jsDelivr 로 소스맵을 받으러 나간다 — 외부 요청 0건이 깨진다.
 **CDN 을 가리키지 않는다.** 파일은 저장소 안에 있고 상대경로로만 불린다.
 
 ## 이 라이선스로 무엇이 되고 무엇이 안 되나
