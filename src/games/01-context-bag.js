@@ -1,124 +1,167 @@
-// 미니게임 1 — 가방 싸기 (엔진 C 조립형)
+// 미니게임 1 — 가방 싸기 (엔진 C 조립형 / 회차형)
 // 배우는 것: 토큰 · 컨텍스트 윈도우 · 컨텍스트 로트
 //
-// 설계 의도: "많이 넣으면 좋다"는 직관이 틀렸다는 걸 말로 설명하지 않는다.
-// 칸이 넘치는 순간 먼저 넣은 자료가 회색으로 밀려나는 걸 눈으로 보게 하고,
-// 실행했을 때 AI가 바로 그 자료를 못 봐서 틀린 답을 내놓는 걸 겪게 한다.
+// 설계 의도: 이 개념의 성질은 **조용히 사라진다**는 것이다. 그래서 자료를 한 번에
+// 주지 않고 회차마다 들여보낸다. 칸이 넘치면 오래된 것이 아무 말 없이 흐려지고,
+// 흐려진 자료를 나중에 꺼내 쓰면 **틀린 값**이 되어 있다. 셋을 하나로 접어 칸을
+// 벌 수 있지만 그때마다 안에 있던 세부 하나가 영구히 사라진다 — 무엇이 사라졌는지는
+// 그때 안 알려 준다. 마감에 하필 그것을 물어본다.
+//
+// 규칙 계산은 전부 core/bag.js 가 한다. 화면과 판정이 같은 함수를 봐야 한다.
 
 import { Run, applyFault, applyGain } from '../core/sim.js';
+import { look } from '../core/bag.js';
 
-const KEY = ['sales-now', 'sales-prev'];
-const NOISE = ['weekly-memo', 'anniversary', 'mail-archive'];
+/** 마감에 물어보는 것 — 이 넷이 이 판의 판정 전부다 */
+const NEED = [
+  ['sep',   '9월 하락폭'],
+  ['base',  '지난 분기와의 차이'],
+  ['churn', '거래처가 떠난 이유'],
+  ['ret',   '반품 사유 1위']
+];
 
 export default {
   id: 'context-bag',
   engine: 'C',
   title: '가방 싸기',
-  subtitle: 'AI에게 일을 시키기 전에, 무엇을 들려 보낼지 고른다',
+  subtitle: '자료는 회차마다 들어온다. AI의 책상은 6칸뿐이다',
   chapter: 1,
   required: true,
   concept: ['토큰', '컨텍스트 윈도우', '컨텍스트 로트'],
   checkedAt: '2026-08',
 
   data: {
-    briefCap: '오늘의 요청',
-    brief: '“이번 분기 매출이 왜 떨어졌는지 3줄로 정리해줘.”\n' +
-           'AI의 책상은 6칸뿐이다. 넘치면 먼저 올려둔 것이 밀려난다.',
-    // 칸 하나가 무엇인지 여기서 한 번 짚어 준다. 이 판이 '토큰'을 도감에 넣어 주는데,
-    // 화면에서 토큰이라는 말을 한 번도 안 보여 주면 겪지 않은 용어를 얻는 셈이 된다.
+    briefCap: '이번 주 할 일',
+    brief: '“이번 분기 매출이 왜 떨어졌는지 보고서를 써 주세요.”\n' +
+           '자료는 회차마다 들어온다. 무엇을 물어볼지는 마감에 정해진다.',
     budgetLabel: 'AI의 책상',
     budgetUnit: '한 칸이 대략 1,000토큰',
     budget: 6,
-    trayLabel: '들려 보낼 자료 — 눌러서 올리고, 다시 누르면 내린다',
-    runLabel: '이대로 시켜 본다',
-    runCaption: 'AI가 책상 위의 것만 보고 일한다',
+    dropLabel: '내리기',
+    nextLabel: '다음 회차',
+    runLabel: '보고서 쓰기',
+    runCaption: 'AI가 책상 위의 것만 보고 쓴다',
+    fold: { label: '셋을 하나로', made: '요약본', pickTag: '선택' },
 
+    // 회차가 바뀌면 자료가 스스로 들어온다. 들어오는 **순서**가 곧 오래된 순서이고,
+    // 접을 때 무엇이 사라지는지도 이 순서가 정한다.
+    rounds: [
+      { cap: '1회차 · 월요일',
+        note: '책상 위의 것을 눌러 고른다. 셋을 고르면 하나로 접을 수 있다',
+        arrive: ['q3', 'notice', 'q2'] },
+      { cap: '2회차 · 수요일',
+        note: '다음 회차에도 자료는 들어온다',
+        arrive: ['memo', 'board'] },
+      { cap: '3회차 · 금요일',
+        note: '',
+        arrive: ['voc', 'rival'] },
+      { cap: '마감 · 다음 주 월요일',
+        note: '책상에 남은 것만으로 쓴다',
+        askCap: '마감 — 이제 무엇을 물어볼지 정해졌다',
+        ask: '“3줄로 정리해 주세요 — 9월 하락폭, 지난 분기와의 차이, ' +
+             '거래처가 떠난 이유, 반품 사유 1위.”',
+        arrive: [] }
+    ],
+
+    // details 는 그 자료 안에 든 세부다. value 는 맞는 값, wrong 은 흐려진 뒤에
+    // 읽히는 값이다. AI는 둘을 구별하지 못한 채 wrong 을 자신 있게 적는다.
     parts: [
-      { id: 'sales-now',   label: '이번 분기 매출표',      cost: 2 },
-      { id: 'sales-prev',  label: '지난 분기 매출표',      cost: 2 },
-      { id: 'format',      label: '원하는 답 형식 예시',   cost: 1 },
-      { id: 'competitor',  label: '경쟁사 가격 변동 요약', cost: 2 },
-      { id: 'weekly-memo', label: '영업팀 주간 메모 30건', cost: 4 },
-      { id: 'anniversary', label: '창립기념일 안내 메일',  cost: 1 },
-      { id: 'mail-archive',label: '전사 메일 보관함',      cost: 5 }
+      { id: 'q3', label: '이번 분기 매출표', cost: 2, details: [
+        { id: 'sep', label: '9월 하락폭',
+          value: '9월 매출이 18% 떨어졌다', wrong: '9월 매출은 거의 그대로였다' } ] },
+      { id: 'notice', label: '창립기념일 안내 메일', cost: 1, details: [
+        { id: 'party', label: '행사 날짜',
+          value: '행사는 다음 달 둘째 주다', wrong: '행사는 이번 주다' } ] },
+      { id: 'q2', label: '지난 분기 매출표', cost: 2, details: [
+        { id: 'base', label: '지난 분기와의 차이',
+          value: '지난 분기보다 12% 낮다', wrong: '지난 분기보다 2% 높다' } ] },
+      { id: 'memo', label: '영업팀 주간 메모 30건', cost: 2, details: [
+        { id: 'churn', label: '거래처가 떠난 이유',
+          value: '납기가 밀려 세 곳이 떠났다', wrong: '값이 비싸서 세 곳이 떠났다' } ] },
+      { id: 'board', label: '전사 공지 모음', cost: 1, details: [
+        { id: 'dress', label: '복장 규정 변경',
+          value: '다음 달부터 자율 복장이다', wrong: '이번 달부터 자율 복장이다' } ] },
+      { id: 'voc', label: '고객 문의 모음', cost: 2, details: [
+        { id: 'ret', label: '반품 사유 1위',
+          value: '반품 사유 1위는 배송 파손이다', wrong: '반품 사유 1위는 색상 불만이다' } ] },
+      { id: 'rival', label: '경쟁사 가격 변동 요약', cost: 1, details: [
+        { id: 'cut', label: '경쟁사가 값을 내린 시점',
+          value: '지난달 초에 값을 내렸다', wrong: '이번 달에 값을 내렸다' } ] }
     ]
   },
 
   simulate(setup) {
-    const kept = setup.kept.map(p => p.id);
-    const evicted = setup.evicted.map(p => p.id);
-    const has = id => kept.includes(id);
+    const desk = setup.desk;
     const r = new Run();
 
-    r.read(`책상에 올라온 것: ${setup.kept.map(p => p.label).join(', ') || '없음'}`);
+    const shelf = setup.kept.map(p => p.label);
+    r.read(`책상 위의 것만 보고 쓴다 — ${shelf.join(', ') || '아무것도 없다'}`, 320);
 
-    if (evicted.length) {
-      r.warn(`칸이 모자라 밀려난 것: ${setup.evicted.map(p => p.label).join(', ')}`);
+    // 넷을 하나씩 찾아본다. AI는 흐려진 값과 맞는 값을 **구별하지 못한다** —
+    // 그래서 wrong 을 의심 없이 그대로 적는다. 그 태연함이 이 판의 임팩트다.
+    const seen = [];
+    let wrong = 0, gone = 0, blank = 0;
+    for (const [id, ask] of NEED) {
+      const hit = look(desk, id);
+      seen.push([ask, hit]);
+      if (hit.state === 'ok') r.do(`${ask} — ${hit.detail.value}`);
+      else if (hit.state === 'wrong') { r.do(`${ask} — ${hit.detail.wrong}`); wrong++; }
+      else if (hit.state === 'folded') {
+        r.do(`${ask} — 요약본에 그 줄이 없다. 앞뒤에 맞춰 채운다`); gone++;
+      } else { r.warn(`${ask} — 받은 자료에 없다. 비워 둔다`); blank++; }
     }
 
-    // 밀려난 자료가 핵심이면 그 자리에서 결과가 무너진다
-    const lostKey = evicted.filter(id => KEY.includes(id));
-    if (lostKey.length) {
-      r.fail('밀려난 매출표를 찾지 못한다');
-      applyFault(r, 'overflow', 30);
+    // 빈 곳 없이 채워진 보고서가 나온다. 겉만 보면 잘된 결과물이라는 것이 요점이다.
+    r.out(wrong + gone + blank === 0
+      ? '3줄 요약 완성 — 네 가지가 다 자료에서 나왔다'
+      : '3줄 요약 완성 — 빈 곳 없이 채워져 있다');
+
+    // 값을 지어내거나 틀리게 적는 쪽이 비워 두는 쪽보다 비싸다 — 읽는 사람을
+    // 속이기 때문이다. 그중에서도 **내가 접어 놓고 사라진 줄 모른 것**이 가장 비싸다.
+    if (setup.evicted.length) applyFault(r, 'overflow', 12);
+    for (let i = 0; i < wrong; i++) applyFault(r, 'halluc', 24);
+    for (let i = 0; i < gone; i++) applyFault(r, 'rot', 28);
+    r.score -= blank * 14;
+
+    // ---- 되짚기 — 무엇을 언제 잃었는지 여기서 처음 밝힌다 ----
+    r.read('되짚기 — 무엇을 언제 잃었나', 320);
+    for (const [ask, hit] of seen) {
+      if (hit.state === 'wrong') {
+        r.fail(`${ask} — ${hit.at}회차에 흐려졌다. 맞는 값은 “${hit.detail.value}”`);
+      } else if (hit.state === 'folded') {
+        r.fail(`${ask} — ${hit.at}회차에 요약하면서 사라졌다`);
+      } else if (hit.state !== 'ok') {
+        r.read(`${ask} — ${hit.at ? hit.at + '회차에 ' : ''}내가 내렸다`);
+      }
+    }
+    const asked = new Set(NEED.map(x => x[0]));
+    for (const f of desk.log.filter(x => x.kind === 'fold' && x.lost && !asked.has(x.lost)).slice(0, 2)) {
+      r.read(`${f.round}회차 요약에서도 하나가 사라졌다 — ${f.lostLabel}`);
     }
 
-    if (has('sales-now') && has('sales-prev')) {
-      r.do('두 분기 매출표를 나란히 놓고 차이를 계산한다');
-      r.ok('감소 구간을 찾았다');
-    } else if (has('sales-now') || has('sales-prev')) {
-      r.do('한쪽 분기 자료만으로 추세를 추정한다');
-      r.warn('비교할 대상이 없다');
-      applyFault(r, 'halluc', 25);
-      r.fail('“전년 대비 하락”이라고 썼지만 확인한 자료가 없다');
-    } else {
-      r.warn('매출 자료가 없다');
-      applyFault(r, 'halluc', 35);
-      r.fail('그럴듯한 숫자를 지어내 채웠다');
+    if (!setup.evicted.length) applyGain(r, 'lean', 10);
+    if (wrong + gone + blank === 0) {
+      r.ok('네 줄 다 자료를 짚을 수 있다');
+      r.gain('근거 확인', '마감에 필요한 것이 하나도 상하지 않았다', 8);
     }
 
-    const noise = kept.filter(id => NOISE.includes(id));
-    if (noise.length >= 2) {
-      r.read('관련 없는 문서를 훑느라 중간에 있는 내용을 지나친다');
-      applyFault(r, 'rot', 20);
-    } else if (noise.length === 1) {
-      r.read('관련 없는 문서가 하나 섞여 있다');
-      r.score -= 6;
-    }
-
-    if (has('competitor') && has('sales-now')) {
-      r.do('경쟁사 가격 변동과 시점을 맞춰 본다');
-      r.gain('근거 있는 원인', '숫자 변화에 짚을 이유를 찾았다', 6);
-    }
-
-    // 형식 예시를 넣은 것과 잡음 없이 담은 것은 **다른** 잘한 점이다.
-    // 둘 다 'lean'(컨텍스트 엔지니어링)으로 적었더니 결과 화면에 똑같은 줄이
-    // 두 개 떴다 — 같은 문장이 반복되는 화면은 그 자체로 워크슬롭이다.
-    if (has('format')) {
-      r.do('요청한 형식에 맞춰 정리한다');
-      r.gain('형식 지정', '원하는 모양을 예시로 보여 줘서 다시 시킬 일이 없었다', 4);
-    }
-
-    if (kept.length && noise.length === 0 && setup.used <= setup.cap) {
-      applyGain(r, 'lean', 6);
-    }
-
-    r.out(r.faults.length ? '3줄 요약 — 근거가 비어 있다' : '3줄 요약 완성 — 각 줄에 근거 자료가 붙어 있다');
     return r.finish({ pass: 85, partial: 55 });
   },
 
   named: {
-    pass: 'AI의 책상 크기가 **컨텍스트 윈도우**이고, 그 크기를 세는 단위가 **토큰**이다. ' +
-          '필요한 것만 골라 올린 것이 **컨텍스트 엔지니어링**이다.',
-    partial: 'AI의 책상 크기를 **컨텍스트 윈도우**, 그 칸을 세는 단위를 **토큰**이라고 한다. ' +
-             '방금 그 위에서 자료가 밀리고 섞이는 걸 봤다.',
-    fail: '넣을수록 나빠지는 이 현상에 이름이 있다 — **컨텍스트 로트**. ' +
-          '자료가 밀려난 것은 **컨텍스트 윈도우**를 넘겼기 때문이고, 그 칸을 세는 단위가 **토큰**이다.'
+    pass: '자료가 조용히 상하는 이 현상이 **컨텍스트 로트**다. 책상 크기가 ' +
+          '**컨텍스트 윈도우**, 그 칸을 세는 단위가 **토큰**이고, 셋을 하나로 접은 것이 ' +
+          '**컨텍스트 압축**이다.',
+    partial: '방금 자료가 조용히 상한 것이 **컨텍스트 로트**다. 책상 크기를 ' +
+             '**컨텍스트 윈도우**, 그 칸을 세는 단위를 **토큰**이라고 한다.',
+    fail: '경고 없이 흐려지는 이 현상에 이름이 있다 — **컨텍스트 로트**. ' +
+          '자료가 흐려진 것은 **컨텍스트 윈도우**를 넘겼기 때문이고, 그 칸을 세는 단위가 ' +
+          '**토큰**이다.'
   },
 
   debrief: {
-    pass: '핵심 자료만 올려서 AI가 근거를 갖고 답했다. 자료를 고르는 일이 곧 정확도다.\n칸이 남았다고 더 채울 필요는 없다. 넣을수록 가운데 있는 정보를 놓친다.\n실제 업무에서도 “관련 자료 다 넣기”보다 “관련된 3개만”이 낫다.',
-    partial: '자료가 부족하거나 잡음이 섞였다. AI는 없는 것을 지어내서라도 답을 채운다.\n비교하는 질문에는 비교 대상이 반드시 함께 있어야 한다.\n다시 해보면서 무엇이 꼭 필요한지 골라 보라.',
-    fail: '책상이 넘쳐서 먼저 올린 자료가 밀려났고, AI는 그걸 못 본 채로 답을 지어냈다.\n이게 실무에서 “분명히 파일 줬는데 왜 딴소리를 하지?”의 정체다.\n칸 수를 보면서 다시 담아 보라.'
+    pass: '회차가 끝날 때마다 미리 접거나 내려서, 마감에 필요한 넷이 다 남아 있었다.\n요약은 처음과 끝을 남기고 가운데를 흘린다 — 이번엔 흘린 것이 안 쓰는 자료였다.\n실무에서도 “다 넣기”가 아니라 “무엇을 버릴지”가 정확도를 만든다.',
+    partial: '필요한 것 하나가 없거나 상해 있었다. AI는 없다고 말하지 않고 그럴듯하게 채운다.\n요약은 처음과 끝을 남기고 가운데를 흘린다. 무엇이 사라졌는지는 그때 안 알려 준다.\n무엇을 접고 무엇을 내릴지 바꿔서 다시 해보라.',
+    fail: '책상이 넘쳐 오래된 자료가 조용히 흐려졌고, AI는 그걸 모른 채 틀린 값을 적었다.\n이게 실무에서 “분명히 파일 줬는데 왜 딴소리를 하지?”의 정체다.\n회차가 끝날 때마다 칸을 미리 비워 두면 흐려지지 않는다.'
   }
 };

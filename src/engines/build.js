@@ -1,18 +1,19 @@
 // 엔진 C — 조립형. 부품을 골라 넣고 [실행]을 눌러 결과를 본다.
 //
-// 이 엔진이 이 게임의 심장이다. 설명을 읽는 대신 **직접 세팅하고, 돌려보고,
-// 자기 세팅 때문에 결과가 달라지는 걸 눈으로 본다.**
-//
-// 두 가지 배치 방식:
-//   예산형 (data.budget)  칸이 정해진 하나의 통. 넘치면 먼저 넣은 것이 밀려난다 → 컨텍스트 로트
+// 설명을 읽는 대신 **직접 세팅하고, 돌려보고, 자기 세팅 때문에 결과가 달라지는
+// 걸 눈으로 본다.** 배치 방식 셋 — 판정은 언제나 game.simulate(setup) 가 한다:
+//   예산형 (data.budget)  칸이 정해진 하나의 통. 넘치면 먼저 넣은 것이 밀려난다
 //   슬롯형 (data.slots)   역할이 정해진 여러 칸. 부품을 집어 슬롯에 놓는다
-//
-// 판정은 game.simulate(setup) 가 한다. 엔진은 세팅만 모아서 넘긴다.
+//   회차형 (data.rounds)  자료가 회차마다 스스로 들어온다. 넘치면 오래된 것이
+//                        **아무 말 없이** 흐려진다. 계산은 전부 core/bag.js 가 한다
+// 여기에 수리형(data.repair)이 겹칠 수 있다 — 한 번 돌려 보고 고쳐서 다시 돌린다.
 
 import { el, esc, say, Bin, header, actions, runner } from './base.js';
 import { press, shake, enter, flyTo, pulse, wipeIn, dropOut }
   from '../core/motion.js';
 import { hasBatchim, eulReul } from '../core/ko.js';
+import { newDesk, arrive, takeOff, fold, live, dimmed, used as deskUsed, FOLD_N }
+  from '../core/bag.js';
 
 let bin = new Bin();
 export function unmount() { bin.clear(); }
@@ -23,6 +24,7 @@ export function mount(root, game, ctx) {
 
   const d = game.data;
   const useSlots = Array.isArray(d.slots) && d.slots.length > 0;
+  const useRounds = Array.isArray(d.rounds) && d.rounds.length > 0;
   const startedAt = Date.now();
 
   /** 넣은 부품 (예산형) — 넣은 순서를 지킨다. 밀려나는 순서가 이 순서다 */
@@ -32,25 +34,31 @@ export function mount(root, game, ctx) {
   const evicted = [];
   let armed = null;   // 집어 든 부품
 
+  /** 회차형 — 책상 상태(계산은 core/bag.js) · 수리형 — 몇 번째 실행인가 */
+  let desk = newDesk(d.budget ?? 6), roundAt = -1, runNo = 1, locked = false, fell = [];
+  const picked = new Set();
+
   root.innerHTML = '';
   root.append(header(game));
 
+  // 회차형은 마지막 회차에 **그때 처음** 요청이 뜬다. 무엇을 물어볼지 미리 알면
+  // "필요한 것만 남긴다"가 계획 문제가 되고, 모르게 잃는 성질이 사라진다.
+  let ticket = null;
   if (d.brief) {
-    const t = el('article', 'ticket');
-    t.innerHTML = `<div class="ticket__no">${esc(d.briefCap || '상황')}</div>` +
-                  `<div class="ticket__body">${esc(d.brief)}</div>`;
-    root.append(t);
+    ticket = el('article', 'ticket');
+    setTicket(d.briefCap || '상황', d.brief);
+    root.append(ticket);
   }
 
-  // ---- 예산 표시 (예산형) ----
+  // ---- 예산 표시 (예산형 · 회차형) ----
   //
-  // 예전에는 막대 하나 + "3 / 6칸" 숫자였다. 그러면 밀려나는 것이 **부품함에서**
-  // 흐려지기만 해서, 정작 "책상이 꽉 차서 뭔가 떨어졌다"가 안 보였다.
-  // 지금은 칸을 실제 그릇으로 그린다 — 올린 것이 자기 비용만큼 칸을 차지하고,
-  // 넘치면 그 자리에서 떨어져 나간다. 이 판이 가르치는 세 용어가 여기 다 들어 있다:
-  //   토큰(비용) · 컨텍스트 윈도우(칸 수) · 컨텍스트 로트(밀려남)
+  // 막대 하나 + "3 / 6칸" 숫자로는 남은 여유가 안 보여서 겁 없이 큰 것을 올린다.
+  // 칸을 실제 그릇으로 그려야 올리기 전에 세어 본다. 이 판이 가르치는 세 용어가
+  // 여기 다 들어 있다: 토큰(비용) · 컨텍스트 윈도우(칸 수) · 컨텍스트 로트(밀려남)
   let budgetNum = null, budgetBox = null, deskGrid = null;
+  let roundCap = null, dimStrip = null;
   if (!useSlots) {
+    if (useRounds) { roundCap = el('div', 'rd'); root.append(roundCap); }
     budgetBox = el('div', 'budget');
     budgetNum = el('span', 'budget__num');
     budgetBox.append(
@@ -63,13 +71,13 @@ export function mount(root, game, ctx) {
     deskGrid = el('div', 'desk');
     deskGrid.style.setProperty('--cells', String(d.budget ?? 6));
     root.append(budgetBox, deskGrid);
+    // 흐려진 자리. **아무 설명도 붙이지 않는다** — 적는 순간 이 판의 전부가 없어진다.
+    if (useRounds) { dimStrip = el('div', 'dim'); root.append(dimStrip); }
   }
 
   // ---- 슬롯 (슬롯형) ----
-  //
-  // 부품에 reach(열어 준 폭)가 있으면 슬롯마다 **통로**를 굵기로 그린다.
-  // 엔진은 그 숫자의 뜻을 모른다 — 굵게 그리기만 한다. 뜻은 games/ 가 정한다.
-  // 말로 "최소 권한"이라고 적는 대신 굵은 통로가 화면을 먹는 걸 보게 하는 장치다.
+  // 부품에 reach(열어 준 폭)가 있으면 슬롯마다 **통로**를 굵기로 그린다. 엔진은
+  // 그 숫자의 뜻을 모른다 — 굵은 통로가 화면을 먹는 걸 보게 하는 장치다.
   const wired = useSlots && (d.parts || []).some(p => p.reach);
   const slotNodes = new Map();
   if (useSlots) {
@@ -84,59 +92,65 @@ export function mount(root, game, ctx) {
         (wired ? `<div class="slot__wire" aria-hidden="true"></div>` : '') +
         `<div class="slot__cap">${esc(s.label)}<span class="slot__tag"></span></div>` +
         `<div class="slot__items"></div>`;
-      const hit = el('button');
+      const hit = el('button', 'btn-quiet', '여기 놓기');
       hit.type = 'button';
-      hit.className = 'btn-quiet';
-      hit.textContent = '여기 놓기';
       hit.style.marginTop = 'var(--sp-2)';
       hit.hidden = true;
       node.append(hit);
       bin.on(hit, 'click', () => placeInto(s));
       wrap.append(node);
-      slotNodes.set(s.id, {
-        node,
+      slotNodes.set(s.id, { node, hit,
         items: node.querySelector('.slot__items'),
         wire: node.querySelector('.slot__wire'),
-        tag: node.querySelector('.slot__tag'),
-        hit
-      });
+        tag: node.querySelector('.slot__tag') });
     }
     root.append(wrap);
   }
 
-  // ---- 부품함 ----
-  root.append(el('div', 'slot__cap', esc(d.trayLabel || '넣을 수 있는 것 — 눌러서 넣는다')));
-  const tray = el('div', 'parts');
-  root.append(tray);
-
+  // ---- 부품함 (회차형에는 없다 — 자료가 스스로 들어온다) ----
   const partNodes = new Map();
-  for (const p of d.parts) {
-    const b = el('button', 'part' + (p.danger ? ' part--danger' : ''));
-    b.type = 'button';
-    b.innerHTML = `<span>${esc(p.label)}</span>` +
-                  (p.cost ? `<span class="part__cost">${p.cost}칸</span>` : '');
-    if (p.note) b.title = p.note;
-    bin.on(b, 'click', () => tapPart(p, b));
-    tray.append(b);
-    partNodes.set(p.id, b);
+  if (!useRounds) {
+    root.append(el('div', 'slot__cap', esc(d.trayLabel || '넣을 수 있는 것 — 눌러서 넣는다')));
+    const tray = el('div', 'parts');
+    root.append(tray);
+    for (const p of d.parts) {
+      const b = el('button', 'part' + (p.danger ? ' part--danger' : ''));
+      b.type = 'button';
+      b.dataset.cost = p.cost ? `${p.cost}칸` : '';
+      b.innerHTML = `<span>${esc(p.label)}</span>` +
+                    (p.cost ? `<span class="part__cost">${p.cost}칸</span>` : '');
+      if (p.note) b.title = p.note;
+      bin.on(b, 'click', () => tapPart(p, b));
+      tray.append(b);
+      partNodes.set(p.id, b);
+    }
+    enter([...partNodes.values()], { each: 25 });
   }
-  enter([...partNodes.values()], { each: 25 });
 
   const notice = el('div');
-  root.append(notice);
-
   const feedback = el('div');
-  root.append(feedback);
+  root.append(notice, feedback);
 
-  const bar = actions([
-    { id: 'reset', label: '비우기' },
-    { id: 'run', label: d.runLabel || '실행', primary: true }
-  ]);
+  const bar = actions(useRounds
+    ? [{ id: 'off',  label: d.dropLabel || '내리기' },
+       { id: 'fold', label: (d.fold && d.fold.label) || '요약하기' },
+       { id: 'next', label: d.nextLabel || '다음', primary: true }]
+    : [{ id: 'reset', label: '비우기' },
+       { id: 'run', label: d.runLabel || '실행', primary: true }]);
   root.append(bar.node);
-  bin.on(bar.btn.reset, 'click', resetAll);
-  bin.on(bar.btn.run, 'click', run);
 
-  paint();
+  if (useRounds) {
+    bin.on(bar.btn.off, 'click', dropPicked);
+    bin.on(bar.btn.fold, 'click', foldPicked);
+    bin.on(bar.btn.next, 'click', () => {
+      if (roundAt >= d.rounds.length - 1) run(); else nextRound();
+    });
+    nextRound();
+  } else {
+    bin.on(bar.btn.reset, 'click', resetAll);
+    bin.on(bar.btn.run, 'click', run);
+    paint();
+  }
 
   // ------------------------------------------------------------
 
@@ -205,15 +219,80 @@ export function mount(root, game, ctx) {
     return (part.tags || []).some(t => slot.accepts.includes(t));
   }
 
+  function setTicket(cap, text) {
+    if (!ticket) return;
+    ticket.innerHTML = `<div class="ticket__no">${esc(cap || '')}</div>` +
+                       `<div class="ticket__body">${esc(text || '')}</div>`;
+  }
+
+  // ------------------------------------------------------------ 회차형
+  // 자료는 회차가 바뀔 때 스스로 들어온다. 사람이 할 수 있는 것은 셋뿐이고
+  // 셋 다 대가가 있다 — 내린다(알고 잃음) · 접는다(모르고 잃음) · 둔다(흐려짐).
+
+  function nextRound() {
+    roundAt++;
+    const rd = d.rounds[roundAt] || {};
+    const list = (rd.arrive || [])
+      .map(id => d.parts.find(p => p.id === id)).filter(Boolean);
+    desk = arrive(desk, list, roundAt + 1);
+    picked.clear();
+    if (rd.ask) setTicket(rd.askCap || rd.cap, rd.ask);
+    paintRounds();
+    if (list.length) say(`자료 ${list.length}건이 들어왔다.`);
+  }
+
+  function toggle(id) {
+    if (picked.has(id)) picked.delete(id); else picked.add(id);
+    paintRounds();
+  }
+
+  function dropPicked() {
+    fell = [...picked];   // 내가 내린 것만 떨어지는 것이 보인다
+    for (const id of fell) desk = takeOff(desk, id, roundAt + 1);
+    picked.clear();
+    paintRounds();
+  }
+
+  function foldPicked() {
+    const name = `${(d.fold && d.fold.made) || '요약본'} ${desk.folds + 1}`;
+    desk = fold(desk, [...picked], roundAt + 1, name);
+    picked.clear();
+    paintRounds();
+  }
+
+  function paintRounds() {
+    const rd = d.rounds[roundAt] || {};
+    const last = roundAt >= d.rounds.length - 1;
+    roundCap.innerHTML = `<b class="rd__no">${esc(rd.cap || '')}</b>` +
+      (rd.note ? `<span class="rd__note">${esc(rd.note)}</span>` : '');
+
+    const keep = live(desk);
+    const u = deskUsed(desk);
+    drawDesk(keep, desk.cap, u, {
+      pick: toggle, on: picked, lock: locked, loud: new Set(fell),
+      tag: (d.fold && d.fold.pickTag) || '고름'
+    });
+    budgetNum.textContent = `${u} / ${desk.cap}칸`;
+
+    dimStrip.innerHTML = '';
+    for (const it of dimmed(desk)) {
+      dimStrip.append(el('div', 'part part--evicted', `<span>${esc(it.label)}</span>`));
+    }
+
+    // 실행 뒤에는 다시 안 열린다 — 안 그러면 결과가 흐르는 중에 또 돌릴 수 있다
+    bar.btn.off.disabled = locked || picked.size === 0;
+    bar.btn.fold.disabled = locked || picked.size !== FOLD_N;
+    bar.btn.next.textContent = last ? (d.runLabel || '실행') : (d.nextLabel || '다음');
+  }
+
   /**
-   * 책상을 그린다 — 올린 것이 자기 비용만큼 칸을 차지한다.
-   *
-   * 빈 칸까지 다 그리는 게 요점이다. "남은 칸이 얼마"가 눈에 보여야
-   * 4칸짜리를 올리기 전에 망설이게 된다. 숫자만 있으면 그 망설임이 없다.
-   *
-   * 남아 있는 것(keep)만 그린다 — 밀려난 것은 이미 책상 밖이다.
+   * 책상을 그린다 — 올린 것이 자기 비용만큼 칸을 차지한다. 빈 칸까지 다 그려야
+   * "남은 칸이 얼마"가 보이고, 그래야 큰 것을 올리기 전에 망설인다.
+   * opts.pick 이 있으면 책상 위의 것을 **누를 수 있다**(회차형). opts.loud 를 주면
+   * 거기 든 것만 떨어지는 연출이 붙는다 — 흐려지는 것은 사건이 아니라 침묵이라서,
+   * 사람이 직접 내린 것 말고는 소리 없이 빠져야 한다.
    */
-  function drawDesk(keep, cap, used) {
+  function drawDesk(keep, cap, used, opts = {}) {
     if (!deskGrid) return;
     const before = new Map(
       [...deskGrid.querySelectorAll('.desk__item')].map(n => [n.dataset.id, n]));
@@ -221,16 +300,27 @@ export function mount(root, game, ctx) {
 
     // 지우기 전에 먼저 떨어뜨린다. 좌표는 아직 책상에 있을 때만 잴 수 있다.
     for (const [id, node] of before) {
-      if (!staying.has(id)) dropOut(node, node.querySelector('.desk__name')?.textContent);
+      if (staying.has(id)) continue;
+      if (opts.loud && !opts.loud.has(id)) continue;
+      dropOut(node, node.querySelector('.desk__name')?.textContent);
     }
 
     deskGrid.innerHTML = '';
     for (const p of keep) {
-      const item = el('div', 'desk__item');
+      const on = opts.on ? opts.on.has(p.id) : false;
+      const item = el(opts.pick ? 'button' : 'div',
+        'desk__item' + (on ? ' desk__item--on' : ''));
+      if (opts.pick) {
+        item.type = 'button';
+        item.disabled = !!opts.lock;
+        item.style.minHeight = 'var(--tap-min)';   // 조작 대상은 44px 이상
+        item.setAttribute('aria-pressed', on ? 'true' : 'false');
+        bin.on(item, 'click', () => opts.pick(p.id));
+      }
       item.dataset.id = p.id;
       item.style.setProperty('--span', String(Math.min(p.cost ?? 1, cap)));
       item.innerHTML = `<span class="desk__name">${esc(p.label)}</span>` +
-                       `<span class="desk__cost">${p.cost ?? 1}칸</span>`;
+        `<span class="desk__cost">${on ? esc(opts.tag || '고름') : (p.cost ?? 1) + '칸'}</span>`;
       deskGrid.append(item);
       // 방금 올라온 것만 등장 연출을 준다 — 매번 전부 다시 튀면 산만하다
       if (!before.has(p.id)) wipeIn(item);
@@ -274,6 +364,7 @@ export function mount(root, game, ctx) {
   }
 
   function paint() {
+    if (useRounds) { paintRounds(); return; }
     if (useSlots) {
       if (wired) drawWires();
       armRun([...placed.values()].some(v => v.length));
@@ -282,8 +373,7 @@ export function mount(root, game, ctx) {
 
     const cap = d.budget ?? 6;
     evicted.length = 0;
-    let used = 0;
-    const keep = [];
+    let used = 0; const keep = [];
     // 뒤에서부터 채운다: 나중에 넣은 것이 남고 먼저 넣은 것이 밀려난다
     for (let i = pool.length - 1; i >= 0; i--) {
       const c = pool[i].cost ?? 1;
@@ -296,14 +386,11 @@ export function mount(root, game, ctx) {
     budgetBox.classList.toggle('budget--over', evicted.length > 0);
 
     for (const [id, node] of partNodes) {
-      const isEvicted = evicted.some(p => p.id === id);
-      node.classList.toggle('part--evicted', isEvicted);
+      node.classList.toggle('part--evicted', evicted.some(p => p.id === id));
     }
 
-    // 조사는 마지막 이름에 맞춰 붙인다 — "30건가 밀려났다"가 되면 안 된다
-    //
-    // 남은 칸 수를 같이 알려 준다. 빈 칸이 1칸 남았는데 2칸짜리가 밀려나는 경우가
-    // 있어서, 그냥 "칸이 모자라"라고만 하면 "자리 있는데 왜?"로 읽힌다.
+    // 조사는 마지막 이름에 맞춰 붙인다("30건가 밀려났다" 방지). 남은 칸도 같이
+    // 알려 준다 — 1칸 남았는데 2칸짜리가 밀려나면 "자리 있는데 왜?"로 읽힌다.
     const names = evicted.map(p => p.label);
     const free = cap - used;
     notice.innerHTML = evicted.length
@@ -314,17 +401,14 @@ export function mount(root, game, ctx) {
         `AI는 밀려난 것을 못 본다.</p>`
       : '';
 
-    // 밀려난 부품을 흐리게 만드는 것은 CSS(.part--evicted) 가 한다.
-    // 예전에는 여기서 animate(opacity) 도 같이 걸었는데, 그게 **인라인 opacity** 를
-    // 남겨서 애니메이션이 시작 프레임에 얼어붙으면 opacity 1 로 고정됐다 —
-    // CSS 의 .4 를 덮어써서 **밀려난 것이 멀쩡해 보였다.** 실제로 그렇게 찍혔다.
+    // 흐리게 만드는 것은 CSS(.part--evicted) 가 한다. 여기서 animate(opacity) 를
+    // 걸면 인라인 opacity 가 남아 CSS 를 덮어써서 **밀려난 것이 멀쩡해 보인다.**
     // 상태를 나타내는 값은 애니메이션하지 않는다(통로 굵기와 같은 이유).
     armRun(pool.length > 0);
   }
 
   function resetAll() {
-    pool.length = 0;
-    evicted.length = 0;
+    pool.length = 0; evicted.length = 0;
     for (const [id] of placed) placed.set(id, []);
     for (const n of partNodes.values()) n.classList.remove('part--in', 'part--evicted');
     for (const [, s] of slotNodes) { s.items.innerHTML = ''; s.node.classList.remove('slot--filled'); }
@@ -333,25 +417,40 @@ export function mount(root, game, ctx) {
     paint();
   }
 
+  /** 실행 결과를 부품에 한 마디로 붙인다. 엔진은 그 말의 뜻을 모른다 */
+  function markParts(marks) {
+    for (const [id, tag] of Object.entries(marks || {})) {
+      const n = partNodes.get(id);
+      if (!n) continue;
+      let s = n.querySelector('.part__cost');
+      if (!s) { s = el('span', 'part__cost'); n.append(s); }
+      s.textContent = tag;
+    }
+  }
+
   async function run() {
-    bar.btn.run.disabled = true;
-    bar.btn.reset.disabled = true;
+    locked = true; for (const b of Object.values(bar.btn)) b.disabled = true;
     for (const n of partNodes.values()) n.disabled = true;
 
-    const cap = d.budget ?? 0;
-    let used = 0; const kept = [];
-    for (let i = pool.length - 1; i >= 0; i--) {
-      const c = pool[i].cost ?? 1;
-      if (used + c <= cap) { used += c; kept.unshift(pool[i]); }
+    let setup;
+    if (useRounds) {
+      setup = { desk, kept: live(desk), evicted: dimmed(desk), slots: {}, runNo,
+        all: desk.items.slice(), used: deskUsed(desk), cap: desk.cap };
+    } else {
+      const cap = d.budget ?? 0;
+      let used = 0; const kept = [];
+      for (let i = pool.length - 1; i >= 0; i--) {
+        const c = pool[i].cost ?? 1;
+        if (used + c <= cap) { used += c; kept.unshift(pool[i]); }
+      }
+      setup = {
+        kept: useSlots ? [] : kept,
+        evicted: useSlots ? [] : evicted.slice(),
+        slots: useSlots ? Object.fromEntries([...placed].map(([k, v]) => [k, v.slice()])) : {},
+        all: useSlots ? [...placed.values()].flat() : pool.slice(),
+        used, cap, runNo
+      };
     }
-
-    const setup = {
-      kept: useSlots ? [] : kept,
-      evicted: useSlots ? [] : evicted.slice(),
-      slots: useSlots ? Object.fromEntries([...placed].map(([k, v]) => [k, v.slice()])) : {},
-      all: useSlots ? [...placed.values()].flat() : pool.slice(),
-      used, cap
-    };
 
     const r = runner(d.runCaption || 'AI가 일하는 중');
     feedback.append(r.node);
@@ -359,15 +458,41 @@ export function mount(root, game, ctx) {
 
     const sim = game.simulate(setup, d);
     await r.play(sim.steps);
+    markParts(sim.marks);
     say('실행이 끝났습니다.');
 
+    // 수리형 — 한 번 돌려 보고 고쳐서 다시 돌린다. 첫 판에 못 맞히는 게 정상이다.
+    if (d.repair && runNo < (d.repair.runs ?? 2)) { offerRepair(sim); return; }
+    done(sim);
+  }
+
+  function offerRepair(sim) {
+    const again = actions([
+      { id: 'fix', label: d.repair.label || '고쳐서 다시 돌린다', primary: true },
+      { id: 'send', label: d.repair.keep || '이대로 제출한다' }
+    ]);
+    feedback.append(again.node);
+    bin.on(again.btn.send, 'click', () => done(sim));
+    bin.on(again.btn.fix, 'click', () => {
+      runNo++;
+      feedback.innerHTML = '';
+      for (const n of partNodes.values()) {
+        n.disabled = false;
+        const s = n.querySelector('.part__cost');
+        if (s) s.textContent = n.dataset.cost || '';
+      }
+      if (bar.btn.reset) bar.btn.reset.disabled = false;
+      paint();
+      say('규칙을 고칠 수 있다.');
+    });
+    again.node.scrollIntoView({ block: 'nearest' });
+  }
+
+  function done(sim) {
     ctx.finish({
-      grade: sim.grade,
-      score: sim.score,
+      grade: sim.grade, score: sim.score, mistakes: [],
       elapsed: Math.round((Date.now() - startedAt) / 1000),
-      mistakes: [],
-      faults: sim.faults || [],
-      gains: sim.gains || [],
+      faults: sim.faults || [], gains: sim.gains || [],
       unlocked: sim.grade === 'fail' ? [] : (game.concept || [])
     });
   }

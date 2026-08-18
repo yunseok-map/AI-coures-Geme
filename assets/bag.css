@@ -1,0 +1,68 @@
+/* ============================================================
+   회차형(엔진 C) 전용 — 1번 가방 싸기
+
+   game.css 가 이미 500줄 규칙을 넘겨서 여기로 뺐다.
+   **game.css 뒤에 걸어야 한다** — 여기 있는 규칙이 .desk__item 을 덮는다.
+   (안 걸어도 판은 돌아간다. 책상 위의 것이 버튼 기본 모양으로 보일 뿐이다.
+    44px 최소 크기는 엔진이 --tap-min 으로 직접 걸어 둔다.)
+
+   값은 tokens.css 의 변수만 쓴다. 색을 여기서 만들지 않는다.
+   ============================================================ */
+
+/* ---------- 회차 머리 ---------- */
+/* "몇 회차인가"가 이 판의 시계다. 자료가 언제 들어왔는지를 사람이 세고 있어야
+   나중에 "그게 2회차에 흐려졌다"가 자기 기억과 이어진다. */
+.rd {
+  display: flex; align-items: baseline; flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-2);
+}
+.rd__no { font-size: var(--fs-title); font-weight: 700; color: var(--ink); }
+.rd__note { font-size: var(--fs-aux); color: var(--muted); line-height: 1.35; }
+.rd__note:empty { display: none; }
+
+/* ---------- 책상 위의 것을 누를 수 있게 ---------- */
+/* 예산형에서는 책상이 결과 표시였다. 회차형에서는 **조작 대상**이다 —
+   내리기·접기가 전부 여기서 시작한다. 버튼 기본 모양만 걷어내고
+   .desk__item 이 이미 정한 생김새를 그대로 쓴다. */
+button.desk__item {
+  width: 100%;
+  border: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  min-height: var(--tap-min);
+  transition: transform var(--dur-tap) var(--ease),
+              box-shadow var(--dur-tap) var(--ease),
+              background-color var(--dur-tap) var(--ease);
+}
+button.desk__item:hover:not(:disabled) {
+  transform: translateY(var(--rise));
+  box-shadow: var(--lift-2), var(--gloss);
+}
+button.desk__item:active:not(:disabled) { transform: scale(.98); }
+
+/* 고른 것 — 접기·내리기가 무엇에 걸리는지가 한눈에 보여야 한다.
+   테두리만 바꾸면 두세 개를 고른 상태에서 무엇이 골라졌는지 안 읽힌다. */
+.desk__item.desk__item--on {
+  background: var(--accent);
+  outline: var(--border-w) solid var(--accent-deep);
+  outline-offset: 2px;
+}
+
+/* ---------- 흐려진 자리 ---------- */
+/* 여기에는 제목도 설명도 붙이지 않는다. 무엇이 왜 흐려졌는지 적어 주는 순간
+   이 판이 가르치려는 성질(경고 없이 사라진다)이 통째로 사라진다.
+   조작 대상이 아니므로 부품함 버튼보다 작고 조용하게 둔다. */
+.dim {
+  display: flex; flex-wrap: wrap; gap: var(--sp-2);
+  margin: calc(-1 * var(--sp-3)) 0 var(--sp-4);
+}
+.dim:empty { display: none; }
+.dim .part {
+  pointer-events: none;
+  min-height: 0;
+  padding: var(--sp-1) var(--sp-3);
+}
+/* 밀려난 부품에 붙는 표시는 "내가 뺐다"로 읽힌다. 여기서 벌어진 일은 그게 아니다 */
+.dim .part::before { content: ""; }
