@@ -14,8 +14,9 @@
 //
 // 검색 규칙은 core/search.js 가 한다. 판정은 game.simulate({ picked, queries }).
 
-import { el, esc, say, Bin, header, actions, runner } from './base.js';
+import { el, esc, say, Bin, header, actions, runner, todo } from './base.js';
 import { enter, cardIn, shake, pulse, wait } from '../core/motion.js';
+import { eulReul } from '../core/ko.js';
 import { search } from '../core/search.js';
 
 let bin = new Bin();
@@ -30,6 +31,8 @@ export function mount(root, game, ctx) {
   const TRIES = d.tries || 4;
   const HOLD = d.hold || 3;
   const TOP = d.top || 3;
+  const askLabel = d.askLabel || 'AI에게 넘기고 답 받기';
+  const findLabel = d.findLabel || '찾기';
   const startedAt = Date.now();
 
   /** 담은 문서 id */
@@ -41,16 +44,22 @@ export function mount(root, game, ctx) {
 
   let left = TRIES;
   let asked = false;
+  /** 마지막 검색 결과 {q, list}. 처음 그릴 때부터 읽으므로 여기서 만든다 */
+  let last = null;
 
   root.innerHTML = '';
   root.append(header(game));
+
+  // 지금 눌러야 할 것 하나. 자리는 **질문 카드 바로 다음**이다 —
+  // "이런 질문이 들어왔다 → 그래서 이걸 눌러라" 순서로 읽혀야 한다.
+  const step = todo();
 
   // ---- 들어온 질문 ----
   const ask = el('article', 'lib__ask');
   ask.innerHTML =
     `<div class="lib__ask__cap">${esc(d.askCap || '들어온 질문')}</div>` +
     `<div class="lib__ask__body">${esc(d.ask)}</div>`;
-  root.append(ask);
+  root.append(ask, step.node);
 
   // ---- 검색 줄 ----
   const barBox = el('section', 'lib__find');
@@ -60,7 +69,7 @@ export function mount(root, game, ctx) {
   input.placeholder = d.inputHint || '낱말을 넣고 찾는다';
   input.setAttribute('aria-label', d.inputHint || '검색어');
   input.autocomplete = 'off';
-  const go = el('button', 'lib__go', esc(d.findLabel || '찾기'));
+  const go = el('button', 'lib__go', esc(findLabel));
   go.type = 'button';
   row.append(input, go);
 
@@ -87,7 +96,7 @@ export function mount(root, game, ctx) {
   root.append(feedback);
 
   const bar = actions([
-    { id: 'ask', label: d.askLabel || 'AI에게 넘기고 답 받기', primary: true }
+    { id: 'ask', label: askLabel, primary: true }
   ]);
   root.append(bar.node);
   bin.on(bar.btn.ask, 'click', () => { if (!asked) run(); });
@@ -108,6 +117,23 @@ export function mount(root, game, ctx) {
     }
     go.disabled = left <= 0 || asked;
     input.disabled = left <= 0 || asked;
+    tellStep();
+  }
+
+  /**
+   * 지금 눌러야 할 것 하나. **어떤 낱말을 쳐야 하는지는 말하지 않는다** —
+   * 낱말을 고르는 것이 이 판이 가르치려는 것이라, 여기서 말하면 판이 없어진다.
+   * 버튼 이름은 데이터에서 온 라벨을 그대로 부른다.
+   */
+  function tellStep() {
+    if (asked) { step.set(''); return; }
+    const hand = `${eulReul(`[${askLabel}]`)} 누른다`;
+    // 칸이 다 찼거나 더 찾을 수 없으면 남은 동작은 넘기는 것뿐이다
+    if (picked.length >= HOLD || left <= 0) { step.set(hand, { done: true }); return; }
+    if (!last) { step.set(`낱말을 넣고 ${eulReul(`[${findLabel}]`)} 누른다`); return; }
+    if (!last.list.length) { step.set('다른 낱말로 다시 찾는다'); return; }
+    if (last.list.some(h => !picked.includes(h.doc.id))) { step.set('걸린 것을 눌러 담는다'); return; }
+    step.set(`더 찾거나 ${hand}`);
   }
 
   function drawWords() {
@@ -165,6 +191,7 @@ export function mount(root, game, ctx) {
   }
 
   function drawHold() {
+    tellStep();
     holdBox.innerHTML = '';
     holdBox.append(el('div', 'lib__cap',
       `${esc(d.holdLabel || 'AI에게 넘길 것')} · ${picked.length}/${HOLD}`));
@@ -196,8 +223,6 @@ export function mount(root, game, ctx) {
   }
 
   // ------------------------------------------------------------ 조작
-
-  let last = null;
 
   function find() {
     if (asked || left <= 0) return;

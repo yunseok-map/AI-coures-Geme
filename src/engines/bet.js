@@ -14,8 +14,9 @@
 //
 // 판정은 game.simulate({ bets }) 가 한다. 엔진은 무엇을 걸었는지만 모아 넘긴다.
 
-import { el, esc, say, Bin, header, actions, runner, hud } from './base.js';
+import { el, esc, say, Bin, header, actions, runner, hud, todo } from './base.js';
 import { enter, stamp, shake, wait, cardIn } from '../core/motion.js';
+import { eulReul } from '../core/ko.js';
 
 let bin = new Bin();
 export function unmount() { bin.clear(); }
@@ -34,6 +35,11 @@ export function mount(root, game, ctx) {
 
   root.innerHTML = '';
   root.append(header(game));
+
+  // 지금 눌러야 할 것 하나. 이 판은 상황 카드가 문항마다 새로 그려지므로
+  // 제목 바로 다음에 둔다 — 자리가 고정돼야 눈이 매번 다시 찾지 않는다.
+  const step = todo();
+  root.append(step.node);
 
   const gauge = hud(items.length);
   root.append(gauge.node);
@@ -54,7 +60,7 @@ export function mount(root, game, ctx) {
     stage.innerHTML = '';
     bar.node.hidden = true;
 
-    if (at >= items.length) { done(); return; }
+    if (at >= items.length) { step.set(''); done(); return; }
     const it = items[at];
 
     const card = el('article', 'bt__card');
@@ -69,11 +75,17 @@ export function mount(root, game, ctx) {
 
     // 거는 자리. 두 개뿐이고, 누르면 끝이다.
     const picks = el('div', 'bt__picks');
-    const yes = pickBtn(it.yes || d.yes || '된다', true);
-    const no = pickBtn(it.no || d.no || '안 된다', false);
+    const yesLabel = it.yes || d.yes || '된다';
+    const noLabel = it.no || d.no || '안 된다';
+    const yes = pickBtn(yesLabel, true);
+    const no = pickBtn(noLabel, false);
     picks.append(yes, no);
     stage.append(picks);
     enter([yes, no], { each: 60 });
+
+    // 버튼 이름을 그대로 부른다 — 어느 쪽에 걸어야 하는지는 이 판이 가르치려는
+    // 것이라 여기서 말하지 않는다. 문항마다 두 이름이 달라지므로 그때그때 읽어 온다.
+    step.set(`[${yesLabel}] 또는 [${noLabel}]에 건다`);
 
     say(`${esc(it.text)} — ${ask.textContent}`);
 
@@ -87,6 +99,7 @@ export function mount(root, game, ctx) {
   }
 
   async function place(it, value, btn, both, card) {
+    step.set('');   // 걸었으면 시킬 것이 없다. 실행이 흐르는 동안은 방해만 된다
     for (const b of both) { b.disabled = true; }
     btn.classList.add('bt__pick--taken');
     for (const b of both) if (b !== btn) b.classList.add('bt__pick--dropped');
@@ -122,6 +135,7 @@ export function mount(root, game, ctx) {
 
     bar.node.hidden = false;
     bar.btn.next.textContent = at === items.length - 1 ? '결과 보기' : '다음';
+    step.set(`${eulReul(`[${bar.btn.next.textContent}]`)} 누른다`, { done: true });
     bar.btn.next.focus();
   }
 

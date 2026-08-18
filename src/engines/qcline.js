@@ -16,10 +16,11 @@
 //
 // 부드러운 압박(사용자 확정): 놓쳐도 게임오버 없다. 끝까지 흐르고 등급만 내려간다.
 
-import { el, esc, strong, say, Bin, header, actions, runner } from './base.js';
+import { el, esc, strong, say, Bin, header, actions, runner, todo } from './base.js';
 import { icon } from '../core/art.js';
 import { createLoop } from '../core/loop.js';
 import { sfx } from '../core/sfx.js';
+import { eulReul } from '../core/ko.js';
 import { animate, isReduced, cardIn, shake, burst } from '../core/motion.js';
 
 let bin = new Bin();
@@ -51,6 +52,7 @@ export function mount(root, game, ctx) {
   const bandFrom = d.bandFrom ?? 0.42;   // 창구 구간 (0..1)
   const bandTo = d.bandTo ?? 0.78;
   const roundCount = Math.max(1, d.roundCount || 1);
+  const RUN = d.runLabel || '시작';   // 지금 할 일 줄이 이 이름을 그대로 부른다
 
   const L = Object.assign({
     approve: '승인', reject: '반려',
@@ -82,6 +84,12 @@ export function mount(root, game, ctx) {
     cardIn(s);
   }
 
+  // 지금 눌러야 할 것 하나. 기준 카드 바로 다음에 둔다 —
+  // "이런 기준이다 → 그래서 이걸 눌러라" 순서로 읽혀야 한다.
+  // **서류가 흐르는 동안에는 지운다.** 다시 켜는 곳은 라운드 사이 멈춘 동안뿐이다.
+  const step = todo();
+  root.append(step.node);
+
   const hud = el('div', 'ax__hud');
   root.append(hud);
 
@@ -111,7 +119,7 @@ export function mount(root, game, ctx) {
   const dock = el('div', 'ax__dock');
   const hint = el('p', 'ax__traycap', esc(d.prompt || '창구에 온 서류를 판단하시오'));
   const bar = actions([
-    { id: 'go', label: d.runLabel || '시작', primary: true }
+    { id: 'go', label: RUN, primary: true }
   ]);
   dock.append(hint, bar.node);
   root.append(dock);
@@ -132,6 +140,8 @@ export function mount(root, game, ctx) {
 
   drawPile(0);
   drawHud();
+  // 무엇을 누르면 무엇이 시작되는지만 말한다. 무엇을 반려할지는 말하지 않는다.
+  step.set(`${eulReul(`[${RUN}]`)} 누르면 서류가 내려온다`);
 
   // ---------------------------------------------------------------- 계기판
 
@@ -194,6 +204,7 @@ export function mount(root, game, ctx) {
     if (phase !== 'setup') return;
     phase = 'count';
     bar.btn.go.disabled = true;
+    step.set('');   // 이제부터 서류가 내려온다
 
     await countdown();
     if (phase !== 'count') return;
@@ -221,6 +232,7 @@ export function mount(root, game, ctx) {
       okReject: [], okApprove: [], passed: [], wrongReject: [], auto: [], autoBad: [] };
 
     t = 0; active = null; phase = 'run';
+    step.set('');   // 흐르는 동안에는 이 줄이 없다
     for (const n of track.querySelectorAll('.qc__card, .ax__pop')) n.remove();
     band.classList.remove('qc__band--busy');
     judgeBar.btn.no.disabled = judgeBar.btn.yes.disabled = true;
@@ -435,6 +447,9 @@ export function mount(root, game, ctx) {
       drawHud();
       if (round < roundCount) {
         phase = 'break';
+        // 멈춰 있는 동안만 다시 켠다. 무엇을 반려할지는 여전히 말하지 않는다 —
+        // 도장을 어디서 찍을 수 있는지만 말한다.
+        step.set(`지나가기 전에 [${L.approve}]·${eulReul(`[${L.reject}]`)} 찍는다`);
         const body = breakText(leaked, back, stuck);
         say(body);
         showVeil(`${round + 1}${L.round}`, body, L.next, () => { hideVeil(); startRound(); });
@@ -467,6 +482,7 @@ export function mount(root, game, ctx) {
 
   async function finish() {
     phase = 'done';
+    step.set('');   // 이제 시킬 것이 없다
     hideVeil();
     hint.textContent = '판정 중';
     judgeBar.btn.no.disabled = judgeBar.btn.yes.disabled = true;

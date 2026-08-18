@@ -220,6 +220,17 @@
   border: 1px dashed var(--edge);
   border-radius: var(--radius-sm);
 }
+/* 다음 회차에 찰 자리. 예약석이지 내가 쓴 자리가 아니라서 빗금만 긋는다 —
+   채워 버리면 이미 찬 것으로 읽혀서 "지금 몇 칸 남았나"를 잘못 세게 된다. */
+.desk__free--next {
+  background: repeating-linear-gradient(
+    -45deg, var(--ink-12) 0 2px, transparent 2px 7px);
+}
+
+/* 칸을 넘긴 상태. 회차 안에서는 넘겨 둘 수 있고, 넘긴 채로 다음으로 가면
+   그때 흐려진다. 그래서 **지금 넘쳤다는 것**은 감추지 않는다 —
+   감추는 것은 무엇이 상하는가이지 셈이 아니다. */
+.desk--over { border-color: var(--fail); }
 .budget--over ~ .desk { border-color: var(--fail); background: var(--fail-10); }
 
 /* 책상에서 떠밀려 떨어지는 조각 — .flyer 는 획득(주황)이라 여기선 색을 바꾼다 */

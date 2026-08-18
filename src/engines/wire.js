@@ -12,7 +12,7 @@
 // 시간 계산은 core/graph.js 가 한다 — 화면에 뜨는 소요 시간과 판정이 같은 답을 봐야 한다.
 // 판정은 game.simulate({ links, nodes, sched }) 가 한다. 엔진은 무슨 일인지 모른다.
 
-import { el, esc, say, Bin, header, actions, runner } from './base.js';
+import { el, esc, say, Bin, header, actions, runner, todo } from './base.js';
 import { shake, enter, pulse, wait, isReduced, drawLine } from '../core/motion.js';
 import { eulReul } from '../core/ko.js';
 import { schedule, wouldCycle, normalize } from '../core/graph.js';
@@ -48,6 +48,11 @@ export function mount(root, game, ctx) {
                   `<div class="ticket__body">${esc(d.brief)}</div>`;
     root.append(t);
   }
+
+  // 지금 눌러야 할 것 하나. 일감 카드 바로 다음에 둔다 — 어떻게 이어야 빠른지는
+  // 이 판이 가르치려는 것이라 여기서 말하지 않는다. 조작 방법만 말한다.
+  const step = todo();
+  root.append(step.node);
 
   const hint = el('p', 'wf__hint');
   root.append(hint);
@@ -328,7 +333,17 @@ export function mount(root, game, ctx) {
     bar.btn.run.disabled = links.length === 0;
     if (was && !bar.btn.run.disabled) pulse(bar.btn.run, 1);
 
+    tellStep();
     requestAnimationFrame(drawWires);
+  }
+
+  /** 지금 눌러야 할 것 하나. 재생이 흐르는 동안에는 지운다. */
+  function tellStep() {
+    if (running) { step.set(''); return; }
+    if (armed) { step.set('다음에 올 상자를 누른다'); return; }
+    if (!links.length) { step.set('상자를 누르고 다음 상자를 누른다'); return; }
+    const runLabel = d.runLabel || '이대로 돌리기';
+    step.set(`${eulReul(`[${runLabel}]`)} 누른다. 더 이어도 된다`, { done: true });
   }
 
   function incoming(id) {

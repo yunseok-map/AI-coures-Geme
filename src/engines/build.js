@@ -8,11 +8,11 @@
 //                        **아무 말 없이** 흐려진다. 계산은 전부 core/bag.js 가 한다
 // 여기에 수리형(data.repair)이 겹칠 수 있다 — 한 번 돌려 보고 고쳐서 다시 돌린다.
 
-import { el, esc, say, Bin, header, actions, runner } from './base.js';
+import { el, esc, say, Bin, header, actions, runner, todo } from './base.js';
 import { press, shake, enter, flyTo, pulse, wipeIn, dropOut }
   from '../core/motion.js';
-import { hasBatchim, eulReul } from '../core/ko.js';
-import { newDesk, arrive, takeOff, fold, live, dimmed, used as deskUsed, FOLD_N }
+import { hasBatchim, eulReul, eulReulJosa, euroJosa } from '../core/ko.js';
+import { newDesk, arrive, takeOff, fold, live, dimmed, settle, used as deskUsed, FOLD_N }
   from '../core/bag.js';
 
 let bin = new Bin();
@@ -41,6 +41,11 @@ export function mount(root, game, ctx) {
   root.innerHTML = '';
   root.append(header(game));
 
+  // 지금 눌러야 할 것 하나를 항상 말해 준다. 규칙만 말하고 판단은 말하지 않는다.
+  // 자리는 **상황 카드 바로 다음**이다 — "이런 상황이다 → 그래서 이걸 눌러라"
+  // 순서로 읽혀야 한다. 제목 밑에 두면 상황을 읽기도 전에 지시가 먼저 온다.
+  const step = todo();
+
   // 회차형은 마지막 회차에 **그때 처음** 요청이 뜬다. 무엇을 물어볼지 미리 알면
   // "필요한 것만 남긴다"가 계획 문제가 되고, 모르게 잃는 성질이 사라진다.
   let ticket = null;
@@ -49,6 +54,7 @@ export function mount(root, game, ctx) {
     setTicket(d.briefCap || '상황', d.brief);
     root.append(ticket);
   }
+  root.append(step.node);
 
   // ---- 예산 표시 (예산형 · 회차형) ----
   //
@@ -230,6 +236,9 @@ export function mount(root, game, ctx) {
   // 셋 다 대가가 있다 — 내린다(알고 잃음) · 접는다(모르고 잃음) · 둔다(흐려짐).
 
   function nextRound() {
+    // 지난 회차를 넘긴 채로 넘어가면 여기서 흐려진다. 회차 **안에서는** 칸을
+    // 넘겨 둘 수 있다 — 그래야 들어온 것을 보고 무엇을 뺄지 정할 수 있다.
+    if (roundAt >= 0) desk = settle(desk, roundAt + 1);
     roundAt++;
     const rd = d.rounds[roundAt] || {};
     const list = (rd.arrive || [])
@@ -268,11 +277,22 @@ export function mount(root, game, ctx) {
 
     const keep = live(desk);
     const u = deskUsed(desk);
+
+    // 다음 회차에 몇 칸이 들어오는지는 **미리 보여 준다.**
+    // 이 판이 감추려는 것은 "무엇이 중요한가"이지 "규칙이 어떻게 도나"가 아니다.
+    // 규칙까지 감추면 사람은 판단을 못 하는 게 아니라 조작을 못 하게 된다.
+    const load = last ? 0 : nextLoad(roundAt + 1);
+
     drawDesk(keep, desk.cap, u, {
       pick: toggle, on: picked, lock: locked, loud: new Set(fell),
-      tag: (d.fold && d.fold.pickTag) || '고름'
+      tag: (d.fold && d.fold.pickTag) || '고름',
+      ghost: Math.min(load, desk.cap - u)
     });
     budgetNum.textContent = `${u} / ${desk.cap}칸`;
+    // 칸을 넘긴 채로 회차 안에 머물 수 있다. 넘겼다는 것 자체는 숨기지 않는다 —
+    // 숨기는 것은 **무엇이 상하는가**이지 셈이 아니다.
+    budgetBox.classList.toggle('budget--over', u > desk.cap);
+    tellStep(u, load, last);
 
     dimStrip.innerHTML = '';
     for (const it of dimmed(desk)) {
@@ -283,6 +303,48 @@ export function mount(root, game, ctx) {
     bar.btn.off.disabled = locked || picked.size === 0;
     bar.btn.fold.disabled = locked || picked.size !== FOLD_N;
     bar.btn.next.textContent = last ? (d.runLabel || '실행') : (d.nextLabel || '다음');
+  }
+
+  /** 다음 회차에 들어오는 자료가 차지할 칸 수 */
+  function nextLoad(at) {
+    const rd = d.rounds[at];
+    if (!rd) return 0;
+    return (rd.arrive || [])
+      .reduce((n, id) => n + (d.parts.find(p => p.id === id)?.cost ?? 1), 0);
+  }
+
+  /**
+   * 지금 눌러야 할 것 하나. **버튼 이름을 그대로 부른다** —
+   * "요약할 수 있습니다" 는 어느 버튼인지 알려 주지 않는다.
+   */
+  function tellStep(used, load, last) {
+    if (locked) { step.set(''); return; }
+    const off = d.dropLabel || '내리기';
+    const foldLabel = (d.fold && d.fold.label) || '요약하기';
+    const nextLabel = last ? (d.runLabel || '실행') : (d.nextLabel || '다음');
+
+    // 칸을 넘긴 것이 제일 급하다. 다른 무엇보다 먼저 말한다.
+    const over = used - desk.cap;
+    if (over > 0) { step.set(`${over}칸 넘쳤다. 눌러 골라서 [${off}]`); return; }
+
+    if (picked.size === FOLD_N) {
+      step.set(`[${foldLabel}]${eulReulJosa(foldLabel)} 누르면 한 칸이 된다`); return;
+    }
+    if (picked.size > 0) {
+      step.set(`[${off}]${euroJosa(off)} 치운다. ${FOLD_N}개를 고르면 접을 수 있다`); return;
+    }
+    if (last) { step.set(`[${nextLabel}]${eulReulJosa(nextLabel)} 누른다`, { done: true }); return; }
+
+    const room = desk.cap - used;
+    if (load > room) {
+      step.set(`다음 회차에 ${load}칸이 들어온다. 자리는 ${room}칸이다`);
+      return;
+    }
+    // **여기서 초록 "다 됐다"를 켜지 않는다.** 1회차를 열자마자 켜졌던 적이 있는데,
+    // 그때 책상에는 아직 잡음이 그대로 얹혀 있었다. 이 판이 가르치려는 판단이
+    // 정확히 "들어오는 대로 잡음을 내린다"라서, 손대기 전에 다 됐다고 말하면
+    // **판이 벌하는 쪽으로 등을 떠미는 셈**이 된다. 줄은 규칙만 말한다.
+    step.set(`자료를 눌러 고르거나, [${nextLabel}]${euroJosa(nextLabel)} 넘어간다`);
   }
 
   /**
@@ -325,14 +387,20 @@ export function mount(root, game, ctx) {
       // 방금 올라온 것만 등장 연출을 준다 — 매번 전부 다시 튀면 산만하다
       if (!before.has(p.id)) wipeIn(item);
     }
+    // 빈 칸 중 **다음 회차에 찰 자리**부터 빗금으로 채운다. 글로 "3칸이 들어온다"
+    // 라고 적는 것보다 이쪽이 먼저 읽힌다 — 남은 칸을 세는 것이 곧 판단이라서다.
+    const ghost = Math.max(0, Math.min(opts.ghost || 0, cap - used));
     for (let i = used; i < cap; i++) {
-      const gap = el('div', 'desk__free');
+      const gap = el('div', 'desk__free' + (i < used + ghost ? ' desk__free--next' : ''));
       gap.setAttribute('aria-hidden', 'true');
       deskGrid.append(gap);
     }
+    deskGrid.classList.toggle('desk--over', used > cap);
     deskGrid.setAttribute('aria-label',
-      `${d.budgetLabel || '가방'} ${used} / ${cap}칸 사용. ` +
-      (keep.length ? `올린 것: ${keep.map(p => p.label).join(', ')}` : '아직 없다'));
+      `${d.budgetLabel || '가방'} ${used} / ${cap}칸 사용` +
+      (used > cap ? `. ${used - cap}칸 넘쳤다` : '') + '. ' +
+      (keep.length ? `올린 것: ${keep.map(p => p.label).join(', ')}` : '아직 없다') +
+      (ghost ? `. 다음 회차에 ${ghost}칸이 더 찬다` : ''));
   }
 
   /** 실행 버튼이 방금 살아났으면 한 번 알려 준다 */
@@ -363,11 +431,23 @@ export function mount(root, game, ctx) {
     }
   }
 
+  /** 실행 버튼에 적힌 이름. [지금 할 일] 줄이 이 이름을 그대로 부른다 */
+  const runLabel = d.runLabel || '실행';
+
   function paint() {
     if (useRounds) { paintRounds(); return; }
     if (useSlots) {
       if (wired) drawWires();
-      armRun([...placed.values()].some(v => v.length));
+      const n = [...placed.values()].reduce((a, v) => a + v.length, 0);
+      const empty = d.slots.filter(s => !placed.get(s.id).length);
+      step.set(
+        armed ? `놓을 칸을 누른다`
+        // 칸 이름이 길어서 "아래에서"까지 붙이면 28자를 넘어 두 줄이 된다.
+        // 부품함은 바로 아래에 있다 — 화면이 이미 하는 말은 줄에 쓰지 않는다.
+        : empty.length ? `${empty[0].label} 칸에 넣을 것을 누른다`
+        : `[${runLabel}]${eulReulJosa(runLabel)} 누른다`,
+        { done: !armed && !empty.length && n > 0 });
+      armRun(n > 0);
       return;
     }
 
@@ -401,6 +481,14 @@ export function mount(root, game, ctx) {
         `AI는 밀려난 것을 못 본다.</p>`
       : '';
 
+    // 하나만 넣어도 초록이 켜지던 자리다. 예산이 5칸인데 한 칸 쓴 상태에서
+    // "다 됐다"가 뜨면 거기서 실행하게 되고, 그건 이 판이 벌하는 쪽이다.
+    // 무엇을 몇 개 넣을지가 이 판의 판단이므로 줄은 끝났다고 말하지 않는다.
+    step.set(
+      !pool.length ? `아래에서 넣을 것을 누른다`
+      : evicted.length ? `${cap}칸을 넘겼다. 빼거나 그대로 [${runLabel}]`
+      : `[${runLabel}]${eulReulJosa(runLabel)} 누른다. 더 넣어도 된다`);
+
     // 흐리게 만드는 것은 CSS(.part--evicted) 가 한다. 여기서 animate(opacity) 를
     // 걸면 인라인 opacity 가 남아 CSS 를 덮어써서 **밀려난 것이 멀쩡해 보인다.**
     // 상태를 나타내는 값은 애니메이션하지 않는다(통로 굵기와 같은 이유).
@@ -431,9 +519,13 @@ export function mount(root, game, ctx) {
   async function run() {
     locked = true; for (const b of Object.values(bar.btn)) b.disabled = true;
     for (const n of partNodes.values()) n.disabled = true;
+    step.set('');   // 이제 시킬 것이 없다. 결과가 흐르는 동안 남아 있으면 방해만 된다
 
     let setup;
     if (useRounds) {
+      // 마감도 회차다 — 넘긴 채로 제출하면 여기서 흐려진다
+      desk = settle(desk, roundAt + 1);
+      paintRounds();
       setup = { desk, kept: live(desk), evicted: dimmed(desk), slots: {}, runNo,
         all: desk.items.slice(), used: deskUsed(desk), cap: desk.cap };
     } else {

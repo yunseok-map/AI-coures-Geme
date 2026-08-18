@@ -11,6 +11,8 @@
 //     마찬가지다("RAG 를" X, "RAG를" O). 눈으로는 지나치기 쉽고 개수가 많다.
 //  4) **빈 칸·너무 짧은 칸.** 도감 네 칸(비유·설명·예시·오해)이 다 채워져야 한 항목이다.
 
+import { readFile, readdir } from 'node:fs/promises';
+
 const ROOT = '../src';
 const { terms } = await import(`${ROOT}/data/terms.js`);
 const { manifest } = await import(`${ROOT}/games/index.js`);
@@ -146,6 +148,42 @@ console.log('\n== 조사를 계산해 붙이는 자리 ==');
   }
   check('받침 판단이 끝의 괄호에 속지 않는다', hasBatchim('모델 (엔진)') === true);
   check('영문은 받침 없음으로 본다', eulReul('Cowork') === 'Cowork를', eulReul('Cowork'));
+}
+
+// ---------------------------------------------------------------- 버튼 이름 + 조사
+console.log('\n== [지금 할 일] 줄의 버튼 이름 뒤 조사 ==');
+//
+// 그 줄은 버튼 이름을 대괄호로 그대로 부른다 — `[출고]를 누른다`. 이름은 판마다
+// 다른데 조사를 소스에 박아 두면 **그 판에서만 맞고 다음 판에서 틀린다.**
+// 실제로 `[이 구성으로 처리한다]을`, `[이 지침서로 일 시키기]을` 이 화면에 나갔다.
+// 그래서 두 가지를 본다: ① 엔진 소스에 박힌 조사가 없는가 ② 실제 라벨로 계산하면 뭐가 나오는가
+{
+  const { eulReulJosa, euroJosa } = await import(`${ROOT}/core/ko.js`);
+  const dir = new URL('../src/engines/', import.meta.url);
+  const files = (await readdir(dir)).filter(f => f.endsWith('.js'));
+
+  // `]을 ` `]를 ` `]로 ` `]으로 ` — 대괄호를 닫자마자 박아 넣은 조사
+  const HARD = /\]\s*(을|를|으로|로)(?=[\s.,)]|$)/;
+  for (const f of files) {
+    const src = await readFile(new URL(f, dir), 'utf8');
+    const bad = src.split('\n')
+      .map((l, i) => [i + 1, l])
+      .filter(([, l]) => HARD.test(l) && /\$\{/.test(l));
+    check(`engines/${f} — 버튼 이름 뒤에 조사를 박지 않았다`, bad.length === 0,
+      bad.map(([n, l]) => `${n}행: ${l.trim()}`).join(' / '));
+  }
+
+  // 실제 라벨로 계산한 값. 여기 있는 이름이 화면에 그대로 나간다.
+  for (const [m, g] of games) {
+    for (const key of ['runLabel', 'nextLabel', 'dropLabel']) {
+      const label = g.data?.[key];
+      if (typeof label !== 'string' || !label) continue;
+      const josa = eulReulJosa(label);
+      check(`${m.no}번 [${label}] + 을/를 = ${josa}`, josa === '을' || josa === '를');
+      check(`${m.no}번 [${label}] + 으로/로 = ${euroJosa(label)}`,
+        euroJosa(label) === '으로' || euroJosa(label) === '로');
+    }
+  }
 }
 
 // ---------------------------------------------------------------- 결과 문구

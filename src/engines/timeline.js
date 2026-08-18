@@ -20,8 +20,9 @@
 // 발동 계산은 core/fire.js 가 한다 — 미리보기 표시와 판정이 같은 답을 봐야 한다.
 // 판정은 game.simulate({ placed, presses, opened }) 가 한다. 엔진은 내용을 모른다.
 
-import { el, esc, say, Bin, header, actions, runner } from './base.js';
+import { el, esc, say, Bin, header, actions, runner, todo } from './base.js';
 import { enter, cardIn, pulse, shake, wait, press as pressFx } from '../core/motion.js';
+import { eulReul } from '../core/ko.js';
 import { coverage, laneSpan } from '../core/fire.js';
 
 let bin = new Bin();
@@ -60,6 +61,10 @@ export function mount(root, game, ctx) {
 
   root.innerHTML = '';
   root.append(header(game));
+
+  // 지금 눌러야 할 것 하나. 이 판에는 상황 카드가 없어 제목 바로 다음에 둔다.
+  const step = todo();
+  root.append(step.node);
 
   // ---- 오늘 지켜야 할 것 ----
   const goalBoard = el('section', 'tl__goals');
@@ -188,7 +193,21 @@ export function mount(root, game, ctx) {
     drawTray();
     drawHand();
     drawMarks();
+    tellStep();
     for (const r of rowNodes) r.node.classList.toggle('tl__row--target', armed != null && !running);
+  }
+
+  /**
+   * 지금 눌러야 할 것 하나. 상태가 바뀌면 paint() 가 다시 부른다.
+   * **어느 도구를 어디에 걸어야 하는지는 말하지 않는다** — 그게 이 판이다.
+   * 재생이 도는 동안에는 지운다. 그때 손이 할 일은 손패 쪽이 이미 말하고 있다.
+   */
+  function tellStep() {
+    if (running) { step.set(''); return; }
+    if (armed != null) { step.set('하루에서 걸어 둘 순간을 누른다'); return; }
+    if (!Object.keys(placed).length) { step.set('선반의 도구를 눌러 집는다'); return; }
+    const runLabel = d.runLabel || '하루를 돌린다';
+    step.set(`${eulReul(`[${runLabel}]`)} 누른다. 더 걸어도 된다`, { done: true });
   }
 
   function drawTray() {

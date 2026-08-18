@@ -56,6 +56,15 @@ export function iGa(word) { return word + (hasBatchim(word) ? '이' : '가'); }
 /** 을/를 */
 export function eulReul(word) { return word + (hasBatchim(word) ? '을' : '를'); }
 
+/**
+ * 을/를 조사만 돌려준다 — `euroJosa` 와 같은 이유다.
+ *
+ * [지금 할 일] 줄이 버튼 이름을 대괄호로 불러서(`[출고]를 누른다`) 낱말과 조사를
+ * 이어 붙일 수 없다. 그 자리에 조사를 박아 두면 그 판에서만 맞고 다음 판에서 틀린다 —
+ * 실제로 `[이 구성으로 처리한다]을`, `[이 지침서로 일 시키기]을` 이 화면에 나갔다.
+ */
+export function eulReulJosa(word) { return hasBatchim(word) ? '을' : '를'; }
+
 /** 이다 / 다 — "채팅이다", "프로젝트다" */
 export function ida(word) { return word + (hasBatchim(word) ? '이다' : '다'); }
 

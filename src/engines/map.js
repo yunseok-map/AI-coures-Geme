@@ -16,8 +16,9 @@
 // 계산은 core/terrain.js 가 한다 — 미리보기와 판정이 같은 답을 봐야 한다.
 // 판정은 game.simulate({ picks, left }, d) 가 한다. 엔진은 내용을 모른다.
 
-import { el, esc, say, Bin, header, actions, runner } from './base.js';
+import { el, esc, say, Bin, header, actions, runner, todo } from './base.js';
 import { enter, cardIn, pulse, shake, wait } from '../core/motion.js';
+import { eulReul } from '../core/ko.js';
 import { route } from '../core/terrain.js';
 
 let bin = new Bin();
@@ -60,6 +61,11 @@ export function mount(root, game, ctx) {
   // ---- 지금 의뢰 ----
   const jobCard = el('article', 'mp__job');
   root.append(jobCard);
+
+  // 지금 눌러야 할 것 하나. **의뢰 카드 바로 다음** — 이 의뢰를 읽고 나서
+  // 무엇을 누르는지가 이어져야 한다. 어느 구역이 맞는지는 말하지 않는다.
+  const step = todo();
+  root.append(step.node);
 
   // ---- 지형도 ----
   const map = el('section', 'mp__map');
@@ -152,6 +158,7 @@ export function mount(root, game, ctx) {
     const k = open ? tiles.get(open) : null;
     if (!job || !k) {
       look.innerHTML = `<p class="mp__look__hint">${esc(L.hint || '구역을 눌러 살펴본다')}</p>`;
+      step.set(phase === 'play' ? '구역을 눌러 답사한다. 발품은 줄어든다' : '');
       return;
     }
 
@@ -168,13 +175,19 @@ export function mount(root, game, ctx) {
       `<span>${esc(L.legworkCap || '발품')}</span></div>` +
       `<p class="mp__look__line">${esc(shape)}</p>`;
 
+    const goLabel = far ? (L.poor || '발품이 모자란다')
+      : !r.ok ? (L.anyway || '그래도 가 본다')
+      : (L.go || '이 길로 간다');
+    const backLabel = L.close || '다른 구역 보기';
+
+    // 갈 수 있으면 가는 버튼을, 발품이 모자라면 물러나는 버튼을 이름 그대로 부른다.
+    step.set(far
+      ? `발품이 모자란다. ${eulReul(`[${backLabel}]`)} 누른다`
+      : `${eulReul(`[${goLabel}]`)} 누른다`, { done: !far });
+
     const bar = actions([
-      { id: 'go',
-        label: far ? (L.poor || '발품이 모자란다')
-             : !r.ok ? (L.anyway || '그래도 가 본다')
-             : (L.go || '이 길로 간다'),
-        primary: true, disabled: far },
-      { id: 'back', label: L.close || '다른 구역 보기' }
+      { id: 'go', label: goLabel, primary: true, disabled: far },
+      { id: 'back', label: backLabel }
     ]);
     bar.node.classList.add('mp__look__bar');
     look.append(bar.node);
@@ -272,6 +285,7 @@ export function mount(root, game, ctx) {
     if (phase === 'end') return;
     phase = 'end';
     open = null;
+    step.set('');   // 답사가 끝났다. 이제 누를 것이 없다
 
     // 답사가 끝나면 지형도와 의뢰는 접는다. 남는 것은 **지나온 길**이다 —
     // 그 자취 위에서 되짚는 로그가 흘러야 오늘 한 선택이 이어져 읽힌다.

@@ -18,8 +18,9 @@
 // 어긋나면 이 판은 아무것도 못 가르친다.
 // 판정은 game.simulate({ open, work, attack }) 가 한다. 엔진은 내용을 모른다.
 
-import { el, esc, say, Bin, header, actions, runner } from './base.js';
+import { el, esc, say, Bin, header, actions, runner, todo } from './base.js';
 import { shake, enter, cardIn, pulse, wait, isReduced } from '../core/motion.js';
+import { eulReul } from '../core/ko.js';
 import { key, runSteps, width } from '../core/perm.js';
 
 let bin = new Bin();
@@ -58,6 +59,11 @@ export function mount(root, game, ctx) {
                   `<div class="ticket__body">${esc(d.brief)}</div>`;
     root.append(t);
   }
+
+  // 지금 눌러야 할 것 하나. **맡길 일 바로 다음** — "이런 일이다 → 그래서 이걸
+  // 눌러라" 순서로 읽혀야 한다. 어느 문을 열지는 이 판이 가르치려는 것이라 말하지 않는다.
+  const step = todo();
+  root.append(step.node);
 
   const hint = el('p', 'gt__hint');
   root.append(hint);
@@ -177,11 +183,17 @@ export function mount(root, game, ctx) {
     bar.btn.trial.disabled = over || open.size === 0;
     bar.btn.reset.disabled = over || open.size === 0;
 
-    if (over) { hint.textContent = ''; return; }
+    if (over) { hint.textContent = ''; step.set(''); return; }
     // 모자란 것도 남는 것도 여기서는 안 알려 준다 — 그걸 알려 주면 판이 끝난다.
     hint.textContent = open.size
       ? `${L.hintOpen || '열어 둔 문'} ${open.size}${L.hintUnit || '개'}`
       : (d.hint || '');
+
+    // 몇 개를 열었든 다음 수는 같다 — 돌려 보거나, 그대로 내거나.
+    step.set(open.size
+      ? `${eulReul(`[${L.run || '본 가동'}]`)} 누른다. [${L.trial || '시험 가동'}]도 있다`
+      : '케이블 위의 문을 눌러 연다',
+      { done: open.size > 0 });
   }
 
   // ------------------------------------------------------------ 시험 가동
@@ -190,6 +202,7 @@ export function mount(root, game, ctx) {
     if (over) return;
     trials++;
     bar.btn.trial.disabled = bar.btn.run.disabled = bar.btn.reset.disabled = true;
+    step.set('');   // 로그가 흐르는 동안에는 시킬 것이 없다
     feedback.innerHTML = '';
 
     const rows2 = runSteps(work, open);
@@ -218,6 +231,7 @@ export function mount(root, game, ctx) {
   async function run() {
     over = true;
     bar.btn.trial.disabled = bar.btn.reset.disabled = bar.btn.run.disabled = true;
+    step.set('');   // 판정이 시작됐다. 이제 누를 것이 없다
     for (const b of gateNodes.values()) b.disabled = true;
     feedback.innerHTML = '';
 

@@ -16,9 +16,9 @@
 // 잇기 규칙은 core/evidence.js 가 한다 — 마지막 화면과 판정이 같은 답을 봐야 한다.
 // 판정은 game.simulate({ marks, lines, spans }) 가 한다. 엔진은 무슨 내용인지 모른다.
 
-import { el, esc, say, Bin, header, actions, runner } from './base.js';
+import { el, esc, say, Bin, header, actions, runner, todo } from './base.js';
 import { shake, enter, cardIn, pulse, wait, isReduced, drawLine } from '../core/motion.js';
-import { euroJosa } from '../core/ko.js';
+import { euroJosa, eulReul } from '../core/ko.js';
 import { NONE, judge, tally } from '../core/evidence.js';
 
 let bin = new Bin();
@@ -34,6 +34,7 @@ export function mount(root, game, ctx) {
   const spans = d.spans || [];
   const L = d.labels || {};
   const noneLabel = L.none || '무근거';
+  const runLabel = L.run || '이대로 보고하기';
   const startedAt = Date.now();
 
   /** 문장 id → 구간 id 또는 NONE */
@@ -47,6 +48,10 @@ export function mount(root, game, ctx) {
   root.innerHTML = '';
   root.append(header(game));
 
+  // 지금 눌러야 할 것 하나. 자리는 **상황 카드 바로 다음**이다 —
+  // "이런 답변이 돌아왔다 → 그래서 이걸 눌러라" 순서로 읽혀야 한다.
+  const step = todo();
+
   // ---- 무엇을 물었고 무엇이 돌아왔는가 ----
   if (d.ask) {
     const t = el('article', 'ticket');
@@ -54,6 +59,7 @@ export function mount(root, game, ctx) {
                   `<div class="ticket__body">${esc(d.ask)}</div>`;
     root.append(t);
   }
+  root.append(step.node);
 
   const hint = el('p', 'ev__hint');
   root.append(hint);
@@ -143,7 +149,7 @@ export function mount(root, game, ctx) {
 
   const bar = actions([
     { id: 'reset', label: L.reset || '표시 지우기' },
-    { id: 'run', label: L.run || '이대로 보고하기', primary: true, disabled: true }
+    { id: 'run', label: runLabel, primary: true, disabled: true }
   ]);
   root.append(bar.node);
   bin.on(bar.btn.reset, 'click', resetAll);
@@ -332,6 +338,13 @@ export function mount(root, game, ctx) {
     status.textContent = t.done
       ? (L.statusFull || '전부 표시했다. 이대로 보고할 수 있다.')
       : `${L.statusLeft || '남은 문장'} ${t.left}`;
+
+    // 지금 눌러야 할 것 하나. **규칙만 말한다** — 어느 문장이 걸 데가 없는지는
+    // 이 판이 가르치려는 것이라, 여기서 말하면 판이 없어진다.
+    if (over) step.set('');
+    else if (t.done) step.set(`${eulReul(`[${runLabel}]`)} 누른다`, { done: true });
+    else if (armed) step.set(`걸 자리나 ${eulReul(`[${noneLabel}]`)} 누른다`);
+    else step.set('문장을 누르고 근거 자리를 누른다');
 
     // 판정이 시작되면 다시 눌리지 않아야 한다 — 로그가 도는 동안 또 누르면 두 번 채점된다
     const was = bar.btn.run.disabled;

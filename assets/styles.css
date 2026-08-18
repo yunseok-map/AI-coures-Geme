@@ -252,6 +252,33 @@ input { caret-color: var(--mark); }
 }
 .stage__lead  { margin-top: var(--sp-3); }
 
+/* ---------- 지금 할 일 (engines/base.js 의 todo) ----------
+   화면에서 제일 먼저 읽히는 한 줄이다. 그래서 본문보다 크지도 작지도 않게 두고,
+   대신 왼쪽에 네모 하나를 찍어 **여기부터 보라**고만 한다.
+   두 줄이 되면 이 줄의 뜻이 없어진다 — 그때는 글을 줄여야 한다. */
+.todo {
+  display: flex; align-items: baseline; gap: var(--sp-2);
+  margin-top: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--card);
+  border: 1px solid var(--hair);
+  border-left: var(--lip) solid var(--mark);
+  font-size: var(--fs-label); font-weight: var(--w-mid);
+}
+.todo__mark {
+  flex: none;
+  font-size: var(--fs-tag); font-weight: var(--w-black);
+  letter-spacing: .1em; color: var(--mark);
+  font-style: normal;
+}
+.todo__mark::before { content: "지금 할 일"; }
+.todo__text { min-width: 0; }
+
+/* 그 회차에서 할 일을 다 했다 — 다음으로 넘어가라는 뜻이다 */
+.todo--done { border-left-color: var(--pass); }
+.todo--done .todo__mark { color: var(--pass); }
+.todo--done .todo__mark::before { content: "다 됐다"; }
+
 /* ---------- 3) 코스맵 ---------- */
 
 /* 이어서 하기 — 첫 화면에서 누를 곳이 하나로 보이게 한다 */

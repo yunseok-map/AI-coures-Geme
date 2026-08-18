@@ -17,7 +17,7 @@
 // 점수를 내는 것이 **같은 함수**라, 화면과 판정이 어긋날 수 없다.
 // 엔진은 무슨 내용인지 모른다 — 문구는 전부 game.data 에서 온다.
 
-import { el, esc, say, Bin, header, actions, runner } from './base.js';
+import { el, esc, say, Bin, header, actions, runner, todo } from './base.js';
 import { enter, cardIn, pulse, shake, wait } from '../core/motion.js';
 import { eulReul } from '../core/ko.js';
 import { build, lineup, craft, attackLog, coverage, cost, defend, byId } from '../core/inject.js';
@@ -48,6 +48,12 @@ export function mount(root, game, ctx) {
   root.innerHTML = '';
   root.append(header(game));
   root.append(briefCard());
+
+  // 지금 눌러야 할 것 하나. 작업 지시서 바로 다음이다 —
+  // "이런 상황이다 → 그래서 이걸 눌러라" 순서로 읽혀야 한다.
+  // 이 판은 실시간이 아니라서 단계마다 계속 갱신한다.
+  const step = todo();
+  root.append(step.node);
 
   const stage = el('div', 'ij__stage');
   root.append(stage);
@@ -122,6 +128,12 @@ export function mount(root, game, ctx) {
         paper.innerHTML = `<p class="ij__paper__wait">${esc(L.paperWait)}</p>`;
       }
 
+      // 어디에 심어야 통하는지는 말하지 않는다 — 그걸 찾는 것이 전반의 전부다.
+      // 아직 안 고른 칸의 이름만 그대로 불러 준다.
+      if (!w) step.set(`[${L.step1}]에서 하나를 누른다`);
+      else if (!p) step.set(`[${L.step2}]에서 하나를 누른다`);
+      else step.set(`${eulReul(`[${L.plant}]`)} 누른다`, { done: true });
+
       const was = bar.btn.plant.disabled;
       bar.btn.plant.disabled = locked || !(w && p);
       if (was && !bar.btn.plant.disabled) pulse(bar.btn.plant, 1);
@@ -131,6 +143,7 @@ export function mount(root, game, ctx) {
       if (locked) return;
       locked = true;
       bar.btn.plant.disabled = true;
+      step.set('');   // 결과가 흐르는 동안에는 시킬 것이 없다
       for (const n of [...whereNodes.values(), ...whatNodes.values()]) n.disabled = true;
 
       mine = build({ id: 'mine', label: L.mineDoc, where: whereId, what: whatId },
@@ -147,6 +160,7 @@ export function mount(root, game, ctx) {
       feedback.append(sw.node);
       cardIn(sw.node);
       sw.node.scrollIntoView({ block: 'nearest' });
+      step.set(`${eulReul(`[${L.swap}]`)} 누른다`, { done: true });
       bin.on(sw.btn.go, 'click', () => {
         feedback.innerHTML = '';
         locked = false;
@@ -285,6 +299,13 @@ export function mount(root, game, ctx) {
             `${esc(eulReul(billNames.join(' · ')))} ${esc(L.costTail || '')}</p>`
           : '');
 
+      // 어느 대응책이 무엇을 막는지는 위 칸이 이미 보여 준다. 여기서는
+      // **몇 개까지 켤 수 있고 다음에 무엇을 누르는지**만 말한다.
+      if (!picks.length) step.set(`[${L.step4}]에서 눌러 켠다`);
+      else if (picks.length < budget) {
+        step.set(`더 켜거나 ${eulReul(`[${L.run}]`)} 누른다`, { done: true });
+      } else step.set(`${eulReul(`[${L.run}]`)} 누른다`, { done: true });
+
       const was = bar.btn.run.disabled;
       bar.btn.run.disabled = locked;
       if (was && !bar.btn.run.disabled) pulse(bar.btn.run, 1);
@@ -309,6 +330,7 @@ export function mount(root, game, ctx) {
       locked = true;
       bar.btn.run.disabled = true;
       bar.btn.reset.disabled = true;
+      step.set('');   // 판정이 흐르는 동안에는 시킬 것이 없다
       for (const n of gNodes.values()) n.disabled = true;
 
       const gs = picks.map(id => byId(d.guards, id)).filter(Boolean);

@@ -44,6 +44,44 @@ export function header(game) {
   return h;
 }
 
+/**
+ * **지금 할 일** — 한 줄짜리 다음 동작 안내.
+ *
+ * 왜 필요한가: 1번 판을 처음 연 사람이 "어떻게 진행하는지 모르겠다"고 했다.
+ * 화면에는 설명이 이미 여러 줄 있었는데도 그랬다. 설명이 모자란 게 아니라
+ * **지금 눌러야 할 것이 어느 것인지**가 없었던 것이다. 규칙을 다 읽어도
+ * 첫 수를 모르면 못 움직인다.
+ *
+ * 그래서 글을 늘리지 않고 줄을 하나 더 놓는다. 이 줄은 **언제나 한 줄**이고,
+ * 상태가 바뀔 때마다 통째로 갈린다. 쌓이지 않는다 — 쌓이면 그게 또 글이 된다.
+ *
+ * 지키는 것 둘:
+ *   ① **동사로 끝난다.** "눌러 고른다"는 되고 "선택 가능합니다"는 안 된다.
+ *   ② **규칙만 알려 주고 판단은 안 알려 준다.** "무엇을 남길지"는 이 판이
+ *      가르치려는 것이라 여기서 말하면 판이 없어진다.
+ *
+ * @returns {{node: HTMLElement, set(text: string, opts?: {done?: boolean}): void}}
+ */
+export function todo() {
+  const node = el('p', 'todo');
+  node.setAttribute('role', 'status');
+  node.setAttribute('aria-live', 'polite');
+  const mark = el('b', 'todo__mark');
+  const text = el('span', 'todo__text');
+  node.append(mark, text);
+  let last = '';
+  return {
+    node,
+    set(t, opts = {}) {
+      if (t === last && !opts.done) return;   // 같은 말을 다시 읽어 주지 않는다
+      last = t;
+      text.textContent = t;
+      node.classList.toggle('todo--done', !!opts.done);
+      node.hidden = !t;
+    }
+  };
+}
+
 
 /**
  * 실행 로그 패널.

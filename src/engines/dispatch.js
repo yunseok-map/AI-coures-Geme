@@ -16,10 +16,11 @@
 // 시간 계산은 core/dispatch.js 가 한다 — 막대 길이와 판정이 같은 답을 봐야 한다.
 // 판정은 game.simulate({ plan, lost, elapsed }) 가 한다. 엔진은 내용을 모른다.
 
-import { el, esc, say, Bin, header, actions, runner } from './base.js';
+import { el, esc, say, Bin, header, actions, runner, todo } from './base.js';
 import { enter, cardIn, pulse, shake, wait, isReduced } from '../core/motion.js';
 import { createLoop } from '../core/loop.js';
 import { sfx } from '../core/sfx.js';
+import { eulReul } from '../core/ko.js';
 import { cost, commit, newState } from '../core/dispatch.js';
 
 let bin = new Bin();
@@ -41,6 +42,7 @@ export function mount(root, game, ctx) {
   const surfaces = d.surfaces || [];
   const DAY = d.day || 55;
   const CAP = d.queueCap || 3;
+  const GO = d.goLabel || '오늘 시작';   // 시작 버튼 이름 — 지금 할 일 줄이 이걸 그대로 부른다
   const startedAt = Date.now();
 
   /** 보낸 순서 — 순서가 결과를 바꾼다(자료를 언제 올렸나) */
@@ -56,6 +58,11 @@ export function mount(root, game, ctx) {
 
   root.innerHTML = '';
   root.append(header(game));
+
+  // 지금 눌러야 할 것 하나. **흐르기 시작하면 지운다** — 일감이 내려오는 중에
+  // 이 줄이 바뀌면 그것 때문에 판을 놓친다. 이 줄이 일하는 곳은 시작 버튼 앞이다.
+  const step = todo();
+  root.append(step.node);
 
   // ---- 시계 ----
   const top = el('section', 'dp__top');
@@ -102,7 +109,7 @@ export function mount(root, game, ctx) {
 
   const bar = actions([
     { id: 'sound', label: sfx.on ? '소리 끄기' : '소리 켜기' },
-    { id: 'go', label: d.goLabel || '오늘 시작', primary: true }
+    { id: 'go', label: GO, primary: true }
   ]);
   root.append(bar.node);
   bin.on(bar.btn.sound, 'click', () => {
@@ -114,6 +121,9 @@ export function mount(root, game, ctx) {
   drawStats();
   drawQueue();
   drawDesks();
+  // 무엇을 누르면 무엇이 시작되는지 한 줄. 어느 창구로 보낼지는 말하지 않는다 —
+  // 그걸 고르는 것이 이 판이 가르치려는 것이다.
+  step.set(`${eulReul(`[${GO}]`)} 누르고 일감을 창구로 보낸다`);
   enter([...deskBox.children], { each: 40 });
 
   // ------------------------------------------------------------ 화면
@@ -218,6 +228,7 @@ export function mount(root, game, ctx) {
   async function begin() {
     phase = 'count';
     bar.btn.go.disabled = true;
+    step.set('');   // 이제부터는 일감이 내려온다. 글이 바뀌면 그것 때문에 판을 놓친다
     await countdown();
     if (phase !== 'count') return;
 

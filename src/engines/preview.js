@@ -11,8 +11,9 @@
 //
 // LLM 호출은 없다. game.render(켠블록) 이 미리 써 둔 줄을 규칙대로 고른다.
 
-import { el, esc, say, Bin, header, actions, runner } from './base.js';
+import { el, esc, say, Bin, header, actions, runner, todo } from './base.js';
 import { press, animate, isReduced, enter } from '../core/motion.js';
+import { eulReul } from '../core/ko.js';
 
 const TAG = { add: '새로 생김', changed: '달라짐', gone: '사라짐' };
 
@@ -26,6 +27,7 @@ export function mount(root, game, ctx) {
   const d = game.data;
   const startedAt = Date.now();
   const active = new Set();
+  const runLabel = d.runLabel || '이대로 보내기';
 
   // 지금 화면에 그려져 있는 줄. 다음 그리기에서 무엇이 바뀌었는지 재는 기준이다.
   let shownPrompt = [];
@@ -34,13 +36,17 @@ export function mount(root, game, ctx) {
   root.innerHTML = '';
   root.append(header(game));
 
+  // 지금 눌러야 할 것 하나. 목표 결과물을 본 **다음**에 온다 —
+  // "이렇게 만들어야 한다 → 그래서 이걸 눌러라" 순서로 읽혀야 한다.
+  const step = todo();
+
   // ---- ① 목표 결과물이 먼저 보인다 ----
   const goalPane = el('section', 'preview__pane pv__goal');
   goalPane.append(cap(d.goalCap || '목표 결과물', d.goalNote || ''));
   const goalBox = el('div', 'preview__out');
   for (const id of (d.goal || [])) goalBox.append(lineNode(d.lines[id], '', ''));
   goalPane.append(goalBox);
-  root.append(goalPane);
+  root.append(goalPane, step.node);
 
   // ---- ② 지시문과 결과 ----
   const wrap = el('div', 'preview');
@@ -87,7 +93,7 @@ export function mount(root, game, ctx) {
 
   const bar = actions([
     { id: 'reset', label: '전부 끄기' },
-    { id: 'send', label: d.runLabel || '이대로 보내기', primary: true }
+    { id: 'send', label: runLabel, primary: true }
   ]);
   root.append(bar.node);
   bin.on(bar.btn.reset, 'click', () => { active.clear(); paint(true); });
@@ -170,6 +176,13 @@ export function mount(root, game, ctx) {
       node.setAttribute('aria-pressed', String(active.has(id)));
     }
 
+    // 지금 눌러야 할 것 하나. **어느 블록을 켜야 하는지는 말하지 않는다** —
+    // 그게 이 판이 가르치려는 것이다. 켤 수 있다는 것과 보낼 수 있다는 것만 말한다.
+    const send = `${eulReul(`[${runLabel}]`)} 누른다`;
+    const full = view.hit >= view.total;
+    step.set(!active.size ? '아래에서 켤 블록을 누른다' : full ? send : `${send}. 더 켜도 된다`,
+      { done: full });
+
     say(view.say || '결과가 바뀌었습니다.');
   }
 
@@ -177,6 +190,7 @@ export function mount(root, game, ctx) {
     bar.btn.send.disabled = true;
     bar.btn.reset.disabled = true;
     for (const n of nodes.values()) n.disabled = true;
+    step.set('');   // 이제 시킬 것이 없다. 결과가 흐르는 동안 남아 있으면 방해만 된다
 
     const r = runner(d.runCaption || '지시대로 일을 시킨다');
     feedback.append(r.node);

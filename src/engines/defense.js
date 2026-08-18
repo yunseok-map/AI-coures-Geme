@@ -31,10 +31,12 @@
 //
 // 화면 부품 중 `ax__` 로 시작하는 것은 액션 엔진 공용이다(arcade.css).
 
-import { el, esc, strong, say, Bin, header, actions, runner, scarLine } from './base.js';
+import { el, esc, strong, say, Bin, header, actions, runner, scarLine, todo }
+  from './base.js';
 import { icon, roadArt } from '../core/art.js';
 import { createLoop } from '../core/loop.js';
 import { sfx } from '../core/sfx.js';
+import { eulReul } from '../core/ko.js';
 import { animate, isReduced, enter, cardIn, shake, pulse, burst }
   from '../core/motion.js';
 
@@ -65,6 +67,12 @@ export function mount(root, game, ctx) {
   const LIMIT = d.limitSec || 16;     // 오늘 업무 시간
   const QUOTA = d.quota || 0;         // 오늘 넘겨야 하는 정상 작업 건수
 
+  // 화면에 뜨는 이름 — "지금 할 일" 줄이 이 이름을 그대로 불러야 어느 것인지 안다.
+  // 두 곳(빈 자리 글씨 · 안내 줄)이 각자 적으면 이름이 어긋난다.
+  const RUN = d.runLabel || '시작';
+  const PUT = '여기 놓기';
+  const FREE = '빈 자리';
+
   // 슬롯 — 길을 가로지르는 검사대. 위에서부터 고르게 벌린다.
   const slots = Array.from({ length: d.slots }, (_, i) => ({
     i, at: (i + 1) / (d.slots + 1), gate: null, node: null, bar: null
@@ -93,6 +101,12 @@ export function mount(root, game, ctx) {
     cardIn(ticket);
   }
 
+  // 지금 눌러야 할 것 하나. 자리는 상황 카드 바로 다음이다 —
+  // "이런 상황이다 → 그래서 이걸 눌러라" 순서로 읽혀야 한다.
+  // **돌리기 시작하면 지운다** — 내려오는 중에 글이 바뀌면 그것 때문에 놓친다.
+  const step = todo();
+  root.append(step.node);
+
   const hud = el('div', 'ax__hud');
   const statA = el('span', 'ax__stat');
   const statB = el('span', 'ax__stat');
@@ -120,7 +134,7 @@ export function mount(root, game, ctx) {
     esc(d.trayLabel || '놓을 장치 — 종류마다 막는 것이 다르다'));
   const tray = el('div', 'ax__tray');
   const bar = actions([
-    { id: 'go', label: d.runLabel || '시작', primary: true }
+    { id: 'go', label: RUN, primary: true }
   ]);
   dock.append(trayCap, tray, bar.node);
   root.append(dock);
@@ -132,8 +146,21 @@ export function mount(root, game, ctx) {
   drawSlots();
   drawTray();
   drawHud();
+  tellStep();
 
   // ---------------------------------------------------------------- 배치 단계
+
+  /**
+   * 지금 눌러야 할 것 하나. **어느 장치를 어디에 놓을지는 말하지 않는다** —
+   * 그걸 고르는 것이 이 판이 가르치려는 것이다. 조작 규칙만 말한다.
+   */
+  function tellStep() {
+    if (phase !== 'setup') { step.set(''); return; }
+    if (armed) { step.set(`${eulReul(`[${PUT}]`)} 누른다`); return; }
+    const set = slots.filter(s => s.gate).length;
+    if (!set) { step.set(`장치를 누르고 ${eulReul(`[${FREE}]`)} 누른다`); return; }
+    step.set(`${eulReul(`[${RUN}]`)} 누른다`, { done: true });
+  }
 
   function drawSlots() {
     for (const s of slots) {
@@ -159,7 +186,7 @@ export function mount(root, game, ctx) {
         `<span class="def__slot__n">${esc(s.gate.label)}</span>` +
         `<span class="def__slot__d">검사 ${sec(s.gate.holdSec)}초 · 비용 ${s.gate.cost}</span>` +
         `<i class="def__slot__bar"></i>`
-      : `<span class="def__slot__n def__slot__n--empty">${open ? '여기 놓기' : '빈 자리'}</span>`;
+      : `<span class="def__slot__n def__slot__n--empty">${open ? PUT : FREE}</span>`;
     s.bar = b.querySelector('.def__slot__bar');
     b.disabled = phase !== 'setup';
     b.setAttribute('aria-label', s.gate
@@ -187,7 +214,7 @@ export function mount(root, game, ctx) {
         if (phase !== 'setup') return;
         armed = armed === g ? null : g;
         sfx.play('pick');
-        drawTray(); slots.forEach(paintSlot);
+        drawTray(); slots.forEach(paintSlot); tellStep();
         if (armed && g.blurb) say(`${g.label} — ${g.blurb}`);
       });
       tray.append(b);
@@ -215,6 +242,7 @@ export function mount(root, game, ctx) {
     drawTray();
     slots.forEach(paintSlot);
     drawHud();
+    tellStep();
   }
 
   // ---------------------------------------------------------------- 계기판
@@ -269,6 +297,7 @@ export function mount(root, game, ctx) {
     armed = null;
     drawTray();
     slots.forEach(paintSlot);
+    tellStep();   // 이제부터 내려온다 — 줄을 지운다
 
     await countdown();
     if (phase !== 'count') return;      // 도중에 화면을 떠났다

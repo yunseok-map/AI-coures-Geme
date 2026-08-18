@@ -14,7 +14,7 @@
 //
 // 판정은 game.simulate({ builds }) 가 한다. 엔진은 무엇을 끼웠는지만 모아 넘긴다.
 
-import { el, esc, say, Bin, header, actions, runner, hud } from './base.js';
+import { el, esc, say, Bin, header, actions, runner, hud, todo } from './base.js';
 import { enter, flyTo, shake, pulse, cardIn, wait } from '../core/motion.js';
 import { eulReul } from '../core/ko.js';
 
@@ -27,6 +27,7 @@ export function mount(root, game, ctx) {
 
   const d = game.data;
   const orders = d.orders || [];
+  const shipLabel = d.shipLabel || '출고';
   const startedAt = Date.now();
 
   /** [{ orderId, engine, chassis }] — 출고 기록. 마지막에 관계도가 된다 */
@@ -41,7 +42,10 @@ export function mount(root, game, ctx) {
   root.append(gauge.node);
 
   const orderBox = el('div');
-  root.append(orderBox);
+  // 지금 눌러야 할 것 하나. 자리는 **주문서 바로 다음**이다 —
+  // "이런 주문이 들어왔다 → 그래서 이걸 눌러라" 순서로 읽혀야 한다.
+  const step = todo();
+  root.append(orderBox, step.node);
 
   // ---- 조립대 ----
   const bench = el('div', 'asm__bench');
@@ -93,7 +97,7 @@ export function mount(root, game, ctx) {
 
   const bar = actions([
     { id: 'clear', label: '내리기' },
-    { id: 'ship', label: d.shipLabel || '출고', primary: true }
+    { id: 'ship', label: shipLabel, primary: true }
   ]);
   root.append(bar.node);
   bin.on(bar.btn.clear, 'click', () => { held.engine = null; held.chassis = null; paint(); });
@@ -139,7 +143,7 @@ export function mount(root, game, ctx) {
     for (const n of partNodes.values()) n.disabled = false;
     bar.btn.ship.disabled = false;
     bar.btn.clear.disabled = false;
-    bar.btn.ship.textContent = d.shipLabel || '출고';
+    bar.btn.ship.textContent = shipLabel;
     enter([...partNodes.values()], { each: 20 });
     paint();
     say(o.text);
@@ -162,6 +166,13 @@ export function mount(root, game, ctx) {
     for (const [id, node] of partNodes) {
       node.classList.toggle('asm__part--held', held.engine === id || held.chassis === id);
     }
+
+    // 지금 눌러야 할 것 하나. **엔진만 올린 채로도 출고할 수 있다고 둔다** —
+    // 자리 하나가 비었다고 막거나 나무라면 이 판의 임팩트 모먼트를 못 겪는다.
+    if (phase !== 'build') return;   // 출고 뒤의 안내는 ship() 이 세워 둔 것을 그대로 둔다
+    const on = !!(held.engine || held.chassis);
+    step.set(on ? `${eulReul(`[${shipLabel}]`)} 누른다` : '엔진과 차체를 하나씩 고른다',
+      { done: on });
   }
 
   async function ship() {
@@ -169,6 +180,7 @@ export function mount(root, game, ctx) {
     bar.btn.ship.disabled = true;
     bar.btn.clear.disabled = true;
     for (const n of partNodes.values()) n.disabled = true;
+    step.set('');   // 켜 보는 동안에는 시킬 것이 없다. 남아 있으면 방해만 된다
 
     const build = { orderId: o.id, engine: held.engine, chassis: held.chassis };
     builds.push(build);
@@ -205,6 +217,7 @@ export function mount(root, game, ctx) {
     phase = 'shipped';
     bar.btn.ship.disabled = false;
     bar.btn.ship.textContent = at >= orders.length ? '오늘 출고 정리' : '다음 주문';
+    step.set(`${eulReul(`[${bar.btn.ship.textContent}]`)} 누른다`, { done: true });
     pulse(bar.btn.ship, 1);
     // 완성품과 로그가 아래로 쌓이면 버튼이 화면 밖으로 밀린다.
     // 로그로 스크롤하는 것만으로는 부족했다 — 다음으로 갈 곳이 안 보였다.
@@ -245,6 +258,7 @@ export function mount(root, game, ctx) {
 
   function done() {
     orderBox.innerHTML = '';
+    step.set('');   // 조립대가 사라진다. 시킬 것이 없다
     bench.hidden = true;
     shelves.hidden = true;
     bar.node.hidden = true;
