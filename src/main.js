@@ -22,7 +22,6 @@ document.getElementById('boot-fallback')?.remove();
 // 엔진. 진입할 때만 불러온다 — 첫 화면에서 전부 받지 않는다.
 // A~E 는 세팅형(고르고 제출), F~H 는 실시간 액션형이다.
 const ENGINES = {
-  A: () => import('./engines/sort.js'),      // 분류
   C: () => import('./engines/build.js'),     // 조립
   E: () => import('./engines/preview.js'),   // 미리보기
   W: () => import('./engines/wire.js'),      // 배선 — 상자를 선으로 이어 흐름을 만든다
@@ -32,6 +31,7 @@ const ENGINES = {
   R: () => import('./engines/dispatch.js'),  // 실시간 관제 — 일감을 창구로 보낸다
   S: () => import('./engines/library.js'),   // 서고 — 낱말을 던져 걸린 것만 넘긴다
   V: () => import('./engines/evidence.js'),  // 증거판 — 문장을 근거 조항에 잇는다
+  N: () => import('./engines/map.js'),       // 지형 답사 — 발품을 써서 구역을 고른다
   M: () => import('./engines/gate.js'),      // 권한 게이트 — 케이블 위의 문을 하나씩 연다
   F: () => import('./engines/defense.js'),   // 디펜스 — 내려오는 것을 막는다
   G: () => import('./engines/shoot.js'),     // 슈팅 — 문제 있는 것만 쏜다
@@ -50,7 +50,7 @@ let activeEngine = null;
 // .target · .board__row 은 엔진 B(판별형)와 함께 없어졌다.
 const TAPPABLE = '.bin,.part,.toggle,.node,.btn-primary,.btn-quiet,.tab,' +
                  '.def__slot,.ax__tool,.bt__pick,.asm__part,.tl__tool,.tl__box,.tl__key,' +
-                 '.dp__job,.dp__desk,.lib__hit,.lib__word,.ev__line,.ev__span,.gt__gate';
+                 '.dp__job,.dp__desk,.lib__hit,.lib__word,.ev__line,.ev__span,.gt__gate,.mp__tile';
 // 배선형 상자(.wf__node)는 여기 넣지 않는다. 파문은 host 를 넘어가지 않아야 해서
 // `overflow: hidden` 이 전제인데, 그 상자는 선이 드나드는 동그라미를 테두리 **밖에**
 // 달고 있어서 잘라낼 수 없다. 넣었더니 파문이 상자보다 크게 번져 이름을 덮었다.

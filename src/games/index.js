@@ -48,7 +48,7 @@ export const manifest = [
     title: '업무 티켓 처리',    learn: '전체 종합' },
 
   // ---- 번외 ----
-  { id: 'which-ai',         no: 17, chapter: 9, engine: 'A', required: true,  ready: true,
+  { id: 'which-ai',         no: 17, chapter: 9, engine: 'N', required: true,  ready: true,
     title: '이 일엔 어떤 AI?',  learn: '용도별 도구 지형도 · 애그리게이터' }
 ];
 

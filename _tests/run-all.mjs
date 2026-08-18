@@ -27,6 +27,7 @@ const SUITES = [
   ['4 자료 찾아오기 (서고)', 'test-library.mjs'],
   ['9 배선 연결 (권한 게이트)', 'test-gate.mjs'],
   ['1·10 가방·지침서 (회차·수리)', 'test-bag.mjs'],
+  ['17 이 일엔 어떤 AI (지형 답사)', 'test-map.mjs'],
   ['3 지시문 (실시간 대조)', 'test-preview.mjs'],
   ['용어 수집 (획득/읽음)', 'test-collect.mjs'],
   ['학습자 칸 (공용 PC)', 'test-who.mjs'],

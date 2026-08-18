@@ -1,0 +1,283 @@
+/* ============================================================
+   엔진 N — 지형 답사 (mp__*)
+
+   화면이 말해야 하는 것 셋:
+     ① 발품은 오늘치가 정해져 있다 → 위쪽 계기가 줄어드는 것이 보여야 한다
+     ② 갈래마다 대가가 다르다      → 구역마다 발품·남김·넘김이 얼굴에 적혀 있다
+     ③ 지나온 길은 되돌릴 수 없다  → 아래쪽 자취가 쌓인다
+
+   서식처럼 보이면 안 된다. 네모난 목록이 아니라 **지도**로 읽혀야 해서
+   구역마다 모서리를 다르게 깎고 등고선 무늬를 깔았다. 무늬는 전부
+   그라디언트다 — 바깥 요청 0건을 지켜야 하므로 이미지를 쓰지 않는다.
+   ============================================================ */
+
+/* ---------- 발품 계기 ---------- */
+
+.mp__hud { margin-top: var(--sp-4); }
+
+.mp__meter {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  font-size: var(--fs-aux);
+  color: var(--muted);
+}
+.mp__meter__num {
+  font-family: var(--font-mono);
+  font-size: var(--fs-hero);
+  line-height: 1;
+  color: var(--ink);
+}
+.mp__meter__of { margin-left: auto; }
+
+.mp__gauge {
+  height: 10px;
+  margin-top: var(--sp-2);
+  background: var(--surface-well);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+.mp__gauge i {
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: var(--mark);
+  border-radius: var(--radius-pill);
+  transition: width var(--dur-move) var(--ease-out);
+}
+.mp__gauge.is-low i { background: var(--accent); }
+
+/* ---------- 지금 의뢰 ---------- */
+/* 지도 위에 얹힌 쪽지처럼. 모서리 하나만 접어 둔다 */
+
+.mp__job {
+  position: relative;
+  margin-top: var(--sp-4);
+  padding: var(--sp-3);
+  background: var(--card);
+  border: var(--border-w) solid var(--ink);
+  border-radius: var(--radius-sm) var(--radius-sm) var(--radius-sm) 0;
+  box-shadow: var(--lift-2);
+}
+.mp__job:empty { display: none; }
+.mp__job__no {
+  font-family: var(--font-mono);
+  font-size: var(--fs-aux);
+  letter-spacing: .06em;
+  color: var(--muted);
+}
+.mp__job__text {
+  margin: var(--sp-1) 0 0;
+  font-size: var(--fs-label);
+  line-height: 1.5;
+}
+
+.mp__asks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-top: var(--sp-2);
+}
+.mp__asks__cap { font-size: var(--fs-aux); color: var(--muted); }
+.mp__ask {
+  padding: 2px var(--sp-2);
+  font-size: var(--fs-aux);
+  font-weight: 700;
+  color: var(--on-mark);
+  background: var(--mark);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--gloss);
+}
+.mp__ask--none {
+  color: var(--muted);
+  background: var(--surface-well);
+  box-shadow: none;
+}
+
+/* ---------- 지형도 ---------- */
+
+.mp__map {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+  padding: var(--sp-2);
+  border: var(--border-w) dashed var(--edge);
+  border-radius: var(--radius);
+  /* 등고선 — 옅은 동심원 두 벌을 엇갈리게 겹친다 */
+  background-image:
+    repeating-radial-gradient(circle at 18% 22%,
+      var(--ink-06) 0 1px, transparent 1px 14px),
+    repeating-radial-gradient(circle at 82% 78%,
+      var(--ink-06) 0 1px, transparent 1px 18px);
+}
+
+.mp__tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+  min-height: 108px;
+  padding: var(--sp-2);
+  font: inherit;
+  text-align: left;
+  color: var(--ink);
+  background: var(--card);
+  border: var(--border-w) solid var(--edge);
+  border-bottom-width: var(--lip);
+  /* 모서리를 제각각 깎아 "구역"으로 읽히게 한다 */
+  border-radius: 18px 8px 16px 10px;
+  cursor: pointer;
+  transition: transform var(--dur-press) var(--ease),
+              border-color var(--dur-tap) var(--ease),
+              box-shadow var(--dur-tap) var(--ease);
+}
+.mp__tile:nth-child(2n) { border-radius: 8px 18px 10px 16px; }
+.mp__tile:hover:not(:disabled) { border-color: var(--mark); transform: translateY(var(--rise)); }
+.mp__tile:active:not(:disabled) { transform: translateY(2px); border-bottom-width: var(--border-w); }
+
+.mp__tile__name { font-size: var(--fs-label); font-weight: 700; line-height: 1.3; }
+.mp__tile__line {
+  font-size: var(--fs-aux);
+  line-height: 1.35;
+  color: var(--muted);
+}
+.mp__tile__traits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+  /* 구역 폭을 넘지 않게 못 박는다. 안 그러면 표시 셋이 한 줄로 뻗어
+     360px 에서 가로 스크롤이 생긴다. */
+  align-self: stretch;
+  min-width: 0;
+  margin-top: auto;
+  padding-top: var(--sp-1);
+}
+.mp__trait {
+  padding: 1px var(--sp-1);
+  font-size: var(--fs-aux);
+  font-style: normal;
+  font-weight: 600;
+  color: var(--pass-deep);
+  background: var(--pass-10);
+  border-radius: var(--radius-sm);
+}
+.mp__trait--no { color: var(--muted); background: var(--surface-well); }
+.mp__trait--cost {
+  font-family: var(--font-mono);
+  color: var(--ink);
+  background: var(--ink-06);
+}
+
+/* 살펴보는 중인 구역 — 깃발이 꽂힌 것처럼 */
+.mp__tile.mp__tile--open {
+  border-color: var(--mark);
+  background: var(--mark-08);
+  box-shadow: 0 0 0 2px var(--mark-16), var(--lift-2);
+}
+/* 발품이 모자라 못 가는 곳. 흐리게만 두고 누르는 것은 막지 않는다 —
+   왜 못 가는지 미리보기가 말해 줘야 하기 때문이다. */
+.mp__tile.mp__tile--far { opacity: .55; }
+/* 길이 없는 곳 — 빗금을 쳐서 지도에서 "통행 불가"로 읽히게 한다 */
+.mp__tile.mp__tile--gone {
+  background-image: repeating-linear-gradient(45deg,
+    var(--ink-06) 0 3px, transparent 3px 10px);
+}
+
+/* ---------- 이 길로 가면 ---------- */
+
+.mp__look {
+  min-height: 132px;
+  margin-top: var(--sp-3);
+  padding: var(--sp-3);
+  background: var(--card);
+  border: var(--border-w) solid var(--edge);
+  border-radius: var(--radius);
+  box-shadow: var(--lift-1);
+}
+.mp__look__hint {
+  margin: 0;
+  font-size: var(--fs-aux);
+  color: var(--muted);
+}
+.mp__look__cap {
+  font-size: var(--fs-aux);
+  font-weight: 700;
+  color: var(--mark-deep);
+}
+.mp__look__cost {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-1);
+  margin-top: var(--sp-1);
+}
+.mp__look__cost b {
+  font-family: var(--font-mono);
+  font-size: var(--fs-display);
+  line-height: 1;
+  color: var(--ink);
+}
+.mp__look__cost span { font-size: var(--fs-aux); color: var(--muted); }
+.mp__look__line {
+  margin: var(--sp-1) 0 0;
+  font-size: var(--fs-label);
+  line-height: 1.45;
+}
+.mp__look__bar { margin-top: var(--sp-3); }
+
+/* ---------- 지나온 길 ---------- */
+
+.mp__trail { margin-top: var(--sp-4); }
+.mp__trail__cap {
+  font-size: var(--fs-aux);
+  color: var(--muted);
+  margin-bottom: var(--sp-1);
+}
+.mp__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+}
+.mp__chips__none { font-size: var(--fs-aux); color: var(--muted); }
+.mp__chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--sp-1);
+  padding: 2px var(--sp-2);
+  font-size: var(--fs-aux);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-pill);
+}
+.mp__chip b {
+  font-family: var(--font-mono);
+  font-size: var(--fs-aux);
+  color: var(--muted);
+}
+.mp__chip i { font-style: normal; color: var(--muted); }
+.mp__chip--full { border-color: var(--pass); background: var(--pass-10); }
+.mp__chip--thin { border-color: var(--partial); background: var(--partial-10); }
+.mp__chip--back { border-color: var(--fail); background: var(--fail-10); }
+
+/* ---------- 방금 일어난 일 한 줄 ---------- */
+
+.mp__note {
+  margin: var(--sp-3) 0 0;
+  padding: var(--sp-2) var(--sp-3);
+  font-size: var(--fs-label);
+  line-height: 1.45;
+  color: var(--on-mark);
+  background: var(--ink);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--gloss), var(--lift-2);
+}
+
+/* 360px 에서도 구역 두 줄이 화면 안에 들어와야 한다.
+   가로 스크롤은 절대 생기면 안 되므로 열 수를 늘리지 않는다. */
+@media (max-width: 400px) {
+  .mp__map { gap: var(--sp-1); padding: var(--sp-1); }
+  .mp__tile { min-height: 100px; }
+  .mp__tile__line { line-height: 1.25; }
+  .mp__look { min-height: 124px; }
+}
