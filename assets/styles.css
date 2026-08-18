@@ -6,7 +6,21 @@
 /* ---------- 1) 기본 ---------- */
 *, *::before, *::after { box-sizing: border-box; }
 
-html { -webkit-text-size-adjust: 100%; }
+html {
+  -webkit-text-size-adjust: 100%;
+
+  /* 스크롤바 자리를 늘 비워 둔다.
+     안 그러면 화면마다 세로 스크롤이 생겼다 없어졌다 하면서 **가운데 정렬된 본문이
+     7~8px 씩 옆으로 튄다.** 코스맵(스크롤 있음)에서 게임(스크롤 없음)으로 넘어갈 때,
+     그리고 게임 중에 해설 칸이 열리고 닫힐 때마다 일어난다.
+     움직이는 카드를 눌러 맞히는 판(2·13·14·15)에서는 이게 그대로 조준 실패가 된다.
+     **overflow 를 같이 적어야 한다.** scrollbar-gutter 는 overflow 가 scroll/auto 일 때만
+     듣는다 — 기본값 visible 로 두면 속성은 걸려 있는데 아무 일도 안 일어난다(실제로 겪었다).
+     auto 라서 스크롤이 없는 화면에서는 막대가 그려지지 않고 자리만 비어 있다.
+     지원 안 하는 브라우저에서는 지금과 같게 동작한다. */
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
 
 body {
   margin: 0;
