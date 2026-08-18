@@ -5,13 +5,6 @@
    ============================================================ */
 
 /* ---------- 공통: 진행 표시 ---------- */
-.counter {
-  display: flex; gap: var(--sp-4); align-items: center;
-  font-family: var(--font-mono); font-size: var(--fs-mono);
-  color: var(--muted);
-  margin: var(--sp-3) 0;
-}
-.counter b { color: var(--ink); }
 
 /* ---------- 진행 HUD ----------
    문항 수만큼 칸을 미리 깔아 둔다. "몇 개 남았나"가 숫자가 아니라 길이로 보여야
@@ -118,13 +111,16 @@
 .sheet__bar { margin-top: var(--sp-3); }
 
 /* ---------- 시그니처: 작업 지시서(티켓) ---------- */
+/* 작업 지시서. 떠 있는 카드가 아니라 **철해 둔 종이 한 장**이다 —
+   위쪽에 굵은 선을 긋고 왼쪽에 천공 자국(점선)을 남긴다. */
 .ticket {
   position: relative;
   background: var(--card);
-  border: 1px solid var(--ink-12);
-  border-radius: var(--radius);
-  box-shadow: var(--lift-2);
-  padding: var(--sp-4) var(--sp-4) var(--sp-4) var(--sp-5);
+  border: 1px solid var(--hair);
+  border-top: 3px solid var(--ink);
+  border-radius: 0;
+  box-shadow: var(--lift-1);
+  padding: var(--sp-3) var(--sp-4) var(--sp-4) var(--sp-5);
 }
 .ticket::before {
   content: "";
@@ -132,12 +128,12 @@
   border-left: 2px dashed var(--ink-12);
 }
 .ticket__no {
-  font-family: var(--font-mono); font-size: var(--fs-mono);
-  color: var(--muted); letter-spacing: .06em;
-  margin-bottom: var(--sp-1);
+  font-family: var(--font-mono); font-size: var(--fs-tag);
+  color: var(--muted); letter-spacing: .12em;
+  margin-bottom: var(--sp-2);
+  text-transform: uppercase;
 }
 .ticket__body { font-size: var(--fs-body); }
-.ticket--held { border-color: var(--mark); box-shadow: 0 0 0 2px var(--mark-16), var(--lift-2); }
 
 /* 답을 낸 티켓. 화면 밖으로 날려 버리면 해설을 읽는 동안 질문이 사라지고
    그 자리가 빈 구멍으로 남는다. 그래서 가라앉히기만 한다 (core/motion.settle). */
@@ -153,51 +149,11 @@
 .ticket--no::after { content: "반려"; color: var(--fail); }
 
 /* ---------- A 분류형: 통 ---------- */
-.bins {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
-  gap: var(--sp-2);
-  margin-top: var(--sp-4);
-}
 /* 도구함 = 눌러서 던져 넣는 물체. 얇은 카드로 두면 표의 한 칸으로 읽힌다.
    아랫면(lip)을 깔아 두께를 주고, 누르면 그만큼 내려간다. */
-.bin {
-  display: flex; flex-direction: column; align-items: flex-start;
-  gap: 2px;
-  min-height: 84px;
-  padding: var(--sp-3);
-  text-align: left;
-  background: var(--card);
-  border: var(--border-w) solid var(--ink-12);
-  border-top: 4px solid var(--ink-20);
-  border-bottom-width: var(--lip);
-  border-radius: var(--radius);
-  box-shadow: var(--lift-1);
-  transition: transform var(--dur-press) var(--ease),
-              background var(--dur-tap) var(--ease),
-              border-color var(--dur-tap) var(--ease),
-              border-bottom-width var(--dur-press) var(--ease);
-}
-.bin:active:not(:disabled) {
-  transform: translateY(calc(var(--lip) - var(--border-w)));
-  border-bottom-width: var(--border-w);
-}
-.bin__label { font-weight: 700; font-size: var(--fs-label); line-height: 1.35; }
-.bin__hint  { font-size: var(--fs-aux); color: var(--muted); line-height: 1.35; }
 
 /* 카드가 올라와 있는 동안만 통이 "열린다" — 누를 수 있을 때와 아닐 때가 달라야 한다 */
-.bins--armed .bin { border-top-color: var(--mark); }
-.bins--armed .bin:hover:not(:disabled) {
-  border-color: var(--mark); background: var(--mark-08);
-  transform: translateY(-2px);
-  box-shadow: var(--lift-2);
-}
 
-.bin--right {
-  border-color: var(--pass); border-top-color: var(--pass); background: var(--pass-10);
-  animation: binHit 380ms var(--ease-back) both;
-}
-.bin--wrong { border-color: var(--fail); border-top-color: var(--fail); background: var(--fail-10); }
 @keyframes binHit {
   0%   { transform: scale(1); }
   35%  { transform: scale(1.05); }
@@ -224,30 +180,6 @@
   margin-bottom: var(--sp-1);
 }
 
-.targets { display: grid; gap: var(--sp-2); margin-top: var(--sp-3); }
-.target {
-  display: grid; grid-template-columns: 22px 1fr; gap: var(--sp-3);
-  align-items: start;
-  width: 100%; text-align: left;
-  padding: var(--sp-3);
-  background: var(--card);
-  border: 1px solid var(--ink-12);
-  box-shadow: var(--lift-1);
-}
-.target__box {
-  width: 18px; height: 18px; margin-top: 3px;
-  border: 2px solid var(--ink-20);
-  border-radius: var(--radius-sm);
-}
-.target--picked .target__box { background: var(--mark); border-color: var(--mark); }
-.target--hit  { border-color: var(--pass); background: var(--pass-10); }
-.target--hit .target__box  { background: var(--pass); border-color: var(--pass); }
-.target--miss { border-color: var(--fail); background: var(--fail-10); }
-.target__why {
-  display: block; margin-top: var(--sp-1);
-  font-size: var(--fs-aux); color: var(--muted);
-}
-
 /* 사무실 화면형(미니게임 15) — 좌표 배치 */
 .board {
   position: relative;
@@ -267,10 +199,6 @@
   text-align: left;
   background: none;
   min-height: var(--tap-min);
-}
-.board__tag {
-  font-family: var(--font-mono); font-size: var(--fs-aux);
-  color: var(--muted); white-space: nowrap;
 }
 
 /* ---------- C 조립형: 부품 + 슬롯 + 예산 ---------- */
@@ -402,18 +330,18 @@
   border: 1px solid var(--hair);
   border-radius: var(--radius);
 }
-.part, .bin, .toggle, .target, .board__row {
+.part, .toggle {
   transition: transform var(--dur-tap) var(--ease),
               box-shadow var(--dur-tap) var(--ease),
               background-color var(--dur-tap) var(--ease),
               border-color var(--dur-tap) var(--ease);
 }
 /* 뜨는 높이는 --rise 하나로 맞춘다. 물건마다 다르게 뜨면 손맛이 어긋난다. */
-.part:hover:not(:disabled), .bin:hover:not(:disabled),
-.toggle:hover:not(:disabled), .target:hover:not(:disabled),
+.part:hover:not(:disabled),
+.toggle:hover:not(:disabled),
 .board__row:hover:not(:disabled) { transform: translateY(var(--rise)); box-shadow: var(--lift-2); }
-.part:active:not(:disabled), .bin:active:not(:disabled),
-.toggle:active:not(:disabled), .target:active:not(:disabled),
+.part:active:not(:disabled),
+.toggle:active:not(:disabled),
 .board__row:active:not(:disabled) { transform: scale(.97); }
 
 .part {
@@ -577,6 +505,5 @@
 
 /* ---------- 데스크톱 확장 ---------- */
 @media (min-width: 720px) {
-  .bins { grid-template-columns: repeat(auto-fit, minmax(178px, 1fr)); }
   .preview { grid-template-columns: 1fr 1fr; align-items: start; }
 }
