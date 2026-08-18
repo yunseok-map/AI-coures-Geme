@@ -27,13 +27,19 @@ export function renderLearners() {
   return box;
 }
 
-/** 혼자 쓸 때 — 안내 한 줄 + 나누기 버튼. 이름을 묻지 않는다. */
+/**
+ * 아직 혼자일 때 — 지금 누구인지 한 줄과 [사람 추가].
+ *
+ * 시작 화면에서 이미 이름을 대고 들어왔으므로(`shell/enter.js`) 여기서
+ * "사람을 나눠야 한다"고 설명하지 않는다. 나누는 자리는 맨 앞으로 옮겼다.
+ * 여기 남는 일은 하나다 — **앉은 채로 다음 사람에게 넘기는 것.**
+ */
 function soloLine(box) {
   const row = document.createElement('div');
   row.className = 'who__line';
-  row.append(note('진행도는 이 브라우저에만 저장된다. ' +
-                  '여러 명이 쓰는 PC 라면 사람을 나눠야 앞사람 진도가 안 보인다.'));
-  row.append(quiet('사람 나누기', () => addForm(box)));
+  row.append(cap('지금 배우는 사람'), typed(who.active.name));
+  row.append(note('진행도는 이 브라우저에만 저장된다. 다른 사람이 이어서 하려면 이름을 하나 더 만든다.'));
+  row.append(quiet('사람 추가', () => addForm(box)));
   return row;
 }
 

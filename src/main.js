@@ -10,6 +10,7 @@ import { renderToolbook } from './shell/toolbook.js';
 import { renderReport } from './shell/report.js';
 import { showDebrief, hideDebrief } from './shell/debrief.js';
 import { mountBookmark, refresh as refreshBook } from './shell/bookmark.js';
+import { needEnter, showEnter } from './shell/enter.js';
 import { stageIn, ripple } from './core/motion.js';
 
 // 모듈이 실행됐다는 표시. index.html 의 file:// 안내가 이 값을 본다.
@@ -43,10 +44,6 @@ const app = document.getElementById('app');
 const topbarHost = document.createElement('header');
 const stage = document.createElement('main');
 stage.className = 'stage';
-app.append(topbarHost, stage);
-
-// 화면 옆에 떠 있는 도감책. 셸 바깥(body)에 붙여서 화면이 바뀌어도 살아 있다.
-mountBookmark(document.body);
 
 let activeEngine = null;
 
@@ -65,7 +62,30 @@ document.addEventListener('pointerdown', (e) => {
   ripple(t, e.clientX - box.left, e.clientY - box.top);
 }, { passive: true });
 
-start(handle);
+boot();
+
+/**
+ * 이름을 먼저 묻고, 그 다음에 셸을 세운다.
+ *
+ * 순서가 뒤바뀌면 안 되는 이유: `core/state.js` 는 저장 키를 **모듈 로드 때
+ * 한 번만** 읽는다. 코스맵을 먼저 그린 뒤에 사람을 정하면 앞사람 숫자가
+ * 화면에 남는다. 그래서 사람이 바뀌는 경우 `showEnter` 는 새로고침으로 끝나고
+ * 이 함수는 거기서 멈춘다 — 새 문서가 처음부터 다시 시작한다.
+ *
+ * 상단바·도감책도 이 뒤에 붙인다. 시작 화면에 진도 막대와 도감책이 떠 있으면
+ * 그것부터 눌러 보게 되는데, 그때 숫자는 아직 누구 것인지 정해지지 않았다.
+ */
+async function boot() {
+  if (needEnter()) await showEnter(app);
+
+  app.textContent = '';
+  app.append(topbarHost, stage);
+
+  // 화면 옆에 떠 있는 도감책. 셸 바깥(body)에 붙여서 화면이 바뀌어도 살아 있다.
+  mountBookmark(document.body);
+
+  start(handle);
+}
 
 async function handle(route) {
   // 이전 화면 정리 — 타이머·이벤트가 남지 않게 반드시 먼저 한다.

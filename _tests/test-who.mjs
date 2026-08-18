@@ -19,6 +19,18 @@ globalThis.localStorage = {
   removeItem: (k) => { delete store[k]; }
 };
 
+// 시작 화면(`shell/enter.js`)이 "이 탭에서 이미 들어왔나"를 여기에 적는다.
+// **탭 하나짜리 저장소**인 것이 설계다 — 창을 닫으면 지워져서 다음 사람에게
+// 이름부터 다시 묻는다. 그래서 localStorage 와 따로 흉내 낸다.
+let ses = {};
+globalThis.sessionStorage = {
+  getItem: (k) => (k in ses ? ses[k] : null),
+  setItem: (k, v) => { ses[k] = String(v); },
+  removeItem: (k) => { delete ses[k]; }
+};
+/** 탭을 닫았다 다시 연다 — localStorage 는 남고 sessionStorage 만 사라진다 */
+const newTab = () => { ses = {}; };
+
 let pass = 0, fail = 0;
 const check = (n, c, x) => { if (c) { pass++; console.log('  OK   ' + n); }
   else { fail++; console.log(`  FAIL ${n}${x ? ' — ' + x : ''}`); } };
@@ -246,6 +258,72 @@ console.log('\n== 지금 사람만 처음부터 ==');
   check('지금 사람 키만 지워진다', store[`${BASE}:2`] === undefined);
   check('다른 사람 기록은 남는다', typeof store[BASE] === 'string',
     JSON.stringify(Object.keys(store)));
+}
+
+// ---------------------------------------------------------------- 시작 화면
+//
+// 이름을 먼저 묻게 만든 장치(`shell/enter.js`)가 기대는 것들을 여기서 못 박는다.
+// 이 판정이 틀리면 공용 PC 에서 **다음 사람이 앞사람 진도를 그대로 물려받는다** —
+// 화면에는 아무 이상이 없어 보이고, 그 사람만 아무것도 못 배운 채 끝난다.
+console.log('\n== 시작 화면 (이름부터 묻기) ==');
+{
+  const w = await resetShared();
+  newTab();
+
+  check('처음 열면 이름을 묻는다', w.entered === false);
+  check('아무도 안 깬 브라우저는 빈 브라우저다', w.fresh === true);
+
+  // ① 첫 사람은 **1번 칸의 이름만 바꾼다.** 새 칸을 만들면 접미사 없는 옛 키를
+  //    쥔 진도 0 짜리 '1번' 이 유령으로 남아 목록에 끼어든다.
+  w.rename(1, '민수');
+  w.enter();
+  check('첫 사람이 1번 칸을 쓴다', w.list.length === 1 && w.active.name === '민수',
+    JSON.stringify(w.list));
+  check('1번은 접미사 없는 옛 키 그대로다', w.key(1) === BASE, w.key(1));
+  check('한 번 들어오면 다시 묻지 않는다', w.entered === true);
+
+  // ② 민수가 두 판 깼다. 그 상태에서 다음 사람이 같은 컴퓨터에 앉는다.
+  store[BASE] = JSON.stringify({ version: 1, cleared: { a: {}, b: {} },
+    unlockedTerms: [], earnedTerms: [] });
+  check('깬 판 수를 이름 옆에 붙일 수 있다', w.done(1) === 2, String(w.done(1)));
+  check('이제 빈 브라우저가 아니다', w.fresh === false);
+
+  newTab();   // 앞사람이 창을 닫고 다음 사람이 새로 연다
+  check('다음 사람에게는 다시 묻는다', w.entered === false);
+
+  // ③ 같은 이름은 막는다 — 목록에서 자기 칸을 구별할 수 없게 된다
+  check('이미 있는 이름을 알아본다', w.taken('민수') === true);
+  check('앞뒤 공백이 달라도 같은 이름이다', w.taken('  민수 ') === true);
+  check('다른 이름은 통과한다', w.taken('영희') === false);
+
+  // ④ 새 사람은 다음 칸을 받고, 진도는 0 에서 시작한다
+  const before = w.active.n;
+  const n = w.add('영희');
+  // **add() 는 만들면서 곧바로 그 사람으로 넘어간다.** 시작 화면이 "새로고침이
+  // 필요한가"를 add() **뒤에** 판단하면 언제나 "같다"가 나와서 새로고침을 건너뛰고,
+  // 새로 들어온 사람 화면에 앞사람 진도가 그대로 뜬다. 실제로 그렇게 났던 사고다.
+  check('새 사람을 만들면 그 사람으로 넘어가 있다', w.active.n === n && before !== n,
+    `${before} → ${w.active.n}`);
+  w.enter();
+  check('새 사람은 2번 칸을 받는다', n === 2 && w.key(2) === `${BASE}:2`, w.key(2));
+  check('새 사람 진도는 0 이다', w.done(2) === 0, String(w.done(2)));
+  check('앞사람 진도는 그대로다', w.done(1) === 2, String(w.done(1)));
+
+  const s = await reload();
+  check('영희 화면에는 앞사람 기록이 없다',
+    s.isCleared('a') === false && s.isCleared('b') === false,
+    `a=${s.isCleared('a')} b=${s.isCleared('b')}`);
+}
+
+console.log('\n== 처음부터 지우면 이름부터 다시 묻는다 ==');
+{
+  // '처음부터'로 브라우저를 통째로 비우고도 계속 안 물으면, 지운 사람이
+  // 앞사람 이름표를 그대로 달고 새로 시작하게 된다.
+  const w = await resetShared();
+  w.enter();
+  check('들어온 표시가 있다', w.entered === true);
+  w.wipe();
+  check('전부 지우면 표시도 지워진다', w.entered === false);
 }
 
 console.log(`\n결과: ${pass} 통과 / ${fail} 실패\n`);

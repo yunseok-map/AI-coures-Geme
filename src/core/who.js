@@ -23,6 +23,16 @@
 const REG = 'ai-course-who';
 const BASE = 'ai-course-v1';
 
+/**
+ * 이 탭에서 이미 이름을 대고 들어왔는지 — 시작 화면(`shell/enter.js`)이 본다.
+ *
+ * **sessionStorage 인 것이 핵심이다.** localStorage 에 두면 한 번 들어온 뒤로
+ * 영영 안 묻게 되어 공용 PC 에서 다음 사람이 앞사람 진도를 그대로 물려받는다.
+ * 탭을 닫으면 사라지므로, 다음 사람이 새로 열면 다시 이름부터 묻는다.
+ * 반대로 같은 탭에서 새로고침(사람 바꾸기·처음부터)할 때는 안 묻는다.
+ */
+const SEEN = 'ai-course-entered';
+
 /** 8명이면 교육장 단말 한 대로 충분하다. 더 늘리면 알약 목록이 화면을 먹는다. */
 const MAX = 8;
 /** 이름은 알약 하나에 들어가야 한다 */
@@ -81,6 +91,54 @@ export const who = {
 
   /** 사람을 나눠 쓰고 있는가. 혼자면 화면에 알약을 띄우지 않는다. */
   get many() { return reg.list.length > 1; },
+
+  /**
+   * 이 브라우저에서 **아직 아무도 한 판도 안 깼는가.**
+   *
+   * 시작 화면에서 첫 사람의 이름을 어디에 넣을지가 여기서 갈린다.
+   *   비어 있으면 → 1번 칸의 **이름만 바꾼다.** 1번은 접미사 없는 옛 키를 쓰므로
+   *     새 사람을 만들면 진도 0 짜리 '1번' 이 유령으로 남는다.
+   *   이미 누가 깼으면 → 그 사람이 1번이다. 새로 온 사람은 **다음 칸**을 받는다.
+   */
+  get fresh() {
+    try {
+      if (localStorage.getItem(REG)) return false;
+      return who.done(1) === 0;
+    } catch { return true; }
+  },
+
+  /** 이 탭에서 이미 이름을 대고 들어왔는가 */
+  get entered() {
+    try { return sessionStorage.getItem(SEEN) === '1'; } catch { return false; }
+  },
+
+  /** 들어왔다고 표시한다. 새로고침해도 시작 화면이 다시 뜨지 않게 한다. */
+  enter() {
+    try { sessionStorage.setItem(SEEN, '1'); } catch { /* 무시 */ }
+  },
+
+  /**
+   * 그 사람이 몇 판을 깼는지 — 시작 화면에서 **이름 옆에 붙여 자기를 찾게** 한다.
+   * 이름이 비슷한 사람이 여럿이면 이름만으로는 자기 칸을 못 고른다.
+   *
+   * 왜 여기 있나: 남의 칸을 읽는 일이라 `core/state.js` 가 할 수 없다 —
+   * 그쪽은 **지금 사람 것 하나만** 들고 있는 것이 설계다. 키를 아는 것은 이 파일이다.
+   * 읽기만 하고 쓰지 않는다.
+   */
+  done(n) {
+    try {
+      const raw = localStorage.getItem(who.key(n));
+      if (!raw) return 0;
+      const p = JSON.parse(raw);
+      return p && p.cleared ? Object.keys(p.cleared).length : 0;
+    } catch { return 0; }
+  },
+
+  /** 이 이름을 이미 쓰고 있는 사람이 있는가 (앞뒤 공백·대소문자 무시) */
+  taken(name, except = 0) {
+    const k = clean(name).toLowerCase();
+    return reg.list.some(s => s.n !== except && s.name.toLowerCase() === k);
+  },
   get full() { return reg.list.length >= MAX; },
   get max() { return MAX; },
   get nameMax() { return NAME_MAX; },
@@ -143,6 +201,7 @@ export const who = {
       for (const s of reg.list) localStorage.removeItem(who.key(s.n));
       localStorage.removeItem(REG);
     } catch { /* 무시 */ }
+    try { sessionStorage.removeItem(SEEN); } catch { /* 무시 */ }
     reg = blankReg();
   }
 };

@@ -1,0 +1,104 @@
+/* 시작 화면 — 이름을 대고 들어간다 (src/shell/enter.js)
+   ------------------------------------------------------------------
+   방향은 나머지 화면과 같다: 도면지 바탕 위의 접수 카드 한 장.
+   각진 모서리 · 가는 괘선 · 그림자 대신 단차. 색은 [들어간다] 한 곳에만 쓴다.
+   여기서 색을 더 쓰면 "무엇을 누르면 되나"가 흐려진다 — 이 화면은 그것만 묻는다. */
+
+.enter {
+  min-height: 100dvh;
+  display: flex; align-items: center; justify-content: center;
+  padding: var(--sp-5) var(--sp-4);
+}
+
+.enter__card {
+  width: 100%; max-width: 420px;
+  padding: var(--sp-5);
+  background: var(--card);
+  border: var(--border-w) solid var(--edge);
+  border-radius: var(--radius);
+  box-shadow: var(--lift-2);
+}
+
+/* 도면 부호 — 이 카드가 무엇인지. 대문자·자간으로만 구별한다 */
+.enter__cap {
+  margin: 0;
+  font-size: var(--fs-tag); font-weight: var(--w-black);
+  letter-spacing: .18em; color: var(--muted);
+}
+
+.enter__title {
+  margin: var(--sp-2) 0 0;
+  font-size: var(--fs-hero); font-weight: var(--w-black);
+  letter-spacing: -.01em; line-height: 1.2;
+}
+
+.enter__lead {
+  margin: var(--sp-2) 0 0;
+  padding-bottom: var(--sp-4);
+  border-bottom: 1px solid var(--hair);
+  font-size: var(--fs-aux); color: var(--muted); line-height: 1.6;
+}
+
+/* 구역 이름 — "이미 하던 사람" / "처음 온 사람" */
+.enter__cap2 {
+  display: block;
+  margin: var(--sp-4) 0 var(--sp-2);
+  font-size: var(--fs-tag); font-weight: var(--w-black);
+  letter-spacing: .12em; color: var(--muted);
+}
+
+/* 이미 하던 사람 — 한 줄에 하나씩. 알약을 옆으로 늘어놓으면 이름이 잘려서
+   자기 칸을 못 찾는다. 판 수까지 붙어야 구별이 되므로 세로로 쌓는다. */
+.enter__pills { display: grid; gap: var(--sp-2); }
+
+.enter__pill {
+  display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-3);
+  width: 100%; min-height: var(--tap-min);
+  padding: var(--sp-2) var(--sp-3);
+  text-align: left;
+  background: var(--card);
+  border: var(--border-w) solid var(--ink-20);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--lift-1);
+}
+.enter__pill:hover { border-color: var(--mark); }
+
+.enter__pill-name {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: var(--fs-body); font-weight: var(--w-bold);
+}
+.enter__pill-sub {
+  flex: none;
+  font-size: var(--fs-aux); font-variant-numeric: tabular-nums; color: var(--muted);
+}
+
+.enter__line { display: flex; gap: var(--sp-2); }
+
+.enter__input {
+  flex: 1 1 auto; min-width: 0;
+  min-height: var(--tap-min);
+  padding: 0 var(--sp-3);
+  font-size: var(--fs-body);   /* 16px 아래로 내려가면 모바일이 화면을 확대한다 */
+  font-family: var(--font-typed);  /* 사람이 친 글자 — 조각 글꼴에 없는 음절이 섞인다 */
+  color: var(--ink);
+  background: var(--card);
+  border: var(--border-w) solid var(--ink-20);
+  border-radius: var(--radius-sm);
+}
+.enter__input:focus-visible { border-color: var(--mark); outline: none; }
+
+.enter__go { flex: none; }
+
+/* 막힌 이유 — 반려 빨강. 이 화면에서 빨강이 켜지는 자리는 여기뿐이다 */
+.enter__err {
+  margin: var(--sp-2) 0 0;
+  font-size: var(--fs-aux); line-height: 1.5; color: var(--fail);
+}
+
+/* 좁은 화면에서는 [들어간다]를 다음 줄로 내린다.
+   한 줄로 버티면 입력칸이 이름 서너 자만 보이는 폭이 된다. */
+@media (max-width: 380px) {
+  .enter__card { padding: var(--sp-4); }
+  .enter__line { flex-wrap: wrap; }
+  .enter__go { width: 100%; }
+}
