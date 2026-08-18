@@ -1,0 +1,205 @@
+/* ============================================================
+   엔진 S — 서고 (lib__*)
+
+   이 화면의 규칙 하나: **서고를 보여 주지 않는다.**
+   문서 목록이 통째로 보이면 이 판은 읽기 게임이 되고, 검색이 답의 상한선이라는
+   것이 안 나온다. 그래서 결과 자리는 처음에 비어 있고, 안내 한 줄만 있다.
+
+   담은 조각(.lib__slip)은 본문을 **다 보여 준다.** 거기서 다음 검색어가 나오기
+   때문이다 — 접어 두면 이 판의 사슬이 끊긴다.
+   ============================================================ */
+
+/* ---------- 들어온 질문 ---------- */
+
+.lib__ask {
+  margin-top: var(--sp-4);
+  padding: var(--sp-4) var(--sp-5);
+  background: var(--card);
+  border: var(--border-w) solid var(--edge);
+  border-left: 5px solid var(--mark);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  box-shadow: var(--lift-1);
+}
+.lib__ask__cap {
+  font-size: var(--fs-aux);
+  color: var(--muted);
+  margin-bottom: var(--sp-1);
+}
+.lib__ask__body { font-size: var(--fs-title); line-height: 1.55; }
+
+/* ---------- 검색 줄 ---------- */
+
+.lib__find { margin-top: var(--sp-4); }
+.lib__row { display: flex; gap: var(--sp-2); }
+
+.lib__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: var(--tap-min);
+  padding: var(--sp-2) var(--sp-3);
+  font: inherit;
+  font-size: var(--fs-body);
+  color: var(--ink);
+  background: var(--card);
+  border: var(--border-w) solid var(--edge);
+  border-radius: var(--radius-sm);
+}
+.lib__input:focus {
+  outline: none;
+  border-color: var(--mark);
+  box-shadow: 0 0 0 3px var(--mark-16);
+}
+.lib__go {
+  flex: 0 0 auto;
+  min-height: var(--tap-min);
+  padding: 0 var(--sp-4);
+  font: inherit;
+  font-size: var(--fs-label);
+  font-weight: 700;
+  color: var(--on-mark);
+  background: var(--ink);
+  border: var(--border-w) solid var(--ink);
+  border-bottom-width: var(--lip);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.lib__go:active:not(:disabled) { transform: translateY(2px); border-bottom-width: var(--border-w); }
+
+/* 남은 횟수. 이게 이 판의 압박이다 — 숫자가 아니라 칸으로 보여야 준다는 게 느껴진다. */
+.lib__tries {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+  font-size: var(--fs-aux);
+  color: var(--muted);
+}
+.lib__try {
+  width: 14px; height: 14px;
+  border: 2px solid var(--mark);
+  border-radius: 50%;
+  background: var(--mark);
+}
+.lib__try--used { background: transparent; border-color: var(--ink-20); }
+
+/* ---------- 아는 낱말 ---------- */
+
+.lib__cap {
+  font-size: var(--fs-aux);
+  color: var(--muted);
+  margin: var(--sp-4) 0 var(--sp-2);
+}
+.lib__rail { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.lib__word {
+  min-height: var(--tap-min);
+  padding: var(--sp-1) var(--sp-3);
+  font: inherit;
+  font-size: var(--fs-label);
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--card);
+  border: var(--border-w) solid var(--edge);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+.lib__word:hover { border-color: var(--mark); box-shadow: var(--lift-1); }
+
+/* ---------- 걸린 것 ---------- */
+
+.lib__empty {
+  margin: 0;
+  padding: var(--sp-4);
+  font-size: var(--fs-aux);
+  line-height: 1.6;
+  color: var(--ink-45);
+  background: var(--surface-well);
+  border-radius: var(--radius);
+}
+.lib__list { display: grid; gap: var(--sp-2); }
+.lib__hit {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-height: var(--tap-min);
+  padding: var(--sp-3);
+  font: inherit;
+  text-align: left;
+  color: var(--ink);
+  background: var(--card);
+  border: var(--border-w) solid var(--edge);
+  border-bottom-width: var(--lip);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.lib__hit:hover { border-color: var(--mark); box-shadow: var(--lift-2); }
+.lib__hit__title { font-size: var(--fs-label); font-weight: 700; }
+/* 왜 이게 걸렸는지를 같이 보여 준다 — 낱말이 결과를 만든다는 것이 여기서 보인다 */
+.lib__hit__why { font-size: var(--fs-aux); color: var(--mark-deep); }
+.lib__hit__mark { font-size: var(--fs-aux); font-weight: 700; color: var(--pass-deep); }
+.lib__hit.lib__hit--taken { border-color: var(--pass); background: var(--pass-10); }
+
+/* ---------- 넘길 것 ---------- */
+
+.lib__slip {
+  position: relative;
+  margin-bottom: var(--sp-2);
+  padding: var(--sp-3) var(--sp-3) var(--sp-3) var(--sp-4);
+  background: var(--card);
+  border: var(--border-w) solid var(--edge);
+  border-left: 4px solid var(--pass);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--lift-1);
+}
+.lib__slip__title { font-size: var(--fs-label); font-weight: 700; margin-bottom: 2px; }
+.lib__slip__text { font-size: var(--fs-aux); line-height: 1.6; color: var(--ink); }
+.lib__drop {
+  position: absolute;
+  right: var(--sp-2);
+  top: var(--sp-2);
+  min-height: 32px;
+  padding: 0 var(--sp-2);
+  font: inherit;
+  font-size: var(--fs-aux);
+  color: var(--muted);
+  background: var(--surface-well);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+.lib__drop:hover { color: var(--fail-deep); border-color: var(--fail); }
+
+/* ---------- 답이 나온 뒤에 여는 서고 ---------- */
+
+.lib__shelf {
+  margin-top: var(--sp-4);
+  padding: var(--sp-4);
+  background: var(--surface-well);
+  border-radius: var(--radius);
+}
+.lib__book {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-2);
+  padding: var(--sp-2) 0;
+  border-top: 1px solid var(--hair);
+  font-size: var(--fs-aux);
+  color: var(--ink-45);
+}
+.lib__book:first-of-type { border-top: 0; }
+.lib__book--need { color: var(--ink); font-weight: 700; }
+.lib__book--had .lib__book__t { text-decoration: underline; text-underline-offset: 3px; }
+.lib__book__tag {
+  padding: 1px var(--sp-2);
+  font-weight: 700;
+  border-radius: var(--radius-pill);
+  background: var(--pass-20);
+  color: var(--pass-deep);
+}
+.lib__book__tag--no { background: var(--fail-20); color: var(--fail-deep); }
+
+@media (max-width: 400px) {
+  .lib__row { flex-wrap: wrap; }
+  .lib__go { width: 100%; }
+}

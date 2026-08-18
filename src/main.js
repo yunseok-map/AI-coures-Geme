@@ -23,7 +23,6 @@ document.getElementById('boot-fallback')?.remove();
 // A~E 는 세팅형(고르고 제출), F~H 는 실시간 액션형이다.
 const ENGINES = {
   A: () => import('./engines/sort.js'),      // 분류
-  B: () => import('./engines/spot.js'),      // 찾기·판별
   C: () => import('./engines/build.js'),     // 조립
   E: () => import('./engines/preview.js'),   // 미리보기
   W: () => import('./engines/wire.js'),      // 배선 — 상자를 선으로 이어 흐름을 만든다
@@ -31,6 +30,7 @@ const ENGINES = {
   L: () => import('./engines/assembly.js'),  // 조립 라인 — 엔진을 차체에 끼워 출고한다
   T: () => import('./engines/timeline.js'),  // 발동 타임라인 — 하루에 걸어 두고 돌려 본다
   R: () => import('./engines/dispatch.js'),  // 실시간 관제 — 일감을 창구로 보낸다
+  S: () => import('./engines/library.js'),   // 서고 — 낱말을 던져 걸린 것만 넘긴다
   F: () => import('./engines/defense.js'),   // 디펜스 — 내려오는 것을 막는다
   G: () => import('./engines/shoot.js'),     // 슈팅 — 문제 있는 것만 쏜다
   H: () => import('./engines/qcline.js')     // 검토 라인 — 창구에서 승인/반려를 찍는다
@@ -45,9 +45,10 @@ app.append(topbarHost, stage);
 let activeEngine = null;
 
 // 눌린 자리에서 파문이 퍼진다. 한 곳에서 위임 처리하므로 엔진은 이걸 몰라도 된다.
-const TAPPABLE = '.bin,.part,.toggle,.target,.board__row,.node,.btn-primary,.btn-quiet,.tab,' +
+// .target · .board__row 은 엔진 B(판별형)와 함께 없어졌다.
+const TAPPABLE = '.bin,.part,.toggle,.node,.btn-primary,.btn-quiet,.tab,' +
                  '.def__slot,.ax__tool,.bt__pick,.asm__part,.tl__tool,.tl__box,.tl__key,' +
-                 '.dp__job,.dp__desk';
+                 '.dp__job,.dp__desk,.lib__hit,.lib__word';
 // 배선형 상자(.wf__node)는 여기 넣지 않는다. 파문은 host 를 넘어가지 않아야 해서
 // `overflow: hidden` 이 전제인데, 그 상자는 선이 드나드는 동그라미를 테두리 **밖에**
 // 달고 있어서 잘라낼 수 없다. 넣었더니 파문이 상자보다 크게 번져 이름을 덮었다.

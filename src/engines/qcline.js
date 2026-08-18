@@ -8,9 +8,13 @@
 //   그리고 승인도 행동이다. 슈팅 엔진(G)은 "나쁜 것만 누른다"라서 가만히 있으면
 //   중립인데, 여기서는 가만히 있는 것도 결과를 만든다 — 결재자의 자리가 그렇다.
 //
-// 부드러운 압박(사용자 확정): 놓쳐도 게임오버 없다. 끝까지 흐르고 등급만 내려간다.
+//   **라운드가 여러 번 돈다.** 한 라운드가 끝나면 그 라운드의 결과가 다음 라운드의
+//   물량이 된다. 무엇이 얼마나 되돌아오는지는 엔진이 정하지 않는다 —
+//   게임이 `plan(no, pending)` 과 `carry(out)` 으로 알려 준다. 엔진은 받은 목록을
+//   창구에 흘려보내고, 되돌아온 것에 표를 붙이고, 못 흘려보낸 것을 더미로 그린다.
+//   (CLAUDE.md §1-3 — 엔진은 특정 미니게임을 모른다)
 //
-// 엔진은 특정 미니게임을 모른다. game.simulate(setup) 이 판정한다. (CLAUDE.md §1-3)
+// 부드러운 압박(사용자 확정): 놓쳐도 게임오버 없다. 끝까지 흐르고 등급만 내려간다.
 
 import { el, esc, strong, say, Bin, header, actions, runner } from './base.js';
 import { icon } from '../core/art.js';
@@ -21,12 +25,14 @@ import { animate, isReduced, cardIn, shake, burst } from '../core/motion.js';
 let bin = new Bin();
 let loop = null;
 let counting = 0;
+let hold = 0;
 let host = null;
 
 export function unmount() {
   bin.clear();
   if (loop) { loop.stop(); loop = null; }
   if (counting) { clearTimeout(counting); counting = 0; }
+  if (hold) { clearTimeout(hold); hold = 0; }
   if (host) { host.classList.remove('stage--arcade'); host = null; }
 }
 
@@ -42,21 +48,22 @@ export function mount(root, game, ctx) {
   const gap = d.gapSec ?? 2.6;
   const bandFrom = d.bandFrom ?? 0.42;   // 창구 구간 (0..1)
   const bandTo = d.bandTo ?? 0.78;
+  const roundCount = Math.max(1, d.roundCount || 1);
 
   const L = Object.assign({
     approve: '승인', reject: '반려',
     okApprove: '옳게 승인', okReject: '옳게 반려',
     badApprove: '통과시켰다', badReject: '잘못 반려', auto: '못 보고 통과',
-    waiting: '다음 서류를 기다린다'
+    round: '라운드', rework: '재작업', pile: '되돌아온 일감', next: '이어서',
+    empty: '되돌아온 일감이 없다'
   }, d.labels || {});
 
-  const items = d.items.map((it, i) => ({
-    ...it,
-    at: it.at ?? i * gap,
-    y: -0.18, live: false, done: false, node: null, seen: false
-  }));
-
-  const out = { okReject: [], okApprove: [], passed: [], wrongReject: [], auto: [] };
+  // 라운드 상태
+  let round = 0;
+  let pending = [];        // 다음 라운드로 넘어가는 일감 (되돌아온 것 + 밀린 것)
+  let items = [];          // 이번 라운드에 창구로 흐르는 서류
+  let out = null;          // 이번 라운드 기록
+  const log = [];          // 라운드별 기록 — 판정으로 넘어간다
   let combo = 0, bestCombo = 0, t = 0, phase = 'setup', active = null;
 
   // ---------------------------------------------------------------- 화면
@@ -90,6 +97,14 @@ export function mount(root, game, ctx) {
   field.append(track, foot, veil);
   root.append(field);
 
+  // 밀린 더미 — 숫자만 커지면 안 읽힌다. 서류 모양이 실제로 쌓여야 한다.
+  const pile = el('section', 'qcl__pile');
+  const pileCap = el('span', 'qcl__pile__cap');
+  const pileStack = el('span', 'qcl__pile__stack');
+  pileStack.setAttribute('aria-hidden', 'true');   // 개수는 위 문구가 이미 말한다
+  pile.append(pileCap, pileStack);
+  root.append(pile);
+
   const dock = el('div', 'ax__dock');
   const hint = el('p', 'ax__traycap', esc(d.prompt || '창구에 온 서류를 판단하시오'));
   const bar = actions([
@@ -112,20 +127,30 @@ export function mount(root, game, ctx) {
   const feedback = el('div');
   root.append(feedback);
 
+  drawPile(0);
   drawHud();
 
   // ---------------------------------------------------------------- 계기판
 
   function drawHud() {
     const left = items.filter(i => !i.done).length;
+    const tally = log.concat(out ? [out] : []);
+    const good = sum(tally, r => r.okReject.length + r.okApprove.length);
+    const gone = sum(tally, r => r.passed.length + r.auto.length);
+    const wrong = sum(tally, r => r.wrongReject.length);
+
     hud.innerHTML =
-      `<span class="ax__stat ax__stat--ok"><b>${out.okReject.length + out.okApprove.length}</b> 정확</span>` +
-      `<span class="ax__stat ax__stat--bad"><b>${out.passed.length + out.auto.length}</b> 통과</span>` +
-      `<span class="ax__stat">오반려 <b>${out.wrongReject.length}</b></span>` +
+      (roundCount > 1
+        ? `<span class="ax__stat">${esc(L.round)} <b>${Math.max(1, round)}</b>/${roundCount}</span>` : '') +
+      `<span class="ax__stat ax__stat--ok"><b>${good}</b> 정확</span>` +
+      `<span class="ax__stat ax__stat--bad"><b>${gone}</b> 통과</span>` +
+      `<span class="ax__stat">오반려 <b>${wrong}</b></span>` +
       (phase === 'run' ? `<span class="ax__stat">남은 서류 <b>${left}</b></span>` : '') +
       (combo > 1 ? `<span class="ax__combo">${combo}연속</span>` : '');
     hud.append(soundBtn());
   }
+
+  function sum(list, f) { return list.reduce((n, r) => n + f(r), 0); }
 
   function soundBtn() {
     const b = el('button', 'ax__mute');
@@ -136,7 +161,25 @@ export function mount(root, game, ctx) {
     return b;
   }
 
-  // ---------------------------------------------------------------- 웨이브
+  /** 되돌아온 일감이 눈으로 쌓인다. 라운드가 끝날 때마다 한 번 더 커진다. */
+  function drawPile(n, grew) {
+    pileCap.innerHTML = `${esc(L.pile)} <b>${n}</b>건`;
+    pileStack.innerHTML = '';
+    const shown = Math.min(n, 14);
+    for (let i = 0; i < shown; i++) pileStack.append(el('i'));
+    if (n > shown) pileStack.append(el('span', 'qcl__pile__n', `+${n - shown}`));
+    pile.style.setProperty('--n', String(n));
+    pile.classList.toggle('qcl__pile--some', n > 0);
+    pile.classList.toggle('qcl__pile--heavy', n >= 5);
+    pile.classList.toggle('qcl__pile--buried', n >= 10);
+    if (grew && n && !isReduced()) {
+      pile.classList.remove('qcl__pile--grew');
+      void pile.offsetWidth;
+      pile.classList.add('qcl__pile--grew');
+    }
+  }
+
+  // ---------------------------------------------------------------- 라운드
 
   async function begin() {
     if (phase !== 'setup') return;
@@ -146,11 +189,33 @@ export function mount(root, game, ctx) {
     await countdown();
     if (phase !== 'count') return;
 
-    phase = 'run';
     bar.node.replaceWith(judgeBar.node);
     hint.textContent = d.runHint || '창구에 들어온 서류만 판단할 수 있다. 지나가면 그대로 통과된다';
-    drawHud();
     say('시작했습니다. 창구에 들어온 서류를 판단하세요.');
+    startRound();
+  }
+
+  /** 이번 라운드에 흘려보낼 서류를 게임에서 받아 창구에 건다 */
+  function startRound() {
+    round++;
+    const built = (typeof game.plan === 'function')
+      ? game.plan(round, pending)
+      : { items: (d.items || []).slice(), backlog: [] };
+
+    pending = built.backlog || [];
+    items = (built.items || []).map((it, i) => ({
+      ...it, at: i * gap, y: -0.18, live: false, done: false, node: null, seen: false
+    }));
+    out = { no: round, size: items.length,
+      okReject: [], okApprove: [], passed: [], wrongReject: [], auto: [] };
+
+    t = 0; active = null; phase = 'run';
+    for (const n of track.querySelectorAll('.qc__card, .ax__pop')) n.remove();
+    band.classList.remove('qc__band--busy');
+    judgeBar.btn.no.disabled = judgeBar.btn.yes.disabled = true;
+
+    drawPile(pending.length);
+    drawHud();
 
     loop = createLoop(tick, {
       onPause: () => showVeil(
@@ -183,6 +248,8 @@ export function mount(root, game, ctx) {
     t += dt;
 
     for (const it of items) {
+      // 도장을 찍은 서류는 그 자리에 멈춰 선다 — 왜 그렇게 됐는지를 읽을 시간이다.
+      // 라운드가 바뀔 때 창구를 통째로 비운다.
       if (it.done) continue;
 
       if (!it.live) {
@@ -202,7 +269,7 @@ export function mount(root, game, ctx) {
       if (it.y >= 1) fallThrough(it);
     }
 
-    if (items.every(i => i.done)) end();
+    if (items.every(i => i.done)) endRound();
   }
 
   function enterBand(it) {
@@ -290,14 +357,17 @@ export function mount(root, game, ctx) {
   }
 
   function cardNode(it) {
-    // 판정 전에는 전부 똑같이 생긴다 — 색으로 정답이 새면 안 된다
-    const n = el('div', 'ax__card ax__card--inert qc__card');
+    // 판정 전에는 전부 똑같이 생긴다 — 색으로 정답이 새면 안 된다.
+    // 되돌아온 것만 표가 붙는다. 그 표는 "다시 왔다"만 말하고 좋고 나쁨은 말하지 않는다.
+    const n = el('div', 'ax__card ax__card--inert qc__card' + (it.rework ? ' qcl__card--back' : ''));
     n.style.top = '0%';
     n.innerHTML =
       `<span class="ax__card__ico">${icon(d.cardIcon || 'doc')}</span>` +
-      `<span class="ax__card__label">${esc(it.label)}</span>`;
+      `<span class="ax__card__label">` +
+      (it.rework ? `<span class="qcl__tag">${esc(L.rework)}</span>` : '') +
+      `${esc(it.label)}</span>`;
     n.setAttribute('role', 'img');
-    n.setAttribute('aria-label', `서류: ${it.label}`);
+    n.setAttribute('aria-label', `${it.rework ? L.rework + ' ' : ''}서류: ${it.label}`);
     return n;
   }
 
@@ -324,22 +394,74 @@ export function mount(root, game, ctx) {
       .then(() => { clearTimeout(kill); p.remove(); });
   }
 
-  // ---------------------------------------------------------------- 마무리
+  // ---------------------------------------------------------------- 라운드 마무리
 
-  async function end() {
+  function endRound() {
     if (phase !== 'run') return;
-    phase = 'done';
+    phase = 'wrap';
     if (loop) { loop.stop(); loop = null; }
+    judgeBar.btn.no.disabled = judgeBar.btn.yes.disabled = true;
+
+    log.push(out);
+    const leaked = out.passed.length + out.auto.filter(id => isBad(id)).length;
+    const back = (typeof game.carry === 'function') ? game.carry(out) : [];
+    const stuck = pending.length;
+    pending = pending.concat(back);
+
+    // 마지막 도장을 눈으로 확인할 틈을 준 뒤에 더미가 커진다
+    hold = setTimeout(() => {
+      hold = 0;
+      drawPile(pending.length, true);
+      drawHud();
+      if (round < roundCount) {
+        phase = 'break';
+        const body = breakText(leaked, back, stuck);
+        say(body);
+        showVeil(`${round + 1}${L.round}`, body, L.next, () => { hideVeil(); startRound(); });
+      } else {
+        finish();
+      }
+    }, isReduced() ? 200 : 800);
+  }
+
+  function isBad(id) {
+    const it = items.find(x => x.id === id);
+    return !!(it && it.bad);
+  }
+
+  /**
+   * 라운드 사이 화면. 설명이 길면 아무도 안 읽는다 — 두 문장까지만 남긴다.
+   *
+   * 되돌아오는 것의 종류(`kind`)는 게임이 정한다. 엔진은 `rework`(통과시킨 것이
+   * 불어나서 돌아온 것)와 나머지(다시 올라온 것)를 세기만 한다.
+   */
+  function breakText(leaked, back, stuck) {
+    const rework = back.filter(b => b.kind === 'rework').length;
+    const redo = back.length - rework;
+    const line = [];
+    if (leaked) line.push(`통과시킨 ${leaked}건이 ${L.rework} ${rework}건으로 돌아온다.`);
+    if (stuck) line.push(`창구에 못 온 ${stuck}건은 그대로 밀린다.`);
+    if (redo) line.push(`반려한 것이 ${redo}건 다시 올라온다.`);
+    if (!line.length) line.push(L.empty + '.');
+    return line.slice(0, 2).join(' ');
+  }
+
+  // ---------------------------------------------------------------- 판정
+
+  async function finish() {
+    phase = 'done';
     hideVeil();
     hint.textContent = '판정 중';
     judgeBar.btn.no.disabled = judgeBar.btn.yes.disabled = true;
 
     const setup = {
-      okReject: out.okReject.slice(),
-      okApprove: out.okApprove.slice(),
-      passed: out.passed.slice(),
-      wrongReject: out.wrongReject.slice(),
-      auto: out.auto.slice(),
+      rounds: log.map(r => ({
+        no: r.no, size: r.size,
+        okReject: r.okReject.slice(), okApprove: r.okApprove.slice(),
+        passed: r.passed.slice(), wrongReject: r.wrongReject.slice(),
+        auto: r.auto.slice()
+      })),
+      backlog: pending.length,
       bestCombo
     };
 

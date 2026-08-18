@@ -474,7 +474,7 @@
   font-size: var(--fs-aux); color: var(--fail);
 }
 
-/* ---------- E 미리보기형: 좌우 대조 ---------- */
+/* ---------- E 미리보기형: 목표와 실시간 대조 ---------- */
 .preview { display: grid; gap: var(--sp-3); }
 .preview__pane {
   background: var(--card);
@@ -484,15 +484,26 @@
   min-height: 120px;
 }
 .preview__cap {
+  display: flex; justify-content: space-between; gap: var(--sp-2); flex-wrap: wrap;
   font-size: var(--fs-aux); color: var(--muted);
   border-bottom: 1px solid var(--ink-12);
   padding-bottom: var(--sp-2); margin-bottom: var(--sp-2);
 }
-.preview__out { font-size: var(--fs-label); white-space: pre-wrap; }
-.preview__out em {
-  font-style: normal; background: var(--pass-10);
-  border-bottom: 2px solid var(--pass); padding: 0 2px;
-}
+.preview__out { font-size: var(--fs-label); }
+
+/* 목표 결과물 — 판이 시작될 때 먼저 보이는 것 */
+.pv__goal { border-color: var(--mark-28); background: var(--mark-08); margin-bottom: var(--sp-3); }
+.pv__goal .preview__cap { color: var(--mark-deep); border-bottom-color: var(--mark-28); }
+.pv__hit { font-family: var(--font-mono); color: var(--ink); }
+.pv__hit b { color: var(--pass); font-size: var(--fs-label); }
+
+/* 결과 한 줄. 바뀐 자리에만 색이 붙는다 — 통째로 다시 그리면 뭐가 바뀌었는지 안 보인다 */
+.pv__line { padding: var(--sp-1) var(--sp-2); border-left: var(--border-w) solid transparent; border-radius: var(--radius-sm); }
+.pv__line--hit { border-left-color: var(--pass); }
+.pv__line--add { background: var(--pass-10); }
+.pv__line--changed { background: var(--partial-10); }
+.pv__line--gone { background: var(--fail-10); color: var(--muted); text-decoration: line-through; }
+.pv__line[data-tag]::after { content: attr(data-tag); margin-left: var(--sp-2); font-size: var(--fs-aux); color: var(--muted); }
 
 .toggles { display: grid; gap: var(--sp-2); }
 .toggle {
@@ -509,6 +520,8 @@
 }
 .toggle--on { border-color: var(--mark); background: var(--mark-08); }
 .toggle--on .toggle__box { background: var(--mark); border-color: var(--mark); }
+/* 서로 반대로 시키는 블록이 둘 다 켜졌다 */
+.toggle--clash { border-color: var(--fail); background: var(--fail-10); }
 .toggle__tag {
   font-family: var(--font-mono); font-size: var(--fs-aux); color: var(--muted);
 }

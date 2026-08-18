@@ -1,121 +1,228 @@
-// 미니게임 4 — 자료 찾아오기 (엔진 B 판별형 + 실행 시뮬레이션)
-// 배우는 것: RAG · 검색 기반 답변
+// 미니게임 4 — 자료 찾아오기 (엔진 S 서고)
+// 배우는 것: RAG · 임베딩·벡터DB
 //
-// 설계 의도: RAG 를 "검색해서 답한다"고 설명하면 아무도 감이 안 온다.
-// 서가에서 직접 문서를 골라 AI에게 건네고, 잘못 고르면 그 자리에서
-// 엉뚱한 답이 나오는 걸 보게 한다. 고르는 사람이 곧 답의 품질이다.
+// 예전에는 서가가 통째로 보이고 거기서 문서 두 개를 고르는 판이었다. 제목만
+// 읽으면 끝이라, 정작 이 개념의 핵심 — **검색 품질이 답 품질의 상한선** —이
+// 안 나왔다. 실제 RAG 에서는 서고가 안 보인다. 낱말을 던져야 몇 건이 걸리고,
+// 걸린 것만 AI 에게 간다.
+//
+// 여기서는 서고가 처음부터 안 보인다. 찾을 수 있는 횟수는 넷, 걸리는 것은
+// 상위 세 건, 넘길 수 있는 칸도 셋이다. 답은 **두 문서에 걸쳐 있고**,
+// 두 번째 문서를 부르는 낱말은 첫 번째 문서를 담아 읽어야 나온다.
+//
+// 함정이 셋이다:
+//   육아휴직 신청 절차   — 첫 낱말에 제일 세게 걸린다. 답과 무관하다.
+//   성과급 지급일        — 이것만 넘기면 AI 가 "3월에 나옵니다"라고 답한다.
+//   연차 산정 시 휴직 기간 — 가장 위험하다. 정반대 결론을 자신 있게 만들어 준다.
+//
+// 매처는 낱말 매칭이다(core/search.js). 일부러 그렇게 뒀다 — 그 한계를 겪은
+// 다음에야 "임베딩은 단어가 안 겹쳐도 뜻이 가까우면 걸리게 해 준다"가 와닿는다.
+//
+// 규정 내용은 전부 **가상의 사내 규정**이다. 실제 법령이나 특정 회사 규정이 아니다.
 
 import { Run, applyFault, applyGain } from '../core/sim.js';
 
-const RIGHT = ['doc-policy', 'doc-form'];
-const TRAP = ['doc-old', 'doc-other'];
+const NEED = ['pay-rule', 'leave-count'];
+
+const DOCS = [
+  { id: 'pay-rule', title: '성과급 지급 기준',
+    keys: ['성과급', '지급', '기준', '재직일수', '비례'],
+    gives: ['재직일수'],
+    text: '성과급은 해당 연도 재직일수에 비례해 지급한다. 재직일수를 어떻게 세는지는 별도 규정을 따른다.' },
+
+  { id: 'leave-count', title: '휴직 기간의 재직일수 산입',
+    keys: ['휴직', '기간', '재직일수', '산입'],
+    gives: ['산입'],
+    text: '휴직 기간은 재직일수에 산입하지 않는다. 다만 병가는 30일까지 산입한다.' },
+
+  { id: 'leave-apply', title: '육아휴직 신청 절차',
+    keys: ['육아휴직', '신청', '절차', '서류', '기간'],
+    text: '육아휴직은 시작 30일 전까지 신청서를 낸다. 최대 1년까지 나눠 쓸 수 있다.' },
+
+  { id: 'pay-date', title: '성과급 지급일',
+    keys: ['성과급', '지급', '지급일', '급여'],
+    text: '성과급은 매년 3월 급여일에 함께 지급한다.' },
+
+  { id: 'annual-leave', title: '연차 산정 시 휴직 기간',
+    keys: ['연차', '산정', '휴직', '기간', '산입'],
+    text: '연차를 산정할 때 육아휴직 기간은 출근한 것으로 본다.' },
+
+  { id: 'maternity', title: '출산전후휴가 급여',
+    keys: ['출산', '휴가', '급여', '지급'],
+    text: '출산전후휴가 기간의 급여는 별도 기준에 따라 지급한다.' },
+
+  { id: 'short-time', title: '근로시간 단축 신청',
+    keys: ['근로시간', '단축', '신청'],
+    text: '자녀 양육을 위한 근로시간 단축은 신청서로 접수한다.' },
+
+  { id: 'review', title: '인사평가 일정',
+    keys: ['인사평가', '평가', '일정'],
+    text: '인사평가는 매년 1월에 마감한다.' },
+
+  { id: 'bonus-tax', title: '상여금 세금 공제',
+    keys: ['상여금', '세금', '공제'],
+    text: '상여금은 지급 시점에 원천징수한다.' },
+
+  { id: 'family-care', title: '가족돌봄휴가',
+    keys: ['가족돌봄', '휴가', '신청'],
+    text: '가족돌봄휴가는 연 10일까지 쓸 수 있다.' },
+
+  { id: 'severance', title: '퇴직금 산정',
+    keys: ['퇴직금', '산정', '재직일수'],
+    text: '퇴직금은 재직일수와 평균임금으로 산정한다.' },
+
+  { id: 'sick', title: '병가 규정',
+    keys: ['병가', '기간', '산입'],
+    text: '병가는 연 60일까지 쓸 수 있다.' },
+
+  { id: 'training', title: '교육훈련 이수 기준',
+    keys: ['교육', '훈련', '이수'],
+    text: '연간 교육훈련 이수 시간은 20시간이다.' },
+
+  { id: 'remote', title: '재택근무 신청',
+    keys: ['재택근무', '신청'],
+    text: '재택근무는 주 2일까지 신청할 수 있다.' }
+];
+
+const has = (picked, id) => picked.includes(id);
 
 export default {
   id: 'fetch-source',
-  engine: 'B',
-  mode: 'pick',
+  engine: 'S',
   title: '자료 찾아오기',
-  subtitle: '질문이 들어왔다. 서가에서 AI에게 건넬 문서를 고른다',
+  subtitle: '서고는 안 보인다. 낱말을 던져 걸린 것만 AI에게 넘긴다',
   chapter: 1,
   required: false,
   concept: ['RAG', '임베딩·벡터DB'],
   checkedAt: '2026-08',
 
   data: {
-    scene: {
-      cap: '들어온 질문',
-      body: '“육아휴직 신청하려면 어떤 서류를 언제까지 내야 하나요?”'
-    },
-    prompt: '서가에서 이 질문에 필요한 문서만 고르시오. 엉뚱한 걸 건네면 엉뚱한 답이 나온다.',
-    need: 2,
-    runCaption: '건넨 문서만 읽고 답을 만든다',
-
-    targets: [
-      { id: 'doc-policy', danger: true,
-        label: '취업규칙 제7장 — 육아휴직 (2026년 3월 개정)',
-        why: '질문의 핵심 근거다. 개정일이 최신인지도 함께 봐야 한다.' },
-      { id: 'doc-form',   danger: true,
-        label: '육아휴직 신청서 양식 및 제출 안내',
-        why: '“어떤 서류를 언제까지”에 직접 답하는 문서다.' },
-      { id: 'doc-old',    danger: false,
-        label: '취업규칙 제7장 — 육아휴직 (2019년판)',
-        why: '같은 조항이지만 낡았다. 낡은 자료를 건네면 낡은 답이 그대로 나온다.' },
-      { id: 'doc-other',  danger: false,
-        label: '연차·병가 사용 안내',
-        why: '휴가라는 점만 같고 질문과 다른 제도다.' },
-      { id: 'doc-news',   danger: false,
-        label: '사내 소식지 — 복지제도 개편 예고 기사',
-        why: '확정된 규정이 아니라 예고 기사다. 근거로 쓸 수 없다.' },
-      { id: 'doc-mail',   danger: false,
-        label: '인사팀 담당자 개인 메모',
-        why: '공식 문서가 아니고 개인정보가 섞여 있을 수 있다.' }
-    ]
+    tries: 4,
+    hold: 3,
+    top: 3,
+    docs: DOCS,
+    words: ['육아휴직', '성과급', '기간', '신청'],
+    ask: '“육아휴직을 석 달 쓴 사람의 올해 성과급은 어떻게 되나요?”',
+    askCap: '들어온 질문',
+    inputHint: '낱말을 넣고 찾는다',
+    findLabel: '찾기',
+    triesLabel: '찾을 수 있는 횟수',
+    wordsLabel: '지금 아는 낱말 — 눌러서 넣는다',
+    hitLabel: '걸린 낱말',
+    takenLabel: '담았다',
+    holdLabel: 'AI에게 넘길 것',
+    holdHint: '아무것도 안 넘기면 AI는 아는 대로 지어낸다.',
+    dropLabel: '빼기',
+    emptyHint: '서고는 안 보인다. 낱말을 쳐야 걸린 것만 나온다.',
+    missHint: '이 낱말이 들어 있는 문서가 서고에 없다. 다른 말로 불러 봐야 한다.',
+    askLabel: 'AI에게 넘기고 답 받기',
+    runCaption: '넘긴 것만 보고 답한다',
+    shelfLabel: '서고에 있던 것',
+    neededLabel: '필요했다',
+    uselessLabel: '넘겼지만 소용없었다'
   },
 
-  simulate(picked) {
+  /**
+   * 판정. 무엇을 골랐나가 아니라 **AI 가 무슨 답을 냈나**로 본다.
+   *
+   * 이 판의 요점은 오답이 틀려 보이지 않는다는 것이다. 그래서 잘못된 답도
+   * 정답과 똑같이 단정적으로 쓴다 — "아마도"를 붙이면 이 판은 아무것도 못 가르친다.
+   */
+  simulate(setup, d) {
+    const picked = setup.picked || [];
+    const queries = setup.queries || [];
     const r = new Run();
-    const has = id => picked.includes(id);
-    const right = picked.filter(id => RIGHT.includes(id)).length;
-    const traps = picked.filter(id => TRAP.includes(id));
 
-    if (!picked.length) {
-      r.warn('건네받은 문서가 없다');
-      applyFault(r, 'halluc', 40);
-      r.fail('기억나는 대로 답을 만들었다 — 근거 없음');
-      r.out('답변 — 근거 문서 0건');
-      return r.finish({ pass: 85, partial: 55 });
+    const gotRule = has(picked, 'pay-rule');
+    const gotCount = has(picked, 'leave-count');
+    const gotAnnual = has(picked, 'annual-leave');
+    const gotDate = has(picked, 'pay-date');
+    const junk = picked.filter(id => !NEED.includes(id));
+
+    r.read(`넘어온 조각 ${picked.length}건을 읽는다.`);
+    for (const id of picked) {
+      const doc = DOCS.find(x => x.id === id);
+      if (doc) r.read(doc.title);
     }
 
-    r.read(`건네받은 문서 ${picked.length}건을 읽는다`);
-
-    if (has('doc-policy')) { r.read('취업규칙 제7장에서 신청 기한 조항을 찾는다'); r.ok('개정 조항 확인'); }
-    if (has('doc-form'))   { r.read('신청서 양식에서 제출 서류 목록을 찾는다'); r.ok('필요 서류 3종 확인'); }
-
-    if (has('doc-old')) {
-      r.warn('2019년판과 2026년 개정판의 기한이 다르다');
-      if (has('doc-policy')) {
-        r.warn('어느 쪽이 최신인지 판단하지 못하고 옛 기한을 인용했다');
-        r.fault('낡은 근거', '같은 제목의 옛 문서가 섞이면 AI는 최신 여부를 알지 못한다', 22);
-      } else {
-        r.fail('폐지된 기한을 그대로 안내했다');
-        r.fault('낡은 근거', '옛 문서만 건네면 옛 답이 나온다. 자료의 날짜를 봐야 한다', 30);
+    if (gotRule && gotCount) {
+      // 제대로 걸렸다 — 두 문서를 이어야만 나오는 답
+      r.do('두 조각을 이어 본다.');
+      r.out('휴직 기간은 재직일수에 안 들어가므로, 석 달을 뺀 재직일수에 비례해 성과급이 줄어듭니다.');
+      r.ok('규정 두 곳을 다 짚었다. 이 답은 근거가 있다.');
+      applyGain(r, 'grounded', 0);
+      r.gain('두 문서에 걸친 답', '한 문서만으로는 나올 수 없는 답이었다', 0);
+      if (junk.length) {
+        for (let i = 0; i < junk.length; i++) {
+          r.fault('쓸데없이 넘긴 조각', '넘길 칸은 좁다. 안 쓰는 조각이 칸을 먹으면 정작 필요한 것이 못 들어간다', 6);
+        }
       }
+    } else if (gotAnnual && !gotCount) {
+      // 가장 위험한 오답 — 그럴듯하고 정반대다
+      r.do('연차 규정을 근거로 삼는다.');
+      r.out('육아휴직 기간은 출근한 것으로 보므로, 성과급은 전액 그대로 지급됩니다.');
+      r.fail('그럴듯하지만 정반대다. 그 규정은 연차 이야기이고 성과급 이야기가 아니다.');
+      // 이 판에서 제일 위험한 답이라 반드시 반려까지 간다. 그럴듯하게 틀린 것이
+      // 대충 틀린 것보다 위험하다는 것이 점수로도 나와야 한다.
+      r.fault('옆 규정을 끌어다 썼다', '낱말이 겹친다고 같은 주제가 아니다. 연차와 성과급은 세는 방식이 다르다', 40);
+      applyFault(r, 'halluc', 18);
+    } else if (gotRule && !gotCount) {
+      r.do('성과급 지급 기준만 놓고 답한다.');
+      r.out('성과급은 재직일수에 비례해 지급됩니다. 재직 중이셨으므로 전액 받으십니다.');
+      r.fail('휴직 기간을 어떻게 세는지가 빠졌다. 그 한 줄이 답을 뒤집는다.');
+      r.fault('반쪽 근거', '답이 두 문서에 걸쳐 있는데 한쪽만 넘겼다. AI 는 없는 줄은 모른다', 26);
+    } else if (gotCount && !gotRule) {
+      r.do('휴직 산입 규정만 놓고 답한다.');
+      r.out('휴직 기간은 재직일수에 산입하지 않습니다.');
+      r.fail('맞는 말이지만 질문에 답을 안 했다. 성과급을 어떻게 계산하는지가 없다.');
+      r.fault('반쪽 근거', '답이 두 문서에 걸쳐 있는데 한쪽만 넘겼다. AI 는 없는 줄은 모른다', 26);
+    } else if (gotDate) {
+      r.do('넘어온 조각으로 답한다.');
+      r.out('성과급은 매년 3월 급여일에 지급됩니다.');
+      r.fail('질문은 얼마를 받느냐였는데 언제 받느냐로 답했다.');
+      r.fault('엉뚱한 조각', '낱말은 걸렸지만 질문에 답하는 조각이 아니었다', 28);
+    } else if (picked.length) {
+      r.do('넘어온 조각으로 답한다.');
+      r.out('규정상 성과급은 근무 기간과 무관하게 지급됩니다.');
+      r.fail('넘긴 조각 어디에도 그런 말은 없다. 지어낸 것이다.');
+      applyFault(r, 'halluc', 58);
+    } else {
+      r.do('넘어온 조각이 없다.');
+      r.out('규정상 성과급은 근무 기간과 무관하게 지급됩니다.');
+      r.fail('아무 근거도 못 받았는데 답이 나왔다. 그리고 그 답은 단정적이다.');
+      applyFault(r, 'halluc', 60);
     }
 
-    if (has('doc-other') || has('doc-news')) {
-      r.read('관련 없는 문서까지 훑는다');
-      applyFault(r, 'rot', 14);
+    // 읽고 다시 찾았나 — 두 번째 문서를 부르는 낱말은 첫 문서 안에 있다
+    const chained = queries.some(q => /재직일수|산입/.test(q));
+    if (chained && gotCount) {
+      r.gain('읽고 다시 찾았다', '첫 조각에서 나온 낱말로 두 번째를 불러냈다', 0);
+    }
+    if (!queries.length) {
+      r.fault('찾아보지 않았다', '검색을 한 번도 안 하면 AI 에게 갈 근거가 없다', 0);
     }
 
-    if (has('doc-mail')) {
-      r.warn('개인 메모에 담당자 연락처와 다른 직원 이름이 들어 있다');
-      applyFault(r, 'leak', 18);
-    }
-
-    if (right === 2 && traps.length === 0 && picked.length === 2) {
-      applyGain(r, 'grounded', 10);
-      r.gain('RAG', '질문에 맞는 문서만 찾아와 그것만 근거로 답했다', 0);
-    } else if (right < 2) {
-      r.warn('필요한 근거가 부족하다');
-      applyFault(r, 'halluc', 25);
-      r.fail('빠진 부분은 그럴듯하게 채워 넣었다');
-    }
-
-    r.out(r.faults.length
-      ? '답변 — 인용한 조항이 맞는지 확인이 필요하다'
-      : '답변 완성 — 문장마다 조항 번호와 개정일이 붙어 있다');
-
-    return r.finish({ pass: 85, partial: 55 });
+    return {
+      ...r.finish({ pass: 80, partial: 45 }),
+      reveal: { need: NEED }
+    };
   },
 
   named: {
-    all: '질문이 오면 먼저 관련 문서를 찾아와 그것만 보고 답하는 방식을 **RAG**(검색 기반 답변)라고 한다. ' +
-         '뜻이 가까운 문서를 찾아내는 데 쓰이는 저장 방식이 **임베딩·벡터DB**다.'
+    all: '방금 한 것이 **RAG**다. 질문이 들어오면 먼저 자료를 찾아오고, 찾아온 것만 보고 답을 만든다. ' +
+         '그래서 검색이 나쁘면 답도 나쁘다 — 그런데 답은 나쁘게 안 보인다. ' +
+         '낱말이 안 겹치면 못 찾는 이 답답함을 줄이는 것이 **임베딩·벡터DB**로, 뜻이 가까우면 걸리게 한다.'
   },
 
   debrief: {
-    pass: '찾아온 자료가 곧 답의 품질이다. 모델을 바꾸는 것보다 자료를 바꾸는 게 효과가 크다.\n특히 같은 제목의 옛 문서가 섞이면 AI는 어느 쪽이 최신인지 모른다.\n사내 챗봇이 헛소리를 한다면 대부분 모델이 아니라 자료 쪽 문제다.',
-    partial: '핵심 문서는 찾았지만 불필요한 것도 함께 건넸다. 관련 없는 문서는 정확도를 떨어뜨린다.\n"관련 있어 보이는 것 전부"가 아니라 "이 질문에 직접 답하는 것"만 고르면 된다.\n자료의 날짜도 함께 봐야 한다.',
-    fail: 'RAG를 붙였다고 환각이 사라지지 않는다 — 찾아온 문서가 틀리면 답도 그대로 틀린다.\n질문의 단어와 문서 제목을 맞춰 보면 어떤 게 필요한지 금방 보인다.\n두 개만 고르고 다시 해보라.'
+    pass: '답이 두 문서에 걸쳐 있었다. 한쪽만 넘기면 AI는 없는 줄을 모른 채로 단정한다.\n' +
+          '첫 조각을 읽어야 두 번째를 부르는 낱말이 나오는 구조였다 — 실제 조사도 그렇게 굴러간다.\n' +
+          '넘길 칸이 좁다는 것도 규칙이다. 무엇을 뺄지가 곧 답의 품질이다.',
+    partial: '낱말이 겹친다고 같은 주제가 아니다. 연차와 성과급은 기간을 세는 방식이 다르다.\n' +
+             '담은 조각의 본문을 읽으면 다음에 칠 낱말이 나온다.\n' +
+             '한 문서로 답이 되는지 스스로 물어보라 — 대개 안 된다.',
+    fail: '근거가 없거나 엉뚱해도 AI는 똑같이 단정적으로 답한다. 그게 이 판에서 제일 무서운 부분이다.\n' +
+          '먼저 넓은 낱말로 걸어 보고, 걸린 조각에서 나온 말로 다시 좁혀 들어간다.\n' +
+          '넘기기 전에 "이걸로 질문에 답이 되나"를 한 번 본다.'
   }
 };

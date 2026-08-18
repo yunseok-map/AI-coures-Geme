@@ -222,13 +222,24 @@
   margin: 0 0 var(--sp-2);
   font-size: var(--fs-aux); color: var(--muted);
 }
-.ax__tray { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+/* 장치를 고르기 전에 대가가 보여야 "맞바꾸는 선택"이 된다.
+   그래서 이름 아래에 그 장치가 작업 하나를 붙잡는 시간을 적는다.
+   가로로 눕히면 장치 네 개가 두 줄이 되고, 그만큼 판이 깎여 길이 짧아진다 —
+   길이 짧아지면 내려오는 것을 보고 판단할 시간이 없어진다. 그래서 세로로 쌓는다. */
+.ax__tray {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(76px, 1fr));
+  gap: var(--sp-2);
+}
 
 .ax__tool {
-  display: inline-flex; align-items: center; gap: var(--sp-2);
+  display: grid;
+  justify-items: center; align-content: center;
+  gap: 2px;
   min-height: var(--tap-min);
-  padding: var(--sp-2) var(--sp-3);
+  padding: var(--sp-2) var(--sp-1);
   font-size: var(--fs-label);
+  text-align: center;
   background: var(--card);
   border: var(--border-w) solid var(--ink-20);
   border-bottom-width: var(--lip);
@@ -239,10 +250,7 @@
 .ax__tool__n { font-weight: 600; }
 .ax__tool__c {
   font-family: var(--font-mono); font-size: var(--fs-aux);
-  color: var(--muted);
-  min-width: 1.4em; text-align: center;
-  border-left: 1px solid var(--ink-12);
-  padding-left: var(--sp-2);
+  color: var(--muted); white-space: nowrap;
 }
 /* 집은 것 — 테두리만 바꾸면 집었는지조차 헷갈린다 */
 .ax__tool--armed {
@@ -276,6 +284,21 @@
 }
 .def__slot__n { font-weight: 700; }
 .def__slot__n--empty { color: var(--muted); font-weight: 400; }
+/* 이 검사대에 걸리면 얼마나 늦어지고 얼마가 드는지. 놓은 뒤에도 계속 보인다 */
+.def__slot__d {
+  font-family: var(--font-mono); font-size: var(--fs-aux);
+  color: var(--muted); white-space: nowrap;
+}
+
+/* 지금 붙잡고 있는 시간을 채워 나가는 막대.
+   "장치를 지날 때마다 느려진다"를 글로 적어 두면 아무도 안 읽는다.
+   카드가 여기서 멈춰 서 있고 막대가 차는 것을 봐야 안다. */
+.def__slot__bar {
+  position: absolute; left: 0; bottom: 0;
+  display: block; height: 4px; width: 0;
+  background: var(--mark);
+  border-radius: var(--radius-pill);
+}
 
 /* 장치를 집은 상태 — 어디에 놓을 수 있는지가 보여야 한다 */
 .def__slot--open {
@@ -294,16 +317,27 @@
   background: var(--pass-10);
   color: var(--pass-deep);
 }
-/* 한 번 막은 뒤 다시 준비되는 동안 — 장치 하나로 다 막히지 않는다 */
-.def__slot--cool {
-  border-color: var(--ink-20);
-  background: var(--ink-06);
-  color: var(--muted);
-  opacity: .6;
+/* 지금 이 검사대가 한 건을 붙잡고 있다. 놓은 자리(--set)보다 뒤에 와야 이긴다 */
+.def__slot--busy {
+  border-color: var(--mark);
+  background: var(--mark-08);
+  color: var(--mark-deep);
 }
 .def__slot--fire { border-color: var(--pass); background: var(--pass-20); }
-.def__slot--miss { border-color: var(--partial); background: var(--partial-10); }
 .def__slot--over { border-color: var(--fail); background: var(--fail-10); }
+
+/* 검사받느라 멈춰 선 일감. 내려오던 것이 딱 서는 게 이 판의 대가다 */
+.def__card--held {
+  box-shadow: 0 0 0 3px var(--mark-16), var(--lift-2);
+}
+/* 업무 시간이 끝났는데 아직 라인 위에 있는 것 — 오늘 못 나갔다 */
+.def__card--late {
+  border-style: dashed;
+  border-color: var(--partial);
+  background: var(--partial-10);
+  color: var(--partial-deep);
+  opacity: .85;
+}
 
 /* ============================================================
    G 슈팅 전용 — 내려오는 주장을 쏜다
@@ -420,7 +454,7 @@
 @media (min-width: 720px) {
   .ax__field { height: 46dvh; min-height: 320px; max-height: 560px; }
   .ax__card { width: min(64%, 320px); font-size: var(--fs-label); }
-  .def__slot { left: 22%; right: 22%; font-size: var(--fs-label); }
+  .def__slot { left: 14%; right: 14%; font-size: var(--fs-label); }
 }
 
 /* 움직임을 줄여 달라는 설정 — 깜빡이는 것부터 끈다 */

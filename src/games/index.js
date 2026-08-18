@@ -12,7 +12,7 @@ export const manifest = [
     title: '지어낸 답 찾기',    learn: '할루시네이션 · 근거 확인' },
   { id: 'rewrite-prompt',   no: 3,  chapter: 1, engine: 'E', required: true,  ready: true,
     title: '지시문 고쳐쓰기',   learn: '프롬프트 4요소' },
-  { id: 'fetch-source',     no: 4,  chapter: 1, engine: 'B', required: false, ready: true,
+  { id: 'fetch-source',     no: 4,  chapter: 1, engine: 'S', required: false, ready: true,
     title: '자료 찾아오기',     learn: 'RAG · 임베딩·벡터DB' },
 
   // ---- 챕터 2 — 도구 구분 ★ ----

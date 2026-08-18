@@ -1,0 +1,142 @@
+/* ============================================================
+   엔진 H(검토 라인) 전용 — 라운드가 여러 번 도는 판에서만 쓰는 부품.
+
+   여기 있는 것은 두 가지다.
+     1) 되돌아온 일감 더미 (`qcl__pile`) — 라운드가 끝날 때마다 커진다.
+        숫자만 커지면 아무도 안 읽는다. 서류 모양이 실제로 쌓여야
+        "내가 통과시킨 것이 돌아왔다"가 한눈에 보인다.
+     2) 되돌아온 서류 표 (`qcl__tag`) — 처음 올라온 것과 구별되게.
+        표는 "다시 왔다"만 말한다. 좋고 나쁨은 절대 말하지 않는다 —
+        색으로 정답이 새면 판이 읽기 게임이 된다.
+
+   색·크기·간격은 전부 `tokens.css` 의 변수다. 이 파일에 값은 없다.
+   기존 `qc__*` 규칙은 `arcade.css` 에 있다. 겹치는 이름을 쓰지 않았고,
+   같은 요소에 얹는 것(`qcl__card--back`)만 클래스를 두 번 겹쳐 이긴다.
+   ============================================================ */
+
+/* ---------------------------------------------------------------- 밀린 더미 */
+
+.qcl__pile {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  margin: var(--sp-2) 0 0;
+  padding: var(--sp-2) var(--sp-3);
+  min-height: var(--tap-min);
+  border: var(--border-w) dashed var(--edge);
+  border-radius: var(--radius);
+  background: var(--surface-well);
+  color: var(--muted);
+  font-size: var(--fs-aux);
+}
+
+.qcl__pile__cap {
+  flex: 0 0 auto;
+  line-height: 1.4;
+}
+
+.qcl__pile__cap b {
+  font-size: var(--fs-title);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 쌓인 서류. 아래에서 위로 붙고, 넘치면 줄이 늘어난다 —
+   그래서 개수가 늘면 더미가 실제로 자란다. */
+.qcl__pile__stack {
+  flex: 1 1 auto;
+  display: flex;
+  flex-wrap: wrap-reverse;
+  align-items: flex-end;
+  justify-content: flex-end;
+  row-gap: var(--sp-1);
+  min-width: 0;
+}
+
+.qcl__pile__stack i {
+  display: block;
+  width: 16px;
+  height: 21px;
+  margin-left: -5px;
+  border: 1px solid var(--edge);
+  border-radius: 2px;
+  background: var(--card);
+  box-shadow: var(--lift-1);
+}
+
+/* 각도를 조금씩 어긋나게 — 가지런한 표가 아니라 쌓인 더미로 보이게 */
+.qcl__pile__stack i:nth-child(3n)   { transform: rotate(-3deg); }
+.qcl__pile__stack i:nth-child(3n+1) { transform: rotate(2.5deg); }
+.qcl__pile__stack i:nth-child(5n)   { transform: rotate(-1.5deg) translateY(-1px); }
+
+.qcl__pile__n {
+  margin-left: var(--sp-2);
+  align-self: flex-end;
+  font-weight: 700;
+  color: var(--fail-deep);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 쌓일수록 더미가 무거워 보인다. 색 단계는 tokens.css 의 역할색 그대로 —
+   주의(partial) → 사고(fail) 순서다. */
+.qcl__pile--some {
+  border-style: solid;
+  border-color: var(--partial);
+  background: var(--partial-10);
+  color: var(--ink);
+}
+
+.qcl__pile--heavy .qcl__pile__stack i {
+  width: 18px;
+  height: 24px;
+  border-color: var(--partial);
+}
+
+.qcl__pile--buried {
+  border-color: var(--fail);
+  background: var(--fail-10);
+}
+
+.qcl__pile--buried .qcl__pile__stack i {
+  height: 27px;
+  border-color: var(--fail);
+}
+
+.qcl__pile--buried .qcl__pile__cap b { color: var(--fail-deep); }
+
+/* 라운드가 끝나는 순간 더미가 한 번 내려앉는다 — 그 1초가 이 판의 임팩트다 */
+.qcl__pile--grew { animation: qcl-thud var(--dur-stamp) var(--ease-back) both; }
+
+@keyframes qcl-thud {
+  0%   { transform: translateY(-6px) scale(1.04); }
+  60%  { transform: translateY(1px) scale(1); }
+  100% { transform: none; }
+}
+
+/* ---------------------------------------------------------------- 되돌아온 서류 */
+
+.qcl__tag {
+  display: inline-block;
+  margin-right: var(--sp-2);
+  padding: 1px var(--sp-2);
+  border-radius: var(--radius-pill);
+  background: var(--accent-12);
+  color: var(--accent-deep);
+  font-size: var(--fs-aux);
+  font-weight: 700;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+/* 같은 요소에 이미 `.qc__card` 규칙이 걸려 있다. 클래스를 두 번 써서 이긴다 —
+   파일을 거는 순서가 어떻게 되든 결과가 같아야 한다. */
+.qcl__card--back.qcl__card--back {
+  border-left: var(--sp-1) solid var(--accent);
+}
+
+@media (max-width: 380px) {
+  .qcl__pile__stack i { width: 13px; height: 18px; margin-left: -4px; }
+  .qcl__pile--heavy .qcl__pile__stack i { width: 14px; height: 20px; }
+  .qcl__pile--buried .qcl__pile__stack i { height: 22px; }
+}
