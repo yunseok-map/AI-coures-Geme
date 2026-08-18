@@ -33,6 +33,13 @@ let open = false;
 let flap = null;      // 날개 짓 타임라인
 let lastEarned = -1;
 
+/** 화면 가장자리에서 이만큼은 떨어뜨린다 — 붙여 두면 잡기가 어렵다 */
+const EDGE = 8;
+/** 이만큼 움직이기 전에는 누른 것으로 본다. 손가락은 가만히 못 있는다 */
+const SLOP = 6;
+/** 화살표 키로 옮기는 거리. 드래그를 못 하는 사람의 몫이다 */
+const NUDGE = 16;
+
 /** 상단바가 접근성 이름을 다시 붙일 수 있게 */
 function label() {
   const n = state.earnedCount;
@@ -60,7 +67,9 @@ export function mountBookmark(root) {
       `<path d="${WING}"/>` +
     `</svg>`;
 
-  host.addEventListener('click', toggle);
+  host.addEventListener('click', onClick);
+  host.addEventListener('pointerdown', onDown);
+  host.addEventListener('keydown', onHostKey);
   root.append(host);
 
   panel = document.createElement('section');
@@ -71,17 +80,220 @@ export function mountBookmark(root) {
   root.append(panel);
 
   document.addEventListener('keydown', onKey);
+  window.addEventListener('resize', onResize);
 
+  applySaved();
   refresh();
   idle();
+  hintOnce();
   return host;
+}
+
+/**
+ * "끌어서 옮길 수 있다"를 처음 한 번만 알려 준다.
+ * 커서가 손 모양으로 바뀌는 것은 마우스에만 있는 신호라 휴대폰에서는 아무 표시가
+ * 없다. 그렇다고 화면에 계속 띄워 두면 그게 곧 잔소리가 된다 — 한 번 보고 끝낸다.
+ */
+function hintOnce() {
+  if (state.setting('bookTipSeen', false)) return;
+  const tip = document.createElement('div');
+  tip.className = 'bk__tip';
+  tip.textContent = '끌어서 옮길 수 있다';
+  document.body.append(tip);
+  const put = () => {
+    const r = host.getBoundingClientRect();
+    tip.style.left = `${Math.max(EDGE, r.left + r.width / 2 - tip.offsetWidth / 2)}px`;
+    tip.style.top = `${Math.max(EDGE, r.top - tip.offsetHeight - 6)}px`;
+  };
+  put();
+  const off = () => { tip.remove(); state.setSetting('bookTipSeen', true); };
+  if (isReduced()) { setTimeout(off, 3200); return; }
+  gsap.fromTo(tip, { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.3, delay: 0.8 });
+  gsap.to(tip, { opacity: 0, duration: 0.3, delay: 4, onComplete: off });
+  setTimeout(off, 6000);   // 안전망 — 창이 가려져 연출이 멈춰도 결국 사라진다
 }
 
 export function unmountBookmark() {
   document.removeEventListener('keydown', onKey);
+  window.removeEventListener('resize', onResize);
+  window.removeEventListener('pointermove', onMove);
+  window.removeEventListener('pointerup', onUp);
+  window.removeEventListener('pointercancel', onUp);
+  drag = null;
   if (flap) { flap.kill(); flap = null; }
   host?.remove(); panel?.remove();
   host = panel = null; open = false;
+}
+
+// ---------------------------------------------------------------- 자리 옮기기
+//
+// 왜 옮길 수 있어야 하나: 책은 화면 오른쪽 아래에 떠 있는데, 판마다 그 자리에
+// 무엇이 오는지가 다르다. 어떤 판은 거기가 [실행] 버튼이고 어떤 판은 거기로
+// 일감이 내려온다. 한 자리에 못 박아 두면 언젠가는 반드시 방해가 된다.
+//
+// 자리는 **화면 비율로 저장한다.** 픽셀로 저장하면 노트북에서 놓은 자리가
+// 회의실 큰 화면에서는 한가운데가 되고, 창을 줄이면 화면 밖으로 나간다.
+// 비율은 모서리에 놓은 것을 어느 화면에서든 모서리로 되돌려 준다.
+
+/** 지금 화면에서 책이 갈 수 있는 왼쪽·위쪽 최대값 */
+function bounds() {
+  const w = host.offsetWidth, h = host.offsetHeight;
+  return {
+    maxX: Math.max(0, window.innerWidth - w - EDGE * 2),
+    maxY: Math.max(0, window.innerHeight - h - EDGE * 2)
+  };
+}
+
+/** 비율(0~1)을 지금 화면의 좌표로 바꿔 실제로 놓는다 */
+function place(fx, fy) {
+  const { maxX, maxY } = bounds();
+  host.style.left = `${EDGE + maxX * clamp01(fx)}px`;
+  host.style.top = `${EDGE + maxY * clamp01(fy)}px`;
+  host.style.right = 'auto';
+  host.style.bottom = 'auto';
+}
+
+function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
+
+/** 저장된 자리가 있으면 그대로 놓는다. 없으면 CSS 기본값(오른쪽 아래)에 둔다 */
+function applySaved() {
+  const at = state.setting('bookAt', null);
+  if (at && typeof at.fx === 'number' && typeof at.fy === 'number') place(at.fx, at.fy);
+}
+
+/** 창 크기가 바뀌면 비율대로 다시 놓는다 — 안 그러면 화면 밖으로 나간다 */
+function onResize() {
+  if (!host) return;
+  applySaved();
+  if (open) placePanel();
+}
+
+let drag = null;
+/** 방금 끌었다 — 그 동작에서 이어 나오는 click 하나를 삼키는 표시 */
+let justDragged = false;
+
+function onDown(e) {
+  if (e.button != null && e.button !== 0) return;   // 오른쪽 버튼으로는 안 끈다
+  // 새 동작이 시작됐다. 지난 드래그의 흔적은 여기서 지운다 —
+  // 브라우저가 드래그 뒤에 click 을 안 보내는 경우가 있어서, 이 표시를 그대로
+  // 두면 **한참 뒤의 진짜 탭 하나가 대신 먹힌다.**
+  justDragged = false;
+  const r = host.getBoundingClientRect();
+  drag = { id: e.pointerId, ox: e.clientX - r.left, oy: e.clientY - r.top,
+           x0: e.clientX, y0: e.clientY, moved: false };
+
+  // 포인터 잡기는 **되면 좋고 안 돼도 그만**이다. 실패하면 예외를 던지는데,
+  // 여기서 막히면 드래그가 아예 시작되지 않는다. 실제로 그렇게 한 번 죽였다.
+  try { host.setPointerCapture?.(e.pointerId); } catch { /* 못 잡아도 아래로 진행 */ }
+
+  // 듣는 곳은 책이 아니라 **창**이다. 손이 책보다 빨리 움직이면 포인터가 책 밖으로
+  // 나가는데, 책에만 걸어 두면 그 순간 따라오다 만다.
+  window.addEventListener('pointermove', onMove);
+  window.addEventListener('pointerup', onUp);
+  window.addEventListener('pointercancel', onUp);
+}
+
+function onMove(e) {
+  if (!drag || e.pointerId !== drag.id) return;
+  if (!drag.moved) {
+    if (Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) < SLOP) return;
+    drag.moved = true;
+    host.classList.add('bk--drag');
+    if (open) toggle();          // 끌기 시작하면 펼친 면은 접는다
+  }
+  e.preventDefault();
+  const { maxX, maxY } = bounds();
+  const x = Math.min(EDGE + maxX, Math.max(EDGE, e.clientX - drag.ox));
+  const y = Math.min(EDGE + maxY, Math.max(EDGE, e.clientY - drag.oy));
+  host.style.left = `${x}px`;
+  host.style.top = `${y}px`;
+  host.style.right = 'auto';
+  host.style.bottom = 'auto';
+}
+
+function onUp(e) {
+  if (!drag) return;
+  try { host.releasePointerCapture?.(drag.id); } catch { /* 안 잡혀 있었다 */ }
+  window.removeEventListener('pointermove', onMove);
+  window.removeEventListener('pointerup', onUp);
+  window.removeEventListener('pointercancel', onUp);
+  const moved = drag.moved;
+  drag = null;
+  host.classList.remove('bk--drag');
+  if (moved) { justDragged = true; save(); e.preventDefault(); }
+}
+
+/** 지금 자리를 비율로 바꿔 저장한다 */
+function save() {
+  const r = host.getBoundingClientRect();
+  const { maxX, maxY } = bounds();
+  state.setSetting('bookAt', {
+    fx: maxX ? clamp01((r.left - EDGE) / maxX) : 0,
+    fy: maxY ? clamp01((r.top - EDGE) / maxY) : 0
+  });
+}
+
+/** 끌고 난 직후의 click 은 삼킨다 — 놓자마자 도감이 펼쳐지면 놀란다 */
+function onClick(e) {
+  if (justDragged) { justDragged = false; e.preventDefault(); return; }
+  toggle();
+}
+
+/**
+ * 화살표 키로도 옮긴다. 드래그는 손이 되는 사람만 쓸 수 있는 조작이라
+ * 그것 하나만 두면 자리를 못 옮기는 사람이 생긴다.
+ */
+function onHostKey(e) {
+  const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+  if (!d) return;
+  e.preventDefault();
+  const r = host.getBoundingClientRect();
+  const { maxX, maxY } = bounds();
+  const x = Math.min(EDGE + maxX, Math.max(EDGE, r.left + d[0] * NUDGE));
+  const y = Math.min(EDGE + maxY, Math.max(EDGE, r.top + d[1] * NUDGE));
+  host.style.left = `${x}px`; host.style.top = `${y}px`;
+  host.style.right = 'auto'; host.style.bottom = 'auto';
+  save();
+  if (open) placePanel();
+}
+
+/**
+ * 펼친 면을 **책이 있는 자리에 맞춰** 놓는다.
+ * 책을 왼쪽으로 옮겼으면 면도 오른쪽으로 열려야 한다 — 자리를 옮길 수 있게
+ * 만들어 놓고 면이 늘 왼쪽으로만 열리면 옮긴 보람이 없다.
+ */
+function placePanel() {
+  if (!panel || !host) return;
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const r = host.getBoundingClientRect();
+
+  // 좁은 화면에서는 좌우로 꽉 채운다. 옆으로 열 자리 자체가 없다.
+  if (vw < 420) {
+    panel.style.left = `${EDGE}px`;
+    panel.style.right = `${EDGE}px`;
+    panel.style.width = 'auto';
+    const below = vh - r.bottom;
+    panel.style.top = below > r.top ? `${r.bottom + EDGE}px` : '';
+    panel.style.bottom = below > r.top ? '' : `${vh - r.top + EDGE}px`;
+    return;
+  }
+
+  const w = Math.min(340, vw - EDGE * 2);
+  panel.style.width = `${w}px`;
+  panel.style.right = 'auto';
+
+  // 넓은 쪽으로 연다. 양쪽 다 좁으면 화면 안으로 밀어 넣는다.
+  const roomRight = vw - r.right - EDGE * 2;
+  const left = roomRight >= w ? r.right + EDGE : r.left - w - EDGE;
+  panel.style.left = `${Math.min(vw - w - EDGE, Math.max(EDGE, left))}px`;
+
+  // 세로는 책의 아랫변에 맞춘다. 그래야 책에서 면이 뻗어 나온 것처럼 보인다.
+  const h = panel.offsetHeight || 320;
+  panel.style.bottom = 'auto';
+  panel.style.top = `${Math.min(vh - h - EDGE, Math.max(EDGE, r.bottom - h))}px`;
+
+  // 펼치는 연출이 책 쪽에서 시작되게 한다
+  panel.style.transformOrigin = roomRight >= w ? 'left center' : 'right center';
 }
 
 function onKey(e) {
@@ -169,11 +381,14 @@ async function toggle() {
 
   fill();
   panel.hidden = false;
-  if (isReduced()) { gsap.set(panel, { clearProps: 'all' }); return; }
+  // 자리를 먼저 잡는다 — 높이를 재야 세로 위치가 정해지고, 재려면 화면에 있어야 한다
+  placePanel();
+  if (isReduced()) { gsap.set(panel, { clearProps: 'transform' }); return; }
 
-  // 책이 펼쳐진다 — 등에서 옆으로 펴지고, 줄이 차례로 얹힌다
+  // 책이 펼쳐진다 — 등에서 옆으로 펴지고, 줄이 차례로 얹힌다.
+  // 어느 쪽에서 펴지는지는 placePanel 이 정해 둔다(책이 왼쪽에 있으면 오른쪽으로).
   const rows = panel.querySelectorAll('.bk__row');
-  gsap.set(panel, { transformOrigin: 'right center', scaleX: 0, opacity: 1 });
+  gsap.set(panel, { scaleX: 0, opacity: 1 });
   gsap.set(rows, { opacity: 0, x: 14 });
   const tl = gsap.timeline()
     .to(panel, { scaleX: 1, duration: 0.34, ease: 'settle' })

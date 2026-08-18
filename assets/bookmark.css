@@ -14,12 +14,20 @@
   background: none;
   border: 0;
   box-shadow: none;
-  cursor: pointer;
+  /* 끌 수 있는 물건이라는 표시. 잡는 손 모양이 "옮겨도 된다"를 말없이 알려 준다 */
+  cursor: grab;
+  /* 손가락으로 끌 때 화면이 같이 스크롤되면 아무 데도 못 놓는다.
+     브라우저에게 이 요소의 터치는 내가 처리한다고 미리 말해 둔다. */
+  touch-action: none;
+  -webkit-user-select: none; user-select: none;
   /* 떠 있는 물건이라 hover 로 더 뜨지 않는다 — 이미 떠 있다 */
   transition: filter var(--dur-tap);
 }
 .bk:hover:not(:disabled) { transform: none; box-shadow: none; filter: brightness(1.05); }
 .bk:active:not(:disabled) { transform: none; border-bottom-width: 0; }
+/* 끄는 중 — 손에 들린 것처럼 살짝 커지고, 커서가 쥔 손으로 바뀐다 */
+.bk--drag { cursor: grabbing; filter: brightness(1.08); }
+.bk--drag .bk__book { box-shadow: var(--lift-3), var(--lift-2); }
 
 /* ---- 날개 ----
    깃털 세 장짜리 한 장을 그려 두고 왼쪽은 뒤집어 쓴다.
@@ -77,7 +85,10 @@
 
 .bk--open .bk__book { background: var(--mark-deep); }
 
-/* ---- 펼친 면 ---- */
+/* ---- 펼친 면 ----
+   좌표는 JS(placePanel)가 정한다. 책을 어디로 옮겼는지에 따라 왼쪽으로도
+   오른쪽으로도 열려야 해서, 여기 박아 둔 값으로는 맞출 수가 없다.
+   아래 값은 JS 가 아직 재기 전 한 프레임 동안만 쓰인다. */
 .bk__panel {
   position: fixed;
   right: calc(88px + var(--sp-2));
@@ -169,6 +180,20 @@
     width: auto;
     bottom: calc(var(--sp-5) + 58px + env(safe-area-inset-bottom));
   }
+}
+
+/* 자리를 옮길 수 있다는 걸 처음 한 번은 알려 준다. 끌 수 있는 물건은
+   끌어 보기 전에는 끌 수 있는지 알 수 없다 — 커서 모양은 손가락에는 없다. */
+.bk__tip {
+  position: fixed;
+  z-index: 41;
+  padding: var(--sp-1) var(--sp-2);
+  background: var(--ink);
+  color: var(--on-mark);
+  font-size: var(--fs-tag); font-weight: var(--w-bold);
+  white-space: nowrap;
+  border-radius: var(--radius-sm);
+  pointer-events: none;
 }
 
 /* 움직임을 줄여 달라고 하면 날개는 가만히 있는다 */
