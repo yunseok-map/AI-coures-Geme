@@ -118,6 +118,36 @@ function walk(node, path) {
   }
 }
 
+// ---------------------------------------------------------------- 조사 계산
+console.log('\n== 조사를 계산해 붙이는 자리 ==');
+//
+// 통 이름·부품 이름은 판마다 다르고, 뒤에 붙는 조사도 그때그때 달라진다.
+// "모델 (엔진)로 보냈다" 처럼 괄호로 끝나는 이름에서 틀린 적이 있다 —
+// 읽을 때는 '진' 으로 끝나므로 '으로' 가 맞다.
+{
+  const { euroJosa, ida, iGa, eulReul, hasBatchim } = await import(`${ROOT}/core/ko.js`);
+  const cases = [
+    ['모델 (엔진)', '으로', '이다'], ['제품 (도구)', '로', '다'],
+    ['채팅', '으로', '이다'],       ['프로젝트', '로', '다'],
+    ['스킬', '로', '이다'],          ['훅', '으로', '이다'],
+    ['검증', '으로', '이다'],        ['샌드박스', '로', '다'],
+    ['MCP', '로', '다'],             ['CLI 에이전트', '로', '다']
+  ];
+  for (const [w, ro, da] of cases) {
+    check(`"${w}" + 으로/로`, euroJosa(w) === ro, euroJosa(w));
+    check(`"${w}" + 이다/다`, ida(w) === w + da, ida(w));
+  }
+  // 실제로 화면에 쓰는 통 이름 전부를 돌려 본다 — 새 판을 넣어도 여기서 걸린다
+  for (const [m, g] of games) {
+    for (const b of (g.data?.bins || [])) {
+      check(`${m.no}번 통 "${b.label}" 조사가 계산된다`,
+        typeof euroJosa(b.label) === 'string' && ida(b.label).startsWith(b.label));
+    }
+  }
+  check('받침 판단이 끝의 괄호에 속지 않는다', hasBatchim('모델 (엔진)') === true);
+  check('영문은 받침 없음으로 본다', eulReul('Cowork') === 'Cowork를', eulReul('Cowork'));
+}
+
 // ---------------------------------------------------------------- 결과 문구
 console.log('\n== 결과 화면 문구 ==');
 for (const [m, g] of games) {

@@ -1,23 +1,57 @@
-// 모션. anime.js 를 여기서만 import 한다 — 다른 파일은 이 파일의 프리셋만 쓴다.
+// 모션. GSAP 을 여기서만 import 한다 — 다른 파일은 이 파일의 프리셋만 쓴다.
 //
 // 원칙 (GAME_SPEC.md §3):
 //   - 움직임은 뜻이 있을 때만. 장식용 애니메이션은 넣지 않는다.
 //   - "AI가 일하는 중"과 "판정 순간"이 주역이다.
 //   - prefers-reduced-motion 을 켠 사람에게는 전부 즉시 최종 상태로 보여 준다.
 //
-// 라이브러리는 assets/vendor/ 에 들어 있다. CDN 을 쓰지 않는다(사내망 차단 대비).
+// 라이브러리는 assets/vendor/gsap/ 에 들어 있다. CDN 을 쓰지 않는다(사내망 차단 대비).
+//
+// --- anime.js 에서 옮겨 온 이유 (2026-08-18)
+// 물건이 A자리에서 B자리로 옮겨가는 연출을 손으로 계산하고 있었다
+// (getBoundingClientRect 로 좌표를 재서 복제본을 날리는 방식). 1·9·16번이 전부
+// "물건을 옮기는" 판이라 여기서 티가 났다. Flip 은 그 계산을 브라우저가 하게 한다 —
+// 크기·위치·회전이 다 바뀌어도 어긋나지 않는다.
+//
+// --- 이 파일을 고칠 때 반드시 지킬 것
+// 1) **모든 연출에 setTimeout 안전망을 같이 둔다.** 창이 가려지면 브라우저가
+//    rAF 를 멈춘다 → 애니메이션이 첫 프레임(투명·0%)에 얼어붙는다. 실제로 겪었다:
+//    진행도가 4/68 인데 빈 막대가 나왔고, 목록이 통째로 안 보였다.
+// 2) **body 에 붙인 복제본은 끝나면 반드시 지운다.** 안 지우면 조각이 화면에 영구히 남는다.
+// 3) 시간 단위가 다르다. anime 는 ms, **GSAP 은 초**다. 여기 상수는 ms 로 적고
+//    넘길 때 나눈다 — 다른 파일(engines/loop)이 전부 ms 로 말하기 때문이다.
 
-import { animate, stagger, createTimeline, utils }
-  from '../../assets/vendor/anime.esm.min.js';
+import gsap from '../../assets/vendor/gsap/gsap.esm.js';
+import Flip from '../../assets/vendor/gsap/Flip.esm.js';
+import SplitText from '../../assets/vendor/gsap/SplitText.esm.js';
 import { strong } from './text.js';
+
+gsap.registerPlugin(Flip, SplitText);
+
+// GSAP 기본값을 이 게임의 성격에 맞춘다. 교육 자료라 움직임이 빠르고 짧아야 한다 —
+// 느린 연출은 두 번째 판부터 기다리는 시간이 된다.
+gsap.defaults({ duration: 0.32, ease: 'power2.out', overwrite: 'auto' });
 
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
 export const isReduced = () => reduced.matches;
 
-/** 움직임을 끈 사람에게는 최종 상태만 즉시 적용한다 */
-function still(targets, endState) {
-  if (endState) utils.set(targets, endState);
-  return { then: (fn) => { fn && fn(); return Promise.resolve(); }, complete: Promise.resolve() };
+/** ms → s. 이 파일 밖은 전부 ms 로 말한다. */
+const sec = (ms) => ms / 1000;
+
+/**
+ * 트윈이 끝나기를 기다리되, **절대 매달리지 않는다.**
+ *
+ * GSAP 기본값에 `overwrite: 'auto'` 를 켜 뒀다 — 같은 것에 새 움직임이 걸리면
+ * 앞엣것을 죽인다(눌렀다 또 누를 때 어긋나지 않게). 그런데 죽은 트윈은 "끝났다"를
+ * 알려 주지 않을 수 있고, 그걸 `await` 하던 쪽은 거기서 멈춘다.
+ * 실제로 걸리는 자리가 있다: 결과 화면에서 용어 칩을 하나씩 카운터로 보낼 때
+ * 하나가 멈추면 **나머지가 영영 안 날아간다.**
+ *
+ * 그래서 시간으로도 한 번 더 막는다. 화면은 어차피 그 시간이면 제자리에 있다.
+ */
+function done(tween, ms) {
+  const t = tween && typeof tween.then === 'function' ? tween.then(() => {}) : Promise.resolve();
+  return Promise.race([t, new Promise(r => setTimeout(r, ms))]);
 }
 
 // ---------------------------------------------------------------- 등장
@@ -28,37 +62,38 @@ export function enter(targets, opts = {}) {
   if (!list.length) return Promise.resolve();
 
   // 최종 상태 = 그냥 보이는 상태. 모션이 어떤 이유로든 안 돌면 이걸로 끝난다.
-  const show = () => utils.set(list, { opacity: 1, translateY: 0, scale: 1 });
+  const show = () => gsap.set(list, { opacity: 1, y: 0, scale: 1, clearProps: 'transform' });
   if (isReduced()) { show(); return Promise.resolve(); }
 
   const duration = opts.duration ?? 380;
   const each = opts.each ?? 45;
 
   // 백그라운드 탭에서는 브라우저가 rAF 를 멈춘다 → 애니메이션이 시작 프레임(투명)에
-  // 멈춘 채로 남는다. 그러면 화면이 통째로 비어 보인다. 실제로 겪은 증상이라
-  // 안전망을 둔다: 예상 시간이 지나도 안 끝났으면 그냥 보여 준다.
+  // 멈춘 채로 남는다. 그러면 화면이 통째로 비어 보인다. 실제로 겪은 증상이라 안전망을 둔다.
   const guard = setTimeout(show, duration + each * list.length + 600);
 
-  return animate(list, {
-    opacity: [0, 1],
-    translateY: [opts.from ?? 10, 0],
-    scale: [opts.scale ?? 0.98, 1],
-    duration,
-    delay: stagger(each, { start: opts.start ?? 0 }),
-    ease: 'outBack(1.4)'
-  }).then(() => { clearTimeout(guard); show(); });
+  return gsap.fromTo(list,
+    { opacity: 0, y: opts.from ?? 10, scale: opts.scale ?? 0.98 },
+    {
+      opacity: 1, y: 0, scale: 1,
+      duration: sec(duration),
+      delay: sec(opts.start ?? 0),
+      stagger: sec(each),
+      ease: 'back.out(1.4)'
+    }
+  ).then(() => { clearTimeout(guard); show(); });
 }
 
 /** 한 장짜리 등장 — 티켓이 바뀔 때 */
 export function cardIn(el) {
   if (!el) return Promise.resolve();
-  const show = () => utils.set(el, { opacity: 1, translateY: 0, rotate: 0 });
+  const show = () => gsap.set(el, { opacity: 1, y: 0, rotation: 0, clearProps: 'transform' });
   if (isReduced()) { show(); return Promise.resolve(); }
   const guard = setTimeout(show, 900);
-  return animate(el, {
-    opacity: [0, 1], translateY: [14, 0], rotate: [-0.4, 0],
-    duration: 320, ease: 'outExpo'
-  }).then(() => { clearTimeout(guard); show(); });
+  return gsap.fromTo(el,
+    { opacity: 0, y: 14, rotation: -0.4 },
+    { opacity: 1, y: 0, rotation: 0, duration: sec(320), ease: 'expo.out' }
+  ).then(() => { clearTimeout(guard); show(); });
 }
 
 /**
@@ -77,11 +112,9 @@ export function settle(node, ok = true) {
   if (!node) return Promise.resolve();
   node.classList.add(ok ? 'ticket--ok' : 'ticket--no');
   if (isReduced()) return Promise.resolve();
-  return animate(node, {
-    translateX: [0, ok ? 10 : -10],
-    scale: [1, .97],
-    opacity: [1, .62],
-    duration: 220, ease: 'outQuad'
+  return gsap.to(node, {
+    x: ok ? 10 : -10, scale: 0.97, opacity: 0.62,
+    duration: sec(220), ease: 'power2.out'
   });
 }
 
@@ -90,37 +123,33 @@ export function settle(node, ok = true) {
 /** 도장이 찍힌다. 이 게임의 시그니처 모션. */
 export function stamp(el) {
   if (!el) return Promise.resolve();
-  const show = () => utils.set(el, { opacity: 1, scale: 1, rotate: -6 });
+  const show = () => gsap.set(el, { opacity: 1, scale: 1, rotation: -6 });
   if (isReduced()) { show(); return Promise.resolve(); }
 
   const guard = setTimeout(show, 1400);   // 모션이 안 돌아도 도장은 보여야 한다
-  const tl = createTimeline();
-  tl.add(el, {
-    opacity: [0, 1],
-    scale: [2.1, 0.94],
-    rotate: [-16, -6],
-    duration: 260,
-    ease: 'outExpo'
-  })
-  .add(el, { scale: [0.94, 1.03, 1], duration: 300, ease: 'outElastic(1, .6)' }, '-=40');
-  tl.then(() => clearTimeout(guard));
-  return tl;
+  const tl = gsap.timeline();
+  tl.fromTo(el,
+    { opacity: 0, scale: 2.1, rotation: -16 },
+    { opacity: 1, scale: 0.94, rotation: -6, duration: sec(260), ease: 'expo.out' })
+    .to(el, { scale: 1, duration: sec(300), ease: 'elastic.out(1, 0.6)' }, '-=0.04');
+  return tl.then(() => { clearTimeout(guard); });
 }
 
 /** 오답 — 좌우로 짧게 흔든다 */
 export function shake(el) {
   if (!el || isReduced()) return Promise.resolve();
-  return animate(el, {
-    translateX: [0, -7, 6, -4, 2, 0],
-    duration: 300,
-    ease: 'inOutQuad'
+  return gsap.to(el, {
+    keyframes: { x: [0, -7, 6, -4, 2, 0] },
+    duration: sec(300), ease: 'power1.inOut'
   });
 }
 
 /** 정답 — 짧게 눌렸다 돌아온다 */
 export function press(el) {
   if (!el || isReduced()) return Promise.resolve();
-  return animate(el, { scale: [1, 0.965, 1], duration: 200, ease: 'outQuad' });
+  return gsap.to(el, {
+    keyframes: { scale: [1, 0.965, 1] }, duration: sec(200), ease: 'power2.out'
+  });
 }
 
 /** 숫자가 올라간다 — 점수 */
@@ -132,8 +161,8 @@ export function countUp(el, to, opts = {}) {
   const duration = opts.duration ?? 700;
   const guard = setTimeout(show, duration + 600);   // 숫자가 0에 멈춰 있으면 안 된다
   const box = { v: opts.from ?? 0 };
-  return animate(box, {
-    v: to, duration, ease: 'outExpo',
+  return gsap.to(box, {
+    v: to, duration: sec(duration), ease: 'expo.out',
     onUpdate: () => { el.textContent = Math.round(box.v) + (opts.suffix || ''); }
   }).then(() => { clearTimeout(guard); show(); });
 }
@@ -144,7 +173,6 @@ export function countUp(el, to, opts = {}) {
  * 안전망이 있어야 한다. 애니메이션이 시작 프레임에 얼어붙으면 막대가 **0% 에 멈춘다** —
  * 그러면 진행도가 있는데도 아무것도 안 한 것처럼 보인다. 실제로 겪었다:
  * 창이 가려진 상태에서는 rAF 가 안 돌아서 4/68 인데 빈 막대가 나왔다.
- * (PROGRESS.md 의 "모션에는 setTimeout 안전망을 같이 넣는다"와 같은 계열)
  */
 export function fillBar(el, pct) {
   if (!el) return Promise.resolve();
@@ -156,7 +184,7 @@ export function fillBar(el, pct) {
   const show = () => { el.style.width = pct + '%'; };
   if (isReduced()) { show(); return Promise.resolve(); }
   const guard = setTimeout(show, 520 + 600);
-  return animate(el, { width: pct + '%', duration: 520, ease: 'outExpo' })
+  return gsap.to(el, { width: pct + '%', duration: sec(520), ease: 'expo.out' })
     .then(() => { clearTimeout(guard); show(); });
 }
 
@@ -189,10 +217,11 @@ export async function runLog(host, steps, opts = {}) {
     const ms = step.ms ?? 420;
 
     if (speed) {
-      const settle = () => utils.set(line, { opacity: 1, translateY: 0 });
-      const g = setTimeout(settle, 700);      // 로그 줄이 투명한 채로 남지 않게
-      animate(line, { opacity: [0, 1], translateY: [6, 0], duration: 180, ease: 'outQuad' })
-        .then(() => { clearTimeout(g); settle(); });
+      const settleLine = () => gsap.set(line, { opacity: 1, y: 0 });
+      const g = setTimeout(settleLine, 700);      // 로그 줄이 투명한 채로 남지 않게
+      gsap.fromTo(line, { opacity: 0, y: 6 },
+        { opacity: 1, y: 0, duration: sec(180), ease: 'power2.out' })
+        .then(() => { clearTimeout(g); settleLine(); });
       // 글자가 찍히는 동안 커서가 깜빡인다 — "지금 AI가 쓰고 있다"는 느낌의 전부다.
       // 애니메이션이 얼어붙으면 이 클래스가 안 벗겨져서 **모든 줄에 커서가 남는다.**
       // 글자는 typeIn 의 안전망이 채워 주므로 여기서 커서만 따로 걷어 낸다.
@@ -215,8 +244,11 @@ export async function runLog(host, steps, opts = {}) {
 export function spin(el, on) {
   if (!el) return;
   el.classList.toggle('is-working', Boolean(on));
-  if (isReduced() || !on) return;
-  animate(el, { rotate: '1turn', duration: 900, loop: true, ease: 'linear' });
+  // 끌 때는 돌던 것을 확실히 멈추고 각도를 되돌린다. 안 그러면 기울어진 채로 굳는다.
+  gsap.killTweensOf(el);
+  if (!on) { gsap.set(el, { rotation: 0 }); return; }
+  if (isReduced()) return;
+  gsap.to(el, { rotation: 360, duration: sec(900), repeat: -1, ease: 'none' });
 }
 
 // ---------------------------------------------------------------- 화면 전환
@@ -224,13 +256,13 @@ export function spin(el, on) {
 /** 화면이 바뀔 때. 왼쪽에서 들어오면 전진, 오른쪽이면 뒤로 가는 느낌이다. */
 export function stageIn(el, back = false) {
   if (!el) return Promise.resolve();
-  const show = () => utils.set(el, { opacity: 1, translateX: 0 });
+  const show = () => gsap.set(el, { opacity: 1, x: 0, clearProps: 'transform' });
   if (isReduced()) { show(); return Promise.resolve(); }
   const guard = setTimeout(show, 900);
-  return animate(el, {
-    opacity: [0, 1], translateX: [back ? -18 : 18, 0],
-    duration: 300, ease: 'outQuad'
-  }).then(() => { clearTimeout(guard); show(); });
+  return gsap.fromTo(el,
+    { opacity: 0, x: back ? -18 : 18 },
+    { opacity: 1, x: 0, duration: sec(300), ease: 'power2.out' }
+  ).then(() => { clearTimeout(guard); show(); });
 }
 
 // ---------------------------------------------------------------- 손맛
@@ -247,30 +279,46 @@ export function ripple(host, x, y) {
   r.style.top = ((y ?? box.height / 2) - size / 2) + 'px';
   host.append(r);
   setTimeout(() => r.remove(), 700);
-  animate(r, { scale: [0.25, 1], opacity: [0.34, 0], duration: 560, ease: 'outQuad' });
+  gsap.fromTo(r, { scale: 0.25, opacity: 0.34 },
+    { scale: 1, opacity: 0, duration: sec(560), ease: 'power2.out' });
 }
 
-/** 부품이 집어든 자리에서 놓인 자리로 날아간다 (FLIP) */
+/**
+ * 부품이 집어든 자리에서 놓인 자리로 옮겨 간다.
+ *
+ * Flip 이 하는 일: 옮기기 **전** 자리를 재 두고(`Flip.getState`), 옮긴 **뒤**
+ * "방금 전 자리에서 지금 자리로" 되감아 준다. 손으로 좌표를 빼서 translate 를
+ * 거는 것과 결과가 다르다 — 크기·여백·줄바꿈이 같이 바뀌어도 어긋나지 않는다.
+ *
+ * 여기서는 이미 DOM 이 바뀐 뒤에 불리므로, 출발 자리를 인자로 받아 되돌려 놓고
+ * Flip 에게 "여기서부터 지금 자리로" 오게 시킨다.
+ */
 export function flyTo(fromEl, toEl) {
   if (!fromEl || !toEl || isReduced()) return Promise.resolve();
   const a = fromEl.getBoundingClientRect();
   const b = toEl.getBoundingClientRect();
-  const dx = a.left - b.left, dy = a.top - b.top;
-  if (!dx && !dy) return Promise.resolve();
-  const settle = () => utils.set(toEl, { translateX: 0, translateY: 0, scale: 1, opacity: 1 });
-  const guard = setTimeout(settle, 900);
-  return animate(toEl, {
-    translateX: [dx, 0], translateY: [dy, 0],
-    scale: [Math.max(0.6, a.width / Math.max(b.width, 1)), 1],
-    opacity: [0.65, 1],
-    duration: 420, ease: 'outCubic'
-  }).then(() => { clearTimeout(guard); settle(); });
+  // 둘 중 하나라도 화면에 없으면(폭 0) 좌표를 못 잰다. 그때는 그냥 제자리에 둔다.
+  if (!a.width || !b.width) return Promise.resolve();
+  if (a.left === b.left && a.top === b.top) return Promise.resolve();
+
+  // ① 지금(=제 자리)을 찍어 둔다 → ② 출발 자리에 맞춰 놓는다 → ③ 찍어 둔 자리로 되돌린다
+  const home = Flip.getState(toEl);
+  Flip.fit(toEl, fromEl, { scale: true });
+  gsap.set(toEl, { opacity: 0.65 });
+
+  const settleTo = () => gsap.set(toEl, { clearProps: 'transform,opacity,width,height' });
+  const guard = setTimeout(settleTo, 900);
+  gsap.to(toEl, { opacity: 1, duration: sec(260), ease: 'power2.out' });
+  return Flip.to(home, {
+    duration: sec(420), ease: 'power3.out', scale: true,
+    onComplete: () => { clearTimeout(guard); settleTo(); }
+  }).then(() => {});
 }
 
 /**
  * 딴 것이 모이는 곳으로 날아간다 — 용어 칩 → 상단바 카운터.
  *
- * flyTo 와 다르다. 저쪽은 **목표 요소 자체**를 출발 위치에서 끌어오는 FLIP 이고,
+ * flyTo 와 다르다. 저쪽은 **목표 요소 자체**가 옮겨 오는 것이고,
  * 이쪽은 출발 요소는 그 자리에 두고 **복제본 하나만** 날려 보낸다.
  * 모은 것이 어디로 쌓이는지 눈으로 잇는 게 목적이라 원본이 남아 있어야 한다.
  *
@@ -294,13 +342,21 @@ export function sendTo(fromEl, toEl, label) {
 
   const drop = () => ghost.remove();
   const guard = setTimeout(drop, 1200);
-  return animate(ghost, {
-    translateX: (b.left + b.width / 2) - (a.left + a.width / 2),
-    translateY: (b.top + b.height / 2) - (a.top + a.height / 2),
-    scale: [1, 0.45],
-    opacity: [1, 1, 0],
-    duration: 620, ease: 'inOutQuad'
+  // 직선으로 가면 "이동"으로만 읽힌다. 살짝 위로 떴다가 빨려 들어가야
+  // "쌓인다"로 읽힌다 — 그게 이 연출의 목적이다.
+  // 이 함수만 바깥에서 await 한다(결과 화면이 칩을 하나씩 보낸다). 그래서 done() 으로
+  // 시간 안전망까지 씌운다 — 여기서 매달리면 나머지 칩이 영영 안 날아간다.
+  const tw = gsap.to(ghost, {
+    keyframes: [
+      { x: ((b.left - a.left) + (b.width - a.width) / 2) * 0.35,
+        y: (b.top - a.top) * 0.25 - 26,
+        scale: 1.06, duration: sec(220), ease: 'power2.out' },
+      { x: (b.left + b.width / 2) - (a.left + a.width / 2),
+        y: (b.top + b.height / 2) - (a.top + a.height / 2),
+        scale: 0.45, opacity: 0, duration: sec(400), ease: 'power2.in' }
+    ]
   }).then(() => { clearTimeout(guard); drop(); });
+  return done(tw, 1200).then(() => { clearTimeout(guard); drop(); });
 }
 
 /**
@@ -329,33 +385,33 @@ export function dropOut(fromEl, label) {
 
   const drop = () => ghost.remove();
   const guard = setTimeout(drop, 1400);
-  // 옆으로 떠밀리면서 떨어진다 — "밀려났다"는 말 그대로 보이게
-  return animate(ghost, {
-    translateX: [0, -34],
-    translateY: [0, 58],
-    rotate: [0, -8],
-    opacity: [1, 1, 0],
-    duration: 560, ease: 'inQuad'
+  // 옆으로 떠밀리면서 떨어진다 — "밀려났다"는 말 그대로 보이게.
+  // 아래로 갈수록 빨라져야 떨어지는 것으로 읽힌다(중력).
+  return gsap.to(ghost, {
+    x: -34, y: 58, rotation: -8, opacity: 0,
+    duration: sec(560), ease: 'power2.in'
   }).then(() => { clearTimeout(guard); drop(); });
 }
 
 /** 눈길을 한 번 끌어야 할 때 — 실행 버튼이 살아났다든지 */
 export function pulse(el, times = 2) {
   if (!el || isReduced()) return Promise.resolve();
-  return animate(el, {
-    scale: [1, 1.045, 1], duration: 480, loop: times, ease: 'inOutQuad'
+  return gsap.to(el, {
+    keyframes: { scale: [1, 1.045, 1] },
+    duration: sec(480), repeat: times - 1, ease: 'power1.inOut'
   });
 }
 
 /** 가로로 쓸어내리며 나타난다 — 배치한 칸이 채워질 때 */
 export function wipeIn(el) {
   if (!el) return Promise.resolve();
-  const show = () => utils.set(el, { opacity: 1, scaleX: 1 });
+  const show = () => gsap.set(el, { opacity: 1, scaleX: 1, clearProps: 'transform' });
   if (isReduced()) { show(); return Promise.resolve(); }
   const guard = setTimeout(show, 800);
-  return animate(el, {
-    opacity: [0.2, 1], scaleX: [0.2, 1], duration: 340, ease: 'outExpo'
-  }).then(() => { clearTimeout(guard); show(); });
+  return gsap.fromTo(el,
+    { opacity: 0.2, scaleX: 0.2 },
+    { opacity: 1, scaleX: 1, duration: sec(340), ease: 'expo.out' }
+  ).then(() => { clearTimeout(guard); show(); });
 }
 
 /** 글자가 타자기처럼 찍힌다 — 결과물이 다시 쓰이는 순간 */
@@ -369,10 +425,43 @@ export function typeIn(el, html, opts = {}) {
   const box = { n: 0 };
   const total = plain.length;
   const guard = setTimeout(() => { el.innerHTML = plain; }, (opts.duration ?? 520) + 700);
-  return animate(box, {
-    n: total, duration: opts.duration ?? 520, ease: 'linear',
+  return gsap.to(box, {
+    n: total, duration: sec(opts.duration ?? 520), ease: 'none',
     onUpdate: () => { el.innerHTML = clip(plain, Math.round(box.n)); }
   }).then(() => { clearTimeout(guard); el.innerHTML = plain; });
+}
+
+/**
+ * 한 문장이 글자 단위로 선다 — "방금 겪은 것에 이름이 있다" 순간에만 쓴다.
+ *
+ * 결과 화면에서 용어를 처음 만나는 자리다. 문장이 통째로 나타나면 그냥 설명문이지만,
+ * 글자가 차례로 서면 읽는 속도가 문장 속도에 맞춰진다 — 그래서 이름이 남는다.
+ * 흔해지면 의미가 없어지므로 **다른 곳에 쓰지 않는다.**
+ *
+ * SplitText 는 글자마다 span 을 만든다. 낭독기가 한 글자씩 읽으면 안 되므로
+ * 끝나면 반드시 원래 마크업으로 되돌린다(revert).
+ */
+export function nameIn(el, opts = {}) {
+  if (!el) return Promise.resolve();
+  if (isReduced()) return Promise.resolve();
+  if (!el.textContent.trim()) return Promise.resolve();
+
+  let split;
+  try {
+    split = new SplitText(el, { type: 'chars', charsClass: 'nm__c' });
+  } catch {
+    return Promise.resolve();   // 쪼개지 못하면 그냥 둔다. 글은 이미 화면에 있다
+  }
+
+  const back = () => { try { split.revert(); } catch { /* 이미 되돌아갔다 */ } };
+  const guard = setTimeout(back, (opts.duration ?? 900) + 900);
+
+  return gsap.from(split.chars, {
+    opacity: 0, y: 8,
+    duration: sec(260),
+    stagger: sec(opts.each ?? 14),
+    ease: 'power2.out'
+  }).then(() => { clearTimeout(guard); back(); });
 }
 
 /** 태그 한가운데서 자르지 않도록 잘라 준다 */
@@ -403,14 +492,16 @@ export function burst(anchor, count = 14) {
     bits.push(b);
   }
   const seed = (i) => Math.sin(i * 12.9898) * 43758.5453;   // 난수 대신 고정 패턴
-  animate(bits, {
-    translateX: (el, i) => [0, ((seed(i) % 1) - 0.5) * 240],
-    translateY: (el, i) => [0, -60 - Math.abs((seed(i + 7) % 1)) * 150],
-    rotate: (el, i) => [0, ((seed(i + 3) % 1) - 0.5) * 720],
-    opacity: [1, 0],
-    duration: 900,
-    delay: stagger(14),
-    ease: 'outQuad'
+
+  // 위로 튀었다가 떨어진다. 한 번에 흩어지기만 하면 종이가 아니라 빛으로 읽힌다.
+  gsap.to(bits, {
+    x: (i) => ((seed(i) % 1) - 0.5) * 240,
+    y: (i) => -60 - Math.abs((seed(i + 7) % 1)) * 150,
+    rotation: (i) => ((seed(i + 3) % 1) - 0.5) * 720,
+    opacity: 0,
+    duration: sec(900),
+    stagger: sec(14),
+    ease: 'power2.out'
   }).then(() => host.remove());
   setTimeout(() => host.remove(), 1800);
 }
@@ -430,4 +521,55 @@ function toList(t) {
   return [t];
 }
 
-export { animate, stagger, createTimeline, utils };
+/**
+ * 엔진이 직접 쓰는 얇은 창구.
+ *
+ * anime.js 를 쓸 때는 `animate()` 를 그대로 내보냈다. 그 함수의 규약(ms, translateX,
+ * 배열 키프레임)이 엔진 7군데에 박혀 있어서, 라이브러리를 바꾸면 그 7군데가 같이
+ * 깨진다. 그래서 **이 파일이 그 규약을 지킨다** — 안쪽이 무엇이든 바깥은 그대로다.
+ *
+ *   animate(el, { opacity: [0, 1], translateY: [6, 0], duration: 900, ease: 'outQuad' })
+ */
+export function animate(target, opts = {}) {
+  if (!target) return Promise.resolve();
+  const { duration = 320, ease = 'power2.out', delay = 0, loop, ...props } = opts;
+
+  const EASE = {
+    linear: 'none', outQuad: 'power2.out', inQuad: 'power2.in',
+    outCubic: 'power3.out', outExpo: 'expo.out', inOutQuad: 'power1.inOut'
+  };
+  const NAME = { translateX: 'x', translateY: 'y', rotate: 'rotation' };
+
+  const arrays = {}, plain = {};
+  let steps = 0;
+  for (const [k, v] of Object.entries(props)) {
+    const key = NAME[k] || k;
+    if (Array.isArray(v)) { arrays[key] = v; steps = Math.max(steps, v.length); }
+    else plain[key] = v;
+  }
+
+  const cfg = {
+    duration: sec(duration),
+    delay: sec(delay),
+    ease: EASE[ease] || ease,
+    ...(loop ? { repeat: loop === true ? -1 : loop - 1 } : {})
+  };
+
+  // 값이 셋 이상인 배열이 하나라도 있으면 전부 키프레임으로 넘긴다.
+  // GSAP 은 키프레임과 일반 속성을 한 트윈에 섞지 못한다 — 섞으면 조용히 하나가 무시된다.
+  // (지금 부르는 곳은 전부 배열만 넘긴다. 섞어 부르면 여기서 갈라야 한다.)
+  if (steps > 2) {
+    return gsap.to(target, { ...plain, keyframes: arrays, ...cfg }).then(() => {});
+  }
+
+  const from = {}, to = { ...plain };
+  let hasFrom = false;
+  for (const [k, v] of Object.entries(arrays)) { from[k] = v[0]; to[k] = v[1]; hasFrom = true; }
+
+  const tween = hasFrom
+    ? gsap.fromTo(target, from, { ...to, ...cfg })
+    : gsap.to(target, { ...to, ...cfg });
+  return tween.then(() => {});
+}
+
+export { gsap, Flip, SplitText };

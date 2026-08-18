@@ -4,7 +4,8 @@
 // "당신이 방금 한 것 = 컨텍스트 엔지니어링" 처럼, 먼저 겪고 나서 이름을 알게 만든다.
 // 그래야 용어가 외울 것이 아니라 겪은 것의 이름이 된다.
 
-import { stamp, countUp, wait, enter, burst, shake, sendTo, pulse, typeIn } from '../core/motion.js';
+import { stamp, countUp, wait, enter, burst, shake, sendTo, pulse, typeIn, nameIn }
+  from '../core/motion.js';
 import { esc, strong, plain } from '../core/text.js';
 import { groupReasons } from '../core/sim.js';
 import { terms } from '../data/terms.js';
@@ -165,6 +166,11 @@ export async function showDebrief(game, result, on) {
 
   // 도장이 찍힌 다음 아래 내용이 차례로 올라온다
   enter([...inner.children].slice(1), { each: 55, start: 180, from: 14 });
+
+  // 이름을 붙여 주는 한 문장만 글자 단위로 선다. 이 판에서 용어를 처음 만나는
+  // 자리라 읽는 속도를 문장 속도에 맞춰 준다. 다른 곳에 쓰면 값이 떨어진다.
+  const nameBody = inner.querySelector('.named__body');
+  if (nameBody) wait(420).then(() => nameIn(nameBody, { each: 12 }));
 
   if (grade === 'fail') shake(head);
   // 통과는 그 자체로 축하할 일이다. 만점일 때만 터뜨리면 대부분은 아무것도 못 본다.

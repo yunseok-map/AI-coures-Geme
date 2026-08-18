@@ -7,7 +7,7 @@
 //   drill   틀린 카드를 뒤에 한 번 더 내보낸다                    (게임 8)
 
 import { el, esc, strong, say, Bin, header, brief, actions, verdict, hud } from './base.js';
-import { hasBatchim } from '../core/ko.js';
+import { hasBatchim, euroJosa } from '../core/ko.js';
 import { press, shake, settle, enter } from '../core/motion.js';
 
 let bin = new Bin();
@@ -119,7 +119,7 @@ export function mount(root, game, ctx) {
 
     // 조사는 계산해서 붙인다 — "채팅다"가 아니라 "채팅이다"
     const body = right
-      ? `<b>${esc(target.label)}</b>로 보냈다. ${strong(card.why)}`
+      ? `<b>${esc(target.label)}</b>${euroJosa(target.label)} 보냈다. ${strong(card.why)}`
       : `<b>${esc(chosen.label)}</b>${hasBatchim(chosen.label) ? '이' : '가'} 아니라 ` +
         `<b>${esc(target.label)}</b>${hasBatchim(target.label) ? '이다' : '다'}.<br>${strong(card.why)}`;
 

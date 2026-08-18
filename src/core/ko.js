@@ -19,9 +19,22 @@ const EXCEPTIONS = {
   'skill': true      // 스킬
 };
 
+/**
+ * 조사를 고를 때 실제로 읽는 부분만 남긴다.
+ *
+ * 통 이름이 "모델 (엔진)" 처럼 괄호로 끝나는 경우가 있다. 마지막 글자를 ')' 로 보면
+ * 받침이 없다고 판단해서 "모델 (엔진)로 보냈다"가 나온다 — 읽을 때는 '진' 으로
+ * 끝나므로 "엔진으로" 가 맞다. 그래서 끝의 닫는 기호·마침표를 떼고 본다.
+ */
+function readable(word) {
+  // 이 게임 문구에 실제로 나오는 끝 기호만 본다. 여기에 글자를 늘리면 글꼴 조각에도
+  // 그 글자가 따라 들어간다(_tests/test-font.mjs 가 알려 준다) — 쓰지 않는 기호는 넣지 않는다.
+  return String(word || '').trim().replace(/[)\]}>”’'".,!?·]+$/, '').trim();
+}
+
 /** 마지막 글자에 받침이 있는가 */
 export function hasBatchim(word) {
-  const s = String(word || '').trim();
+  const s = readable(word);
   if (!s) return false;
 
   const key = s.toLowerCase().split(/\s+/).pop();
@@ -46,13 +59,21 @@ export function eulReul(word) { return word + (hasBatchim(word) ? '을' : '를')
 /** 이다 / 다 — "채팅이다", "프로젝트다" */
 export function ida(word) { return word + (hasBatchim(word) ? '이다' : '다'); }
 
-/** 으로/로 */
-export function euro(word) {
-  const s = String(word || '').trim();
+/**
+ * 으로/로 조사만 돌려준다.
+ *
+ * 앞말이 `<b>…</b>` 안에 들어가 있으면 낱말과 조사를 이어 붙일 수 없다.
+ * 그때는 이 함수로 조사만 받아서 태그 뒤에 적는다.
+ */
+export function euroJosa(word) {
+  const s = readable(word);
   const code = s.charCodeAt(s.length - 1);
   // ㄹ 받침은 '로'를 쓴다 (스킬로, 서울로)
-  if (code >= HANGUL_START && code <= HANGUL_END && (code - HANGUL_START) % 28 === 8) {
-    return s + '로';
-  }
-  return s + (hasBatchim(s) ? '으로' : '로');
+  if (code >= HANGUL_START && code <= HANGUL_END && (code - HANGUL_START) % 28 === 8) return '로';
+  return hasBatchim(s) ? '으로' : '로';
+}
+
+/** 으로/로 */
+export function euro(word) {
+  return String(word || '').trim() + euroJosa(word);
 }
