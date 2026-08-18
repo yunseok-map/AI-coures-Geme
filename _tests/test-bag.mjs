@@ -342,5 +342,78 @@ console.log('\n== 16번 회귀 (같은 엔진 · 슬롯형) ==');
   check('16번은 회차형이 아니다 (설정이 안 섞였다)', !ticket.data.rounds && !ticket.data.repair);
 }
 
+// ---------------------------------------------------------------- 16번 난이도
+//
+// 왜 검사로 두나: 16번은 전수 조사에서 **아무나 통과하는 판**이었다.
+// 잘한 점마다 점수를 더하는데 시작이 100점이라, 제대로 한 구성이 132점이 되고
+// `finish()` 가 100 으로 깎았다. 그 47점의 여유가 판단을 통째로 먹어서
+//   · 위에서부터 칸이 찰 때까지 누르기만 한 사람 → 100점 통과
+//   · 사람 확인을 아예 빼도 → 100점 통과
+//   · 규정집 없이 써서 **환각 사유가 찍힌 채로도** → 100점 통과
+// 였다. 결과 카드에 빨간 줄이 뜨는데 만점인 화면은 아무것도 못 가르친다.
+// 숫자를 다시 만지다가 그때로 돌아가지 않도록 네 가지를 못 박는다.
+console.log('\n== 16번 난이도 (판단이 결과를 바꾸는가) ==');
+{
+  const slot = (m) => ({ kept: [], evicted: [], slots: m, all: Object.values(m).flat(),
+    used: 0, cap: 0, runNo: 1 });
+  const ids = (...xs) => xs.map(id => ({ id }));
+  const run = (source, method, guard) =>
+    ticket.simulate(slot({ source, method, guard }), ticket.data);
+
+  // ① 이길 수 있는 판인가 — 제대로 고른 사람이 만점으로 통과한다
+  const best = run(ids('s-rules', 's-cases'), ids('m-project'), ids('g-cite', 'g-human'));
+  check('제대로 고르면 통과한다', best.grade === 'pass', `${best.grade} ${best.score}점`);
+  check('그때 만점이다 (여유가 점수를 먹지 않는다)', best.score === 100, `${best.score}점`);
+  check('그때는 사고가 하나도 없다', best.faults.length === 0,
+    best.faults.map(f => f.name).join());
+
+  // ② 안 읽고 위에서부터 칸을 채운 사람 — 부품 차례가 정답 차례가 아니다
+  const byOrder = (tag, n) =>
+    ids(...ticket.data.parts.filter(p => p.tags.includes(tag)).slice(0, n).map(p => p.id));
+  const blind = run(byOrder('source', 2), byOrder('method', 1), byOrder('guard', 2));
+  check('위에서부터 채우기만 한 사람은 통과하지 못한다',
+    blind.grade !== 'pass', `${blind.grade} ${blind.score}점`);
+  check('두 사람의 점수가 다르다', blind.score !== best.score,
+    `${best.score}점 vs ${blind.score}점`);
+  check('그래도 게임오버는 없다', blind.steps.some(s => s.kind === 'out'));
+
+  // ③ **사고 사유가 하나라도 찍히면 통과선 아래다.** 이 판의 점수 설계 자체다 —
+  //    사유마다 22점 이상이고 잘한 점은 점수를 올리지 않으므로 100점에서 반드시 내려간다.
+  const faulted = [
+    ['규정집을 안 넣으면 환각',
+      run(ids('s-cases'), ids('m-project'), ids('g-cite', 'g-human')), '환각'],
+    ['근거 표시를 빼면 워크슬롭',
+      run(ids('s-rules', 's-cases'), ids('m-project'), ids('g-human')), '워크슬롭'],
+    ['사람 확인을 빼면 검토 없음',
+      run(ids('s-rules', 's-cases'), ids('m-project'), ids('g-cite')), '검토 없음'],
+    ['개인 메모를 섞으면 컨텍스트 로트',
+      run(ids('s-rules', 's-memo'), ids('m-project'), ids('g-cite', 'g-human')), '컨텍스트 로트']
+  ];
+  for (const [what, res, name] of faulted) {
+    check(`${what} — 사유가 찍힌다`, res.faults.some(f => f.name === name),
+      res.faults.map(f => f.name).join() || '없음');
+    check(`${what} — 그러면 통과하지 못한다`, res.grade !== 'pass',
+      `${res.grade} ${res.score}점`);
+  }
+
+  // ④ 사고가 아닌 약점은 통과는 시키되 점수를 깎는다 — 막히지 않고 차이는 보인다
+  const chat = run(ids('s-rules', 's-cases'), ids('m-chat'), ids('g-cite', 'g-human'));
+  check('채팅으로 해도 통과는 한다 (사고는 아니다)', chat.grade === 'pass',
+    `${chat.grade} ${chat.score}점`);
+  check('대신 점수가 만점보다 낮다', chat.score < best.score, `${chat.score}점`);
+
+  // ⑤ 심화 부품은 점수를 더 주는 게 아니라 **푸는 길을 늘린다** —
+  //    훅이 사람 확인 자리를 대신 서서 만점 길이 하나 더 생긴다
+  const hooked = run(ids('s-rules', 's-cases'), ids('m-subagent'), ids('g-cite', 'g-hook'));
+  check('심화 구성도 만점으로 통과한다', hooked.grade === 'pass' && hooked.score === 100,
+    `${hooked.grade} ${hooked.score}점`);
+  check('심화 구성이 만점을 넘지 않는다 (여유가 다시 생기지 않았다)',
+    hooked.score === best.score, `${hooked.score}점`);
+  // 격리는 확인이 아니다 — 샌드박스만으로는 사람이 한 번도 안 본 것이다
+  const boxed = run(ids('s-rules', 's-cases'), ids('m-project'), ids('g-cite', 'g-sandbox'));
+  check('샌드박스만으로는 사람 확인이 대신되지 않는다', boxed.grade !== 'pass',
+    `${boxed.grade} ${boxed.score}점`);
+}
+
 console.log(`\n결과: ${pass} 통과 / ${fail} 실패\n`);
 process.exit(fail ? 1 : 0);
