@@ -11,7 +11,7 @@
 // 화면 없이 도는 검사다. 회차 진행·접기·발동 계산이 전부 core 의 순수 함수라서
 // 엔진을 띄우지 않고도 사람이 하는 것과 똑같은 순서로 돌려 볼 수 있다.
 
-import { newDesk, arrive, takeOff, fold, look, live, dimmed, used }
+import { newDesk, arrive, takeOff, fold, look, live, dimmed, settle, used }
   from '../src/core/bag.js';
 import { resolve, fired, tally } from '../src/core/ruleset.js';
 
@@ -34,6 +34,10 @@ function play(script = []) {
   let desk = newDesk(d.budget);
   const shots = [];
   for (let i = 0; i < d.rounds.length; i++) {
+    // 엔진과 **같은 순서**여야 한다 (engines/build.js 의 nextRound):
+    // 지난 회차를 정산하고 → 새 자료가 도착하고 → 사람이 손을 댄다.
+    // 순서가 어긋나면 이 검사는 화면에 없는 게임을 검사하게 된다.
+    if (i > 0) desk = settle(desk, i);
     const list = (d.rounds[i].arrive || []).map(id => d.parts.find(p => p.id === id));
     desk = arrive(desk, list, i + 1);
     const act = script[i] || {};
@@ -41,6 +45,7 @@ function play(script = []) {
     for (const id of act.drop || []) desk = takeOff(desk, id, i + 1);
     shots.push(desk);
   }
+  desk = settle(desk, d.rounds.length);   // 마감도 회차다
   const setup = {
     desk, kept: live(desk), evicted: dimmed(desk),
     used: used(desk), cap: desk.cap, slots: {}, all: desk.items.slice(), runNo: 1
@@ -73,6 +78,12 @@ console.log('\n== core/bag.js — 책상 규칙 ==');
   check('들어온 것은 칸을 먹는다', used(k) === 2, String(used(k)));
 
   k = arrive(k, [item('b', 2, [{ id: 'db', label: 'db', value: 'B', wrong: 'B아님' }])], 2);
+  // 도착만으로는 안 흐려진다. 회차 안에서는 넘겨 두고 무엇을 뺄지 고를 수 있어야 한다 —
+  // 손대 보기도 전에 흐려지면 잘 판단한 사람과 아무 생각 없는 사람이 같은 결과를 받는다.
+  check('도착만으로는 안 흐려진다', dimmed(k).length === 0, dimmed(k).map(x => x.id).join());
+  check('넘긴 채로 둘 수 있다', used(k) === 4, String(used(k)));
+
+  k = settle(k, 2);   // 회차를 넘긴다
   check('칸이 넘치면 오래된 것이 흐려진다', dimmed(k).map(x => x.id).join() === 'a',
     dimmed(k).map(x => x.id).join());
   check('흐려진 것은 칸을 안 먹는다', used(k) === 2, String(used(k)));
@@ -99,21 +110,23 @@ console.log('\n== core/bag.js — 책상 규칙 ==');
   check('처음과 끝은 남는다',
     look(f, 'd1').state === 'ok' && look(f, 'd3').state === 'ok');
   check('사라진 것은 되돌아오지 않는다',
-    look(arrive(f, [], 2), 'd2').state === 'folded');
+    look(settle(arrive(f, [], 2), 2), 'd2').state === 'folded');
   check('셋이 아니면 접히지 않는다', fold(f, ['x'], 1, 'n') === f);
 }
 
 // ---------------------------------------------------------------- 1번
 console.log('\n== 1번 가방 싸기 — 회차형 ==');
 
-// ① 아무것도 안 하면 칸이 넘치고, 넘친 순간 오래된 것이 조용히 사라진다
+// ① 아무것도 안 하면 칸이 넘치고, 회차를 넘기는 순간 오래된 것이 조용히 사라진다
 {
   const { shots, sim } = play([]);
-  const afterR2 = shots[1];
+  // shots[i] 는 그 회차에서 사람이 손을 댄 **직후**다. 흐려지는 것은 다음 회차로
+  // 넘어갈 때라서, 흐려진 결과는 그 다음 칸에서 봐야 한다.
+  const atDeadline = shots[3];
   check('칸이 넘치면 오래된 것이 사라진다',
-    dimmed(afterR2).some(x => x.id === 'q3'), dimmed(afterR2).map(x => x.id).join());
+    dimmed(atDeadline).some(x => x.id === 'q3'), dimmed(atDeadline).map(x => x.id).join());
   check('사라진 것은 책상에서 안 보인다',
-    !live(afterR2).some(x => x.id === 'q3'));
+    !live(atDeadline).some(x => x.id === 'q3'));
   check('사라졌다고 알려 주는 문구가 회차 중에 없다',
     !(bag.data.rounds || []).some(r => /밀려|흐려|사라/.test(r.note || '')),
     '회차 안내가 미리 일러 준다');
@@ -127,9 +140,37 @@ console.log('\n== 1번 가방 싸기 — 회차형 ==');
   check('틀린 값을 쓴 것이 환각으로 잡힌다', names(sim).includes('환각'), names(sim).join());
   check('칸을 넘긴 것이 컨텍스트 초과로 잡힌다',
     names(sim).includes('컨텍스트 초과'), names(sim).join());
-  check('되짚기에서 언제 흐려졌는지 밝힌다', /2회차에 흐려졌다/.test(t));
+  check('되짚기에서 언제 흐려졌는지 밝힌다', /회차에 흐려졌다/.test(t));
   check('그래도 끝까지 돈다 (게임오버 없음)',
-    sim.grade === 'fail' && sim.steps.some(s => s.kind === 'out'), sim.grade);
+    sim.steps.some(s => s.kind === 'out'), sim.grade);
+}
+
+// ---- 난이도 — 이 판이 **이길 수 있는 판**인지 여기서 못 박는다 ----
+//
+// 왜 검사로 두나: 6칸이던 때 이 판은 전수 조사 10,738가지 중 58가지(0.5%)만
+// 통과했다. 마감에 필요한 넷이 8칸인데 책상이 6칸이라 **산수로 불가능**했다.
+// 그러면 잘 고른 사람과 아무 생각 없는 사람의 결과가 같아지고, 판단을 가르치는
+// 판에서 판단이 아무 힘도 못 쓴다. 숫자를 다시 만지다가 그때로 돌아가지 않도록
+// 두 가지를 못 박는다: **잘 고르면 통과한다** · **안 고르면 통과 못 한다**.
+{
+  const need = ['q3', 'q2', 'memo', 'voc'];   // 마감에 물어보는 넷이 든 자료
+  const noise = ['notice', 'board', 'rival']; // 그 밖의 것
+  const cap = bag.data.budget;
+  const sum = ids => ids.reduce((n, id) => n + bag.data.parts.find(p => p.id === id).cost, 0);
+
+  check('필요한 넷이 책상에 딱 들어간다', sum(need) === cap, `${sum(need)}칸 / ${cap}칸`);
+  check('전부 들고 가면 넘친다', sum(need) + sum(noise) > cap,
+    `${sum(need) + sum(noise)}칸 / ${cap}칸`);
+
+  // 잡음을 들어오는 대로 내린 사람 — 이 판이 원하는 판단이다
+  const good = play([{ drop: ['notice'] }, { drop: ['board'] }, { drop: ['rival'] }]).sim;
+  check('잡음 셋을 내리면 통과한다', good.grade === 'pass', `${good.grade} ${good.score}점`);
+  check('그때는 하나도 안 상한다', good.faults.length === 0, good.faults.map(f => f.name).join());
+
+  // 아무것도 안 한 사람 — 통과는 못 한다. 그래도 끝까지 돌고 등급만 내려간다
+  const lazy = play([]).sim;
+  check('아무것도 안 하면 통과하지 못한다', lazy.grade !== 'pass', `${lazy.grade} ${lazy.score}점`);
+  check('그래도 게임오버는 없다', lazy.steps.some(s => s.kind === 'out'));
 }
 
 // ③ 접으면 세부 하나가 영구히 없어진다 — 무엇이 없어졌는지는 그때 안 알려 준다

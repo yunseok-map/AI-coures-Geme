@@ -9,6 +9,15 @@
 //
 // 여기 있는 것은 **규칙**이지 콘텐츠가 아니다 — 자료 이름도 회차 이름도 모른다.
 // 요약본에 붙일 이름은 부르는 쪽이 넘겨준다.
+//
+// **언제 흐려지나: 회차가 끝날 때다.** 도착하는 순간이 아니다.
+// 전에는 자료가 놓이자마자 넘치는 만큼 흐려졌다. 그래서 한 회차에 두 건이
+// 같이 들어오면, 사람이 손을 대 보기도 전에 이미 흐려져 있었다 —
+// 잘 판단한 사람과 아무 생각 없는 사람의 결과가 같아졌고, 실제로
+// **10,738가지 중 58가지(0.5%)만 통과**했다. 첫 판에서 그러면 배우는 게 아니라
+// 그냥 진다. 지금은 회차 안에서는 칸을 넘겨 둘 수 있고(화면에 9/8 로 뜬다),
+// 넘긴 채로 다음 회차로 넘어갈 때 비로소 흐려진다.
+// 가르치려는 것은 그대로다 — **무엇이 상했는지는 여전히 안 알려 준다.**
 
 /** 요약은 셋을 하나로 접는다 */
 export const FOLD_N = 3;
@@ -53,7 +62,7 @@ export function arrive(desk, items, round) {
       from: null
     });
   }
-  return settle(d, round);
+  return d;   // 흐리는 것은 회차가 끝날 때(settle) 한다
 }
 
 /**
@@ -86,7 +95,7 @@ export function takeOff(desk, id, round) {
   const [it] = d.items.splice(at, 1);
   d.gone.push({ ...it, why: 'off', round });
   d.log.push({ kind: 'off', round, id: it.id, label: it.label });
-  return settle(d, round);
+  return d;
 }
 
 /**
@@ -129,7 +138,7 @@ export function fold(desk, ids, round, name) {
     lostLabel: cut ? cut.dt.label : null,
     lostFrom: cut ? cut.it.label : null
   });
-  return settle(d, round);
+  return d;
 }
 
 /**
