@@ -339,58 +339,6 @@
   opacity: .85;
 }
 
-/* ============================================================
-   G 슈팅 전용 — 내려오는 주장을 쏜다
-   ============================================================ */
-
-/* 판정 전에는 전부 똑같이 생긴다. 색으로 정답이 새면 판별 게임이 아니게 된다. */
-.sh__card {
-  width: min(94%, 420px);
-  align-items: start;
-  font-size: var(--fs-label);
-  cursor: pointer;
-  border-color: var(--ink-20);
-  transition: border-color var(--dur-tap) var(--ease),
-              background var(--dur-tap) var(--ease),
-              box-shadow var(--dur-tap) var(--ease);
-}
-.sh__card:hover:not(:disabled) { border-color: var(--mark); box-shadow: 0 0 0 3px var(--mark-08), var(--lift-2); }
-.sh__card:active:not(:disabled) { transform: translate(-50%, -50%) scale(.98); }
-.sh__card:disabled { cursor: default; opacity: 1; }
-.sh__card .ax__card__ico { margin-top: 2px; }
-
-/* 판정 뒤에만 색이 붙는다 */
-.sh__card--hit  { border-color: var(--pass);    background: var(--pass-10); }
-.sh__card--miss { border-color: var(--fail);    background: var(--fail-10); }
-.sh__card--over { border-color: var(--partial); background: var(--partial-10); }
-.sh__card--pass { border-color: var(--ink-20);  background: var(--ink-06); }
-
-/* 카드 왼쪽 꼬리표 (시각 등). 꼬리표가 있는 판에서만 칸을 하나 더 쓴다 —
-   무조건 3칸으로 두면 꼬리표 없는 판에 빈 칸이 생긴다. */
-.sh__card--tagged { grid-template-columns: auto auto 1fr; }
-.sh__tag {
-  font-family: var(--font-mono); font-size: var(--fs-aux);
-  color: var(--muted); white-space: nowrap;
-  padding-right: var(--sp-2);
-  border-right: 1px solid var(--ink-12);
-}
-
-/* 왜 그런지를 카드에 바로 붙인다 — 나중에 몰아서 보면 안 읽는다 */
-.sh__why {
-  display: block; margin-top: var(--sp-1);
-  font-size: var(--fs-aux); font-weight: 400; color: var(--muted);
-  line-height: 1.35;
-}
-
-/* 판독선에서 카드로 뻗는 광선 */
-.sh__beam {
-  position: absolute; z-index: 1;
-  left: 50%; width: 4px;
-  transform: translateX(-50%);
-  background: var(--mark);
-  border-radius: var(--radius-pill);
-  pointer-events: none;
-}
 
 /* 판독선 — 지나가면 사실로 인정된다 */
 .ax__foot--line {

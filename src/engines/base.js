@@ -44,15 +44,6 @@ export function header(game) {
   return h;
 }
 
-/** 상황 설명 티켓 — "지금 무슨 일이 들어왔는가" */
-export function brief(text, no) {
-  const t = el('article', 'ticket');
-  t.innerHTML =
-    `<div class="ticket__no">${esc(no || '업무 요청')}</div>` +
-    `<div class="ticket__body">${esc(text)}</div>`;
-  cardIn(t);
-  return t;
-}
 
 /**
  * 실행 로그 패널.

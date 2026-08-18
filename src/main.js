@@ -32,9 +32,9 @@ const ENGINES = {
   S: () => import('./engines/library.js'),   // 서고 — 낱말을 던져 걸린 것만 넘긴다
   V: () => import('./engines/evidence.js'),  // 증거판 — 문장을 근거 조항에 잇는다
   N: () => import('./engines/map.js'),       // 지형 답사 — 발품을 써서 구역을 고른다
+  I: () => import('./engines/inject.js'),    // 숨은 지시 — 심어 보고, 편을 바꿔 막는다
   M: () => import('./engines/gate.js'),      // 권한 게이트 — 케이블 위의 문을 하나씩 연다
   F: () => import('./engines/defense.js'),   // 디펜스 — 내려오는 것을 막는다
-  G: () => import('./engines/shoot.js'),     // 슈팅 — 문제 있는 것만 쏜다
   H: () => import('./engines/qcline.js')     // 검토 라인 — 창구에서 승인/반려를 찍는다
 };
 
@@ -47,10 +47,10 @@ app.append(topbarHost, stage);
 let activeEngine = null;
 
 // 눌린 자리에서 파문이 퍼진다. 한 곳에서 위임 처리하므로 엔진은 이걸 몰라도 된다.
-// .target · .board__row 은 엔진 B(판별형)와 함께 없어졌다.
+// 없어진 엔진의 선택자는 여기서도 같이 뺀다 — B(판별형)·A(분류형)·G(슈팅).
 const TAPPABLE = '.bin,.part,.toggle,.node,.btn-primary,.btn-quiet,.tab,' +
                  '.def__slot,.ax__tool,.bt__pick,.asm__part,.tl__tool,.tl__box,.tl__key,' +
-                 '.dp__job,.dp__desk,.lib__hit,.lib__word,.ev__line,.ev__span,.gt__gate,.mp__tile';
+                 '.dp__job,.dp__desk,.lib__hit,.lib__word,.ev__line,.ev__span,.gt__gate,.mp__tile,.ij__opt,.ij__guard';
 // 배선형 상자(.wf__node)는 여기 넣지 않는다. 파문은 host 를 넘어가지 않아야 해서
 // `overflow: hidden` 이 전제인데, 그 상자는 선이 드나드는 동그라미를 테두리 **밖에**
 // 달고 있어서 잘라낼 수 없다. 넣었더니 파문이 상자보다 크게 번져 이름을 덮었다.

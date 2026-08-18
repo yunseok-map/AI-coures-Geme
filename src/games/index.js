@@ -40,8 +40,8 @@ export const manifest = [
     title: '사고 막기',         learn: '훅 · 하네스 엔지니어링 · 가드레일 · 샌드박스' },
   { id: 'reject-approval',  no: 14, chapter: 4, engine: 'H', required: false, ready: true,
     title: '결재 반려',         learn: '워크슬롭 · 검증 부채' },
-  { id: 'spot-risk',        no: 15, chapter: 4, engine: 'G', required: true,  ready: true,
-    title: '이상 징후 찾기',    learn: '프롬프트 인젝션 · 섀도우 AI · 자동화 편향' },
+  { id: 'spot-risk',        no: 15, chapter: 4, engine: 'I', required: true,  ready: true,
+    title: '숨은 지시',         learn: '프롬프트 인젝션 · 섀도우 AI · 자동화 편향' },
 
   // ---- 챕터 5 — 실전 종합 ----
   { id: 'work-ticket',      no: 16, chapter: 5, engine: 'C', required: true,  ready: true,

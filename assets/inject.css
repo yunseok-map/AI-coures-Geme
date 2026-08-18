@@ -1,0 +1,339 @@
+/* ============================================================
+   엔진 I — 숨은 지시. 전반은 심는 쪽, 후반은 막는 쪽.
+
+   여기서 지키는 것 셋:
+
+   1) **판정 전에는 어떤 색도 옳고 그름을 말하지 않는다.**
+      켠 것과 안 켠 것의 차이만 보인다. 대응책을 켤 때마다 초록·빨강이 뜨면
+      플레이어는 색을 보고 풀게 되고, 이 판은 그 자리에서 끝난다.
+
+   2) **360px 에서 한 열로 쌓는다.** 두 열로 두면 문항 카드가 140px 가 되어
+      글이 세로로 한 글자씩 흐르고 가로 스크롤이 생긴다. 넓은 화면에서만
+      대응책 넷을 두 열로 편다.
+
+   3) **누르는 것은 전부 44px 이상.** 끌기는 쓰지 않는다.
+
+   색·크기·간격은 tokens.css 의 변수만 쓴다.
+   ============================================================ */
+
+/* ---------- 작업 지시서 ---------- */
+.ij__brief { margin-bottom: var(--sp-3); }
+
+.ij__row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-1) var(--sp-2);
+  margin-top: var(--sp-2);
+}
+.ij__row__cap {
+  font-size: var(--fs-aux);
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.ij__chip {
+  padding: 3px var(--sp-2);
+  font-size: var(--fs-aux);
+  color: var(--ink);
+  background: var(--surface-well);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-pill);
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+}
+.ij__chip--on {
+  color: var(--mark-deep);
+  background: var(--mark-08);
+  border-color: var(--mark-28);
+  font-weight: 700;
+}
+.ij__chip--gate {
+  color: var(--partial-deep);
+  background: var(--partial-10);
+  border-color: var(--partial);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- 공통 ---------- */
+.ij__stage { display: grid; gap: var(--sp-4); }
+
+.ij__cap {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-1);
+  font-size: var(--fs-aux);
+  font-weight: 700;
+  color: var(--muted);
+}
+.ij__cap__n {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.ij__hint {
+  margin: 0;
+  font-size: var(--fs-aux);
+  color: var(--muted);
+}
+
+/* ---------- 전반: 고르기 ---------- */
+.ij__pick { display: grid; gap: var(--sp-2); }
+
+.ij__opt {
+  display: grid;
+  gap: 2px;
+  min-height: var(--tap-min);
+  min-width: 0;
+  padding: var(--sp-2) var(--sp-3);
+  text-align: left;
+  font: inherit;
+  color: var(--ink);
+  background: var(--card);
+  border: var(--border-w) solid var(--edge);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--lift-1);
+  cursor: pointer;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+  transition: border-color var(--dur-tap) var(--ease),
+              box-shadow var(--dur-tap) var(--ease),
+              transform var(--dur-tap) var(--ease);
+}
+.ij__opt:hover:not(:disabled) { transform: translateY(var(--rise)); box-shadow: var(--lift-2); }
+.ij__opt:active:not(:disabled) { transform: translateY(1px); }
+.ij__opt:disabled { cursor: default; opacity: .7; }
+
+.ij__opt__t { font-size: var(--fs-label); line-height: 1.4; }
+.ij__opt__s { font-size: var(--fs-aux); line-height: 1.4; color: var(--muted); }
+
+.ij__opt--on {
+  border-color: var(--mark);
+  box-shadow: 0 0 0 3px var(--mark-16), var(--lift-2);
+}
+.ij__opt--on .ij__opt__t { font-weight: 700; color: var(--mark-deep); }
+
+/* ---------- 전반: 심어 둔 문장 ----------
+   여기가 이 판의 물건이다. 종이 위에 안 보이게 얹힌 한 줄. */
+.ij__paper {
+  padding: var(--sp-3);
+  background: var(--surface-well);
+  border: var(--border-w) dashed var(--hair);
+  border-radius: var(--radius);
+}
+.ij__paper--set {
+  background: var(--card);
+  border-style: solid;
+  border-color: var(--edge);
+  box-shadow: var(--lift-1);
+}
+.ij__paper__wait {
+  margin: 0;
+  font-size: var(--fs-aux);
+  color: var(--muted);
+}
+.ij__paper__where {
+  margin-top: var(--sp-1);
+  font-size: var(--fs-label);
+  font-weight: 700;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+}
+.ij__paper__how {
+  margin: 2px 0 var(--sp-2);
+  font-size: var(--fs-aux);
+  line-height: 1.45;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+}
+/* 사람 눈에는 안 보이는 줄이라는 것이 모양으로 읽혀야 한다 */
+.ij__paper__line {
+  margin: 0;
+  padding: var(--sp-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono);
+  line-height: 1.5;
+  color: var(--fail-deep);
+  background: var(--fail-10);
+  border-left: 3px solid var(--fail);
+  border-radius: var(--radius-sm);
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+}
+
+/* ---------- 편 바꾸기 ---------- */
+.ij__swap { margin-top: var(--sp-3); }
+
+.ij__swapnote {
+  margin: 0;
+  padding: var(--sp-2) var(--sp-3);
+  font-size: var(--fs-label);
+  font-weight: 700;
+  color: var(--on-mark);
+  background: var(--mark);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--gloss);
+}
+
+/* ---------- 후반: 오늘 들어온 것 ---------- */
+.ij__docs { display: grid; gap: var(--sp-2); }
+
+.ij__doc {
+  display: grid;
+  gap: 3px;
+  padding: var(--sp-3);
+  background: var(--card);
+  border: var(--border-w) solid var(--edge);
+  border-left: 3px solid var(--edge);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--lift-1);
+  min-width: 0;
+}
+.ij__doc--mine { border-left-color: var(--accent); }
+
+.ij__doc__name {
+  font-size: var(--fs-label);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+}
+.ij__doc__where {
+  font-size: var(--fs-aux);
+  line-height: 1.45;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+}
+.ij__doc__line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-1);
+  margin: var(--sp-1) 0 0;
+  padding: var(--sp-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono);
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--surface-well);
+  border-radius: var(--radius-sm);
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+}
+.ij__doc__tag {
+  padding: 1px var(--sp-2);
+  font-family: var(--font-body);
+  font-size: var(--fs-aux);
+  font-weight: 700;
+  color: var(--on-mark);
+  background: var(--ink-45);
+  border-radius: var(--radius-pill);
+}
+
+/* 판정이 끝난 뒤에만 붙는다 */
+.ij__doc__mark:empty { display: none; }
+.ij__doc__mark {
+  margin-top: var(--sp-1);
+  font-size: var(--fs-aux);
+  font-weight: 700;
+}
+.ij__doc--ok { border-left-color: var(--pass); background: var(--pass-10); }
+.ij__doc--no { border-left-color: var(--fail); background: var(--fail-10); }
+.ij__doc--ok .ij__doc__mark { color: var(--pass-deep); }
+.ij__doc--no .ij__doc__mark { color: var(--fail-deep); }
+
+/* ---------- 후반: 대응책 ---------- */
+.ij__guards { display: grid; gap: var(--sp-2); }
+
+.ij__guard {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: var(--tap-min);
+  padding: var(--sp-2) var(--sp-3);
+  text-align: left;
+  font: inherit;
+  color: var(--ink);
+  background: var(--card);
+  border: var(--border-w) solid var(--edge);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--lift-1);
+  cursor: pointer;
+  transition: border-color var(--dur-tap) var(--ease),
+              box-shadow var(--dur-tap) var(--ease),
+              transform var(--dur-tap) var(--ease);
+}
+.ij__guard:hover:not(:disabled) { transform: translateY(var(--rise)); box-shadow: var(--lift-2); }
+.ij__guard:active:not(:disabled) { transform: translateY(1px); }
+.ij__guard:disabled { cursor: default; opacity: .7; }
+
+/* 켜고 끄는 것이 손잡이 모양으로 보여야 한다 — 서식의 체크박스처럼 보이면 안 된다 */
+.ij__guard__sw {
+  position: relative;
+  width: 34px; height: 20px;
+  background: var(--ink-12);
+  border-radius: var(--radius-pill);
+  transition: background var(--dur-tap) var(--ease);
+}
+.ij__guard__sw::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 16px; height: 16px;
+  background: var(--card);
+  border-radius: 50%;
+  box-shadow: var(--lift-1);
+  transition: transform var(--dur-tap) var(--ease);
+}
+.ij__guard--on .ij__guard__sw { background: var(--mark); }
+.ij__guard--on .ij__guard__sw::after { transform: translateX(14px); }
+
+.ij__guard__body { display: grid; gap: 2px; min-width: 0; }
+.ij__guard__t { font-size: var(--fs-label); font-weight: 700; }
+.ij__guard__d {
+  font-size: var(--fs-aux);
+  line-height: 1.4;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+}
+.ij__guard--on { border-color: var(--mark); box-shadow: 0 0 0 3px var(--mark-16), var(--lift-2); }
+.ij__guard--on .ij__guard__t { color: var(--mark-deep); }
+
+/* ---------- 후반: 지금 막는 범위 ---------- */
+.ij__cover {
+  padding: var(--sp-3);
+  background: var(--surface-well);
+  border: var(--border-w) dashed var(--hair);
+  border-radius: var(--radius);
+}
+.ij__cover__none {
+  margin: var(--sp-1) 0 0;
+  font-size: var(--fs-aux);
+  color: var(--muted);
+}
+.ij__cost {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--sp-1) var(--sp-2);
+  margin: var(--sp-2) 0 0;
+  padding-top: var(--sp-2);
+  border-top: 1px solid var(--hair);
+  font-size: var(--fs-aux);
+  color: var(--partial-deep);
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+}
+
+/* ---------- 넓은 화면에서만 두 열 ---------- */
+@media (min-width: 640px) {
+  .ij__guards { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .ij__guards .ij__cap { grid-column: 1 / -1; }
+}
