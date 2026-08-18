@@ -18,6 +18,8 @@ const SUITES = [
   ['2 지어낸 답 찾기 (슈팅)', 'test-shoot.mjs'],
   ['15 이상 징후 찾기 (슈팅)', 'test-shoot15.mjs'],
   ['14 결재 반려 (검토 라인)', 'test-qc.mjs'],
+  ['11·12 배선 (워크플로우)', 'test-wire.mjs'],
+  ['7 이름 함정 (예측 베팅)', 'test-bet.mjs'],
   ['용어 수집 (획득/읽음)', 'test-collect.mjs'],
   ['학습자 칸 (공용 PC)', 'test-who.mjs'],
   ['콘텐츠 검수 (글·용어·조사)', 'test-content.mjs'],

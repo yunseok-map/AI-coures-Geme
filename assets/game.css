@@ -1,6 +1,7 @@
 /* ============================================================
-   미니게임 화면 — 엔진 5종이 쓰는 부품.
-   A 분류형 · B 판별형 · C 조립형 · D 배치형 · E 미리보기형
+   미니게임 화면 — 세팅형 엔진이 쓰는 부품.
+   A 분류형 · B 판별형 · C 조립형 · E 미리보기형
+   (새 메커닉 엔진은 mech.css, 배선형은 wire.css, 실시간형은 arcade.css)
    ============================================================ */
 
 /* ---------- 공통: 진행 표시 ---------- */
@@ -68,6 +69,10 @@
 
 .actionbar { display: flex; gap: var(--sp-2); margin-top: var(--sp-4); }
 .actionbar button { flex: 1; }
+/* `display: flex` 는 브라우저 기본 규칙의 `[hidden] { display: none }` 보다 세다.
+   그래서 hidden 을 걸어도 버튼 줄이 그대로 보인다 — 실제로 예측형 판에서
+   아직 걸지도 않았는데 "다음" 이 떠 있었다. 여기서 한 번 되돌려 둔다. */
+.actionbar[hidden] { display: none; }
 
 /* ---------- 판정 패널 ----------
    맞았는지 틀렸는지가 화면 폭 전체를 쓰며 아래에서 올라온다.
@@ -401,7 +406,7 @@
   border: 1px solid var(--hair);
   border-radius: var(--radius);
 }
-.part, .bin, .toggle, .target, .board__row, .cell {
+.part, .bin, .toggle, .target, .board__row {
   transition: transform var(--dur-tap) var(--ease),
               box-shadow var(--dur-tap) var(--ease),
               background-color var(--dur-tap) var(--ease),
@@ -413,7 +418,7 @@
 .board__row:hover:not(:disabled) { transform: translateY(var(--rise)); box-shadow: var(--lift-2); }
 .part:active:not(:disabled), .bin:active:not(:disabled),
 .toggle:active:not(:disabled), .target:active:not(:disabled),
-.board__row:active:not(:disabled), .cell:active:not(:disabled) { transform: scale(.97); }
+.board__row:active:not(:disabled) { transform: scale(.97); }
 
 .part {
   display: inline-flex; align-items: center; gap: var(--sp-2);
@@ -472,74 +477,6 @@
   margin-top: var(--sp-2);
   font-size: var(--fs-aux); color: var(--fail);
 }
-
-/* ---------- D 배치형: 타임라인 ---------- */
-.lanes { display: grid; gap: var(--sp-2); margin: var(--sp-3) 0; }
-.lane {
-  display: grid;
-  grid-template-columns: 52px 1fr;
-  gap: var(--sp-2); align-items: stretch;
-}
-.lane__cap {
-  font-size: var(--fs-aux); color: var(--muted);
-  display: flex; align-items: center;
-}
-.lane__track {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 1fr;
-  gap: 2px;
-  background: var(--ink-06);
-  border-radius: var(--radius-sm);
-  padding: 2px;
-  min-height: 46px;
-}
-.cell {
-  border: 1px dashed var(--ink-12);
-  border-radius: 2px;
-  background: var(--card);
-  font-size: var(--fs-aux);
-  padding: 2px;
-  min-height: var(--tap-min);   /* 손가락으로 눌러야 하는 칸이다 */
-  display: flex; align-items: center; justify-content: center;
-  text-align: center; line-height: 1.2;
-  overflow: hidden;
-}
-.cell--job   { border-style: solid; border-color: var(--mark); background: var(--mark-08); font-weight: 600; }
-.cell--gate  { border-style: solid; border-color: var(--pass); background: var(--pass-10); }
-.cell--hazard{ border-style: solid; border-color: var(--fail); background: var(--fail-10); color: var(--fail); font-weight: 700; }
-.cell--armed { border-color: var(--mark); background: var(--mark-08); }
-
-.tick-scale {
-  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
-  gap: 2px; margin-left: 60px; padding: 0 2px;
-  font-family: var(--font-mono); font-size: 11px; color: var(--muted);
-  text-align: center;
-}
-/* 마감 칸 — 배치하는 동안 계속 보여야 한다 */
-.tick--deadline {
-  color: var(--fail); font-weight: 700;
-  border-right: 2px solid var(--fail);
-}
-
-/* 마감을 넘긴 칸은 놓을 수는 있지만 늦는다는 걸 바탕으로 알려 준다 */
-.cell--late { background: repeating-linear-gradient(
-  45deg, var(--fail-10) 0 4px, transparent 4px 8px); }
-
-/* 되돌릴 수 없는 단계 */
-.cell--final {
-  border-color: var(--fail); border-width: 2px;
-  background: var(--fail-10); color: var(--fail-deep); font-weight: 700;
-}
-
-/* 재생 — 지금 흐르고 있는 칸 */
-.cell--now {
-  box-shadow: inset 0 0 0 2px var(--mark);
-  background: var(--mark-16);
-}
-.cell--ran { border-style: solid; }
-
-.tray { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-3); }
 
 /* ---------- E 미리보기형: 좌우 대조 ---------- */
 .preview { display: grid; gap: var(--sp-3); }
@@ -633,5 +570,4 @@
 @media (min-width: 720px) {
   .bins { grid-template-columns: repeat(auto-fit, minmax(178px, 1fr)); }
   .preview { grid-template-columns: 1fr 1fr; align-items: start; }
-  .lane { grid-template-columns: 64px 1fr; }
 }

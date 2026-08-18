@@ -1,0 +1,138 @@
+/* ============================================================
+   새 메커닉 엔진들의 화면 부품.
+   여기 있는 것은 전부 "서식처럼 보이지 않게" 만드는 데 쓰인다 —
+   사각형 + 라벨 + 제출 버튼이면 게임이 아니다 (DESIGN_DOCTRINE.md §3).
+
+   P 예측형 ... bt__*
+   ============================================================ */
+
+/* ---------- 엔진 P — 예측형 ---------- */
+
+.bt { margin-top: var(--sp-4); }
+
+/* 상황 카드. 티켓(.ticket)과 다르게 생겨야 한다 — 이건 읽는 것이 아니라 **거는 대상**이다. */
+.bt__card {
+  position: relative;
+  padding: var(--sp-5) var(--sp-5) var(--sp-6);
+  background: var(--card);
+  border: var(--border-w) solid var(--edge);
+  border-radius: var(--radius);
+  box-shadow: var(--lift-2);
+}
+.bt__cap {
+  font-size: var(--fs-aux);
+  font-weight: 700;
+  letter-spacing: .04em;
+  color: var(--muted);
+  margin-bottom: var(--sp-2);
+}
+.bt__text {
+  font-size: var(--fs-title);
+  line-height: 1.55;
+  color: var(--ink);
+}
+
+/* 건 것이 카드에 박히는 도장. 되돌릴 수 없다는 걸 눈에 남긴다. */
+.bt__chip {
+  position: absolute;
+  right: var(--sp-4);
+  bottom: calc(var(--sp-3) * -1);
+  padding: var(--sp-1) var(--sp-3);
+  font-size: var(--fs-aux);
+  font-weight: 700;
+  color: var(--on-mark);
+  background: var(--ink);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--lift-2);
+  transform: rotate(-3deg);
+}
+
+.bt__ask {
+  margin: var(--sp-5) 0 var(--sp-3);
+  text-align: center;
+  font-size: var(--fs-title);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* 거는 자리. 두 개뿐이고 크다 — 고민할 것은 무엇을 고를지이지 어디를 누를지가 아니다. */
+.bt__picks {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+}
+.bt__pick {
+  min-height: 72px;
+  padding: var(--sp-3);
+  font: inherit;
+  font-size: var(--fs-title);
+  font-weight: 700;
+  color: var(--ink);
+  background: var(--card);
+  border: var(--border-w) solid var(--edge);
+  border-bottom-width: var(--lip);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: transform var(--dur-press) var(--ease),
+              border-color var(--dur-tap) var(--ease),
+              box-shadow var(--dur-tap) var(--ease);
+}
+.bt__pick:hover:not(:disabled) {
+  border-color: var(--mark);
+  box-shadow: var(--lift-2);
+  transform: translateY(var(--rise));
+}
+.bt__pick:active:not(:disabled) {
+  transform: translateY(2px);
+  border-bottom-width: var(--border-w);
+}
+/* 고른 것은 남고, 안 고른 것은 지워진다. 둘 다 화면에 남아야
+   "나는 이쪽을 골랐다"가 결과를 볼 때까지 보인다.
+
+   클래스를 두 번 겹쳐 쓰는 이유: 건 뒤에는 두 버튼이 다 `disabled` 가 되는데
+   styles.css 의 `button:disabled` 가 색을 회색으로 덮는다. 그쪽이 더 세서
+   **고른 쪽과 안 고른 쪽이 똑같이 회색이 됐다**(실제 증상).
+   opacity 로 흐리게 하는 것도 안 된다 — motion.enter() 가 인라인 opacity:1 을
+   남겨서 클래스로 준 opacity 는 무시된다(styles.css 의 같은 주석 참고). */
+.bt__pick.bt__pick--taken {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--on-mark);
+  box-shadow: var(--gloss), var(--lift-2);
+}
+.bt__pick.bt__pick--dropped {
+  color: var(--ink-45);
+  background: var(--surface-well);
+  border-color: var(--hair);
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+}
+
+/* 결과. 맞았다/틀렸다가 아니라 **건 것과 같았나 달랐나**를 말한다. */
+.bt__verdict {
+  margin-top: var(--sp-4);
+  padding: var(--sp-4) var(--sp-5);
+  border-radius: var(--radius);
+  border-left: 5px solid var(--edge);
+  background: var(--surface-well);
+}
+.bt__verdict.is-right { border-left-color: var(--pass); background: var(--pass-10); }
+.bt__verdict.is-wrong { border-left-color: var(--accent); background: var(--accent-12); }
+.bt__verdict__head {
+  font-size: var(--fs-label);
+  font-weight: 700;
+  margin-bottom: var(--sp-2);
+}
+.bt__verdict.is-right .bt__verdict__head { color: var(--pass-deep); }
+.bt__verdict.is-wrong .bt__verdict__head { color: var(--accent-deep); }
+.bt__verdict__body {
+  margin: 0;
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  color: var(--ink);
+}
+
+@media (max-width: 400px) {
+  .bt__picks { grid-template-columns: 1fr; }
+  .bt__pick { min-height: var(--tap-min); }
+}

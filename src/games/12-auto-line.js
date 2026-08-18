@@ -1,17 +1,25 @@
-// 미니게임 12 — 자동화 라인 (엔진 D 배치형)
+// 미니게임 12 — 자동화 라인 (엔진 W 배선형)
 // 배우는 것: 에이전트 루프 · 휴먼 인 더 루프 · 휴먼 온 더 루프
 //
 // 설계 의도: "사람 확인을 넣어야 한다"는 말은 쉽다. 어려운 건 **어디에** 넣느냐다.
-// 확인을 다 넣으면 자동화한 의미가 없어지고, 안 넣으면 되돌릴 수 없는 사고가 난다.
-// 되돌릴 수 있는 단계와 없는 단계가 다르다는 걸 배치로 겪게 한다.
+// 다 넣으면 자동화한 의미가 없어지고, 안 넣으면 되돌릴 수 없는 사고가 난다.
+//
+// 배선형으로 바꾼 이유: 확인은 칸에 놓는 것이 아니라 **두 단계 사이에 끼워 넣는 것**이다.
+// 선을 끊고 그 사이에 확인을 넣는 동작이 실무의 그 동작과 같다. 칸에 이름표를
+// 떨어뜨리는 방식으로는 "초안과 발송 사이"라는 자리가 화면에 존재하지 않았다.
 
 import { Run, applyFault, applyGain } from '../core/sim.js';
+import { reaches } from '../core/graph.js';
+import { iGa } from '../core/ko.js';
+
+const STEPS = ['collect', 'classify', 'draft', 'send'];
+const GATES = ['check1', 'check2'];
 
 export default {
   id: 'auto-line',
-  engine: 'D',
+  engine: 'W',
   title: '자동화 라인',
-  subtitle: '반복 업무를 자동으로 흐르게 만든다. 사람 확인을 어디에 둘지 정한다',
+  subtitle: '반복 업무를 선으로 이어 흐르게 만든다. 사람 확인을 어디에 끼울지 정한다',
   chapter: 3,
   required: false,
   // '검증 루프'는 뺐다. 그건 AI가 **스스로** 돌려 보는 검사를 쥐어 주는 것인데
@@ -22,85 +30,91 @@ export default {
 
   data: {
     briefCap: '자동화할 업무',
-    brief: '매주 반복되는 일이다 — 문의 메일 수집 → 유형 분류 → 답변 초안 작성 → 고객에게 발송.\n' +
+    brief: '매주 반복되는 일이다 — 문의 메일을 모으고, 유형을 나누고, 답변 초안을 쓰고, 고객에게 보낸다.\n' +
            '발송은 되돌릴 수 없다. 앞 단계들은 다시 하면 된다.',
-    lanes: 1,
-    ticks: 8,
-    laneNames: ['처리 순서'],
-    trayLabel: '단계와 확인 지점 — 눌러서 집고, 칸을 눌러 놓는다',
+    wireHint: '위쪽 확인 상자는 두 단계 사이에 끼워 넣는 것이다 — 앞에서 선을 받고 뒤로 선을 보낸다.',
     runLabel: '이 라인으로 돌리기',
     runCaption: '한 주 분량이 라인을 따라 흐른다',
 
-    jobs: [
-      { id: 'collect', label: '메일 수집', dur: 1 },
-      { id: 'classify', label: '유형 분류', dur: 1 },
-      { id: 'draft', label: '답변 초안', dur: 2 },
-      // 되돌릴 수 없는 단계. 엔진이 이 칸을 다르게 그려서 배치하는 동안에도 눈에 띈다 —
-      // 이 판의 요령이 "되돌릴 수 없는 것 앞에만 확인을 둔다"이므로 그게 보여야 한다.
-      { id: 'send', label: '고객 발송', dur: 1, irreversible: true }
-    ],
-    gates: [
-      { id: 'check1', label: '사람 확인', dur: 1 },
-      { id: 'check2', label: '사람 확인', dur: 1 }
+    nodes: [
+      { id: 'check1', label: '사람 확인', kind: 'gate', dur: 1, note: '한 번 멈춘다', col: 2, row: 1 },
+      { id: 'check2', label: '사람 확인', kind: 'gate', dur: 1, note: '한 번 멈춘다', col: 3, row: 1 },
+      { id: 'collect',  label: '메일 수집', dur: 1, col: 1, row: 2 },
+      { id: 'classify', label: '유형 분류', dur: 1, col: 2, row: 2 },
+      { id: 'draft',    label: '답변 초안', dur: 2, col: 3, row: 2 },
+      { id: 'send',     label: '고객 발송', dur: 1, irreversible: true,
+        note: '되돌릴 수 없다', col: 4, row: 2 }
     ]
   },
 
   simulate(setup) {
     const r = new Run();
-    const at = id => setup.plan.find(p => p.item.id === id);
-    const order = setup.plan.slice().sort((a, b) => a.tick - b.tick);
+    const { links, sched, nodes } = setup;
+    const label = id => nodes.find(n => n.id === id).label;
 
-    const collect = at('collect'), classify = at('classify');
-    const draft = at('draft'), send = at('send');
-    const gates = setup.plan.filter(p => p.kind === 'gate');
+    r.read(`이은 선 ${links.length}개를 따라간다`);
 
-    r.read(`라인에 놓인 단계 ${setup.plan.length}개를 확인한다`);
-
-    // 순서가 맞는가
-    const seq = [collect, classify, draft, send].filter(Boolean);
-    const missing = 4 - seq.length;
-    if (missing) {
-      r.warn(`빠진 단계 ${missing}개 — 놓지 않은 단계는 실행되지 않는다`);
-      r.fault('빠진 단계', '라인에 없는 일은 아무도 하지 않는다', 15 * missing);
+    // 라인에 아예 끼지 않은 단계 — 놓여만 있고 아무 데도 이어지지 않은 것
+    const loose = STEPS.filter(id => !links.some(l => l.from === id || l.to === id));
+    if (loose.length) {
+      r.warn(`라인에 이어지지 않은 단계 ${loose.length}개 — ${loose.map(label).join(', ')}`);
+      r.fault('빠진 단계', '선에 걸리지 않은 일은 아무도 하지 않는다', 15 * loose.length);
     }
 
-    const wrongOrder = seq.some((p, i) => i > 0 && p.tick < seq[i - 1].tick);
-    if (wrongOrder) {
-      r.warn('앞 단계가 끝나기 전에 뒷 단계가 시작된다');
+    // 순서 — 앞 단계에서 뒷 단계로 선을 따라갈 수 있어야 한다.
+    // 사이에 확인이 끼어 있어도 "따라갈 수 있다"는 그대로다.
+    const broken = [];
+    for (let i = 0; i < STEPS.length - 1; i++) {
+      if (!reaches(links, STEPS[i], STEPS[i + 1])) broken.push([STEPS[i], STEPS[i + 1]]);
+    }
+    if (sched.cycle.length) {
+      r.warn('돌고 도는 선이 있어 시작하지 못한 단계가 있다');
+      r.fault('멈춘 라인', '앞 일이 자기 뒤에 있으면 그 일은 영영 시작되지 않는다', 20);
+    } else if (broken.length) {
+      const [x, y] = broken[0];
+      // 조사를 계산해 붙인다 — "유형 분류이 오지 않는다"가 나오면 안 된다 (CLAUDE.md 8번)
+      const what = broken.length > 1 ? `${label(y)} 등이` : iGa(label(y));
+      r.warn(`${label(x)} 다음에 ${what} 오지 않는다`);
       r.fault('순서 뒤바뀜', '분류 전에 초안을 쓰면 엉뚱한 답변이 나간다', 20);
     }
 
-    for (const p of order) {
-      if (p.kind === 'gate') r.do(`${p.tick + 1}칸 — 사람이 확인한다`);
-      else r.do(`${p.tick + 1}칸 — ${p.item.label}`);
+    // 흐르는 순서대로 읽어 준다
+    for (const id of Object.keys(sched.end).sort((a, b) => sched.start[a] - sched.start[b])) {
+      if (!links.some(l => l.from === id || l.to === id)) continue;
+      const n = nodes.find(x => x.id === id);
+      r.do(n.kind === 'gate' ? `${sched.start[id] + 1}칸 — 사람이 확인한다`
+                             : `${sched.start[id] + 1}칸 — ${n.label}`);
     }
 
-    // 되돌릴 수 없는 단계 앞에 확인이 있는가
-    if (send) {
-      const gateBefore = gates.some(g => g.tick < send.tick);
-      if (gateBefore) {
-        r.ok('발송 직전에 사람이 한 번 걸러냈다');
-        applyGain(r, 'gate', 14);
-        const wrong = 2;
-        r.do(`오분류 ${wrong}건을 사람이 잡아 되돌렸다`);
-      } else {
-        r.warn('아무도 확인하지 않고 발송 단계로 넘어간다');
-        applyFault(r, 'nogate', 30);
-        r.fail('잘못 분류된 답변이 고객에게 그대로 나갔다 — 되돌릴 수 없다');
-      }
+    // 되돌릴 수 없는 단계 바로 앞에 확인이 있는가.
+    // "어딘가 앞에 있다"로는 부족하다 — 수집 앞에 두면 초안이 틀려도 그대로 나간다.
+    const direct = links.some(l => l.to === 'send' && GATES.includes(l.from));
+    const upstream = GATES.filter(g => reaches(links, g, 'send'));
+
+    if (direct) {
+      r.ok('발송 직전에 사람이 한 번 걸러냈다');
+      applyGain(r, 'gate', 14);
+      r.do('오분류 2건을 사람이 잡아 되돌렸다');
+    } else if (upstream.length) {
+      r.warn('확인은 있지만 발송 직전이 아니다 — 확인 뒤에 고친 내용은 아무도 안 봤다');
+      r.fault('확인 위치', '되돌릴 수 없는 행동 **바로 앞**이 아니면 그 사이에서 생긴 문제는 그대로 나간다', 18);
+    } else if (reaches(links, 'draft', 'send') || links.some(l => l.to === 'send')) {
+      r.warn('아무도 확인하지 않고 발송 단계로 넘어간다');
+      // 이 판에서 가장 무거운 실수다 — 되돌릴 수 없는 것이 그대로 나갔다.
+      // 반려(fail) 로 떨어져야 결과 화면의 세 줄(debrief.fail)이 이 상황을 말해 준다.
+      applyFault(r, 'nogate', 50);
+      r.fail('잘못 분류된 답변이 고객에게 그대로 나갔다 — 되돌릴 수 없다');
     }
 
-    // 확인이 너무 많으면 자동화의 의미가 없다
-    if (gates.length >= 2) {
-      const early = gates.filter(g => send && g.tick < send.tick - 2).length;
-      if (early >= 1) {
-        r.warn('되돌릴 수 있는 단계 앞에도 확인이 걸려 있다');
-        r.fault('확인 과다', '매 단계 확인하면 자동화한 의미가 없고, 사람이 무심코 통과시키게 된다', 15);
-      }
+    // 확인을 여러 곳에 걸면 사람이 내용을 안 보고 누르게 된다
+    if (upstream.length >= 2) {
+      r.warn('되돌릴 수 있는 단계 앞에도 확인이 걸려 있다');
+      r.fault('확인 과다', '매 단계 확인하면 자동화한 의미가 없고, 사람이 무심코 통과시키게 된다', 15);
     }
 
-    if (gates.length === 1 && send && gates[0].tick === send.tick - 1) {
-      r.gain('휴먼 온 더 루프', '되돌릴 수 없는 지점 하나에만 사람을 두고 나머지는 맡겼다', 10);
+    if (direct && upstream.length === 1) {
+      r.gain('휴먼 온 더 루프',
+        '되돌릴 수 없는 지점 하나에만 사람을 두고 나머지는 맡겼다', 10);
     }
 
     r.out(r.faults.length
@@ -115,12 +129,12 @@ export default {
          '이 구조를 **에이전트 루프**라고 한다. ' +
          '그 안에 사람 승인을 두는 지점이 **휴먼 인 더 루프**이고, ' +
          '매 건이 아니라 “울타리 안에서는 알아서, 사람은 감독자”로 물러난 형태가 **휴먼 온 더 루프**다. ' +
-         '되돌릴 수 없는 행동 앞에만 두는 것이 요령이다.'
+         '되돌릴 수 없는 행동 바로 앞에만 두는 것이 요령이다.'
   },
 
   debrief: {
-    pass: '되돌릴 수 있는 단계는 맡기고, 되돌릴 수 없는 발송 앞에만 사람을 뒀다. 그게 정답에 가깝다.\n확인 지점은 많을수록 안전한 게 아니라, 많을수록 무뎌진다.\n실무에서 자동화 설계의 핵심 질문은 하나다 — “이 단계는 되돌릴 수 있나?”',
-    partial: '라인은 돌았지만 확인 위치가 애매했다. 앞쪽 단계는 틀려도 다시 하면 되지만 발송은 아니다.\n확인을 여러 곳에 걸면 사람이 내용을 안 보고 누르게 된다 — 그게 자동화 편향이다.\n확인 하나를 발송 바로 앞에 두고 다시 해보라.',
-    fail: '확인 없이 나간 것은 되돌릴 수 없다. 자동화의 위험은 속도가 아니라 되돌릴 수 없다는 데 있다.\n순서대로 놓고, 발송 바로 앞 칸에 사람 확인을 하나 넣어 보라.\n그 한 칸이 사고를 막는다.'
+    pass: '되돌릴 수 있는 단계는 맡기고, 되돌릴 수 없는 발송 바로 앞에만 사람을 뒀다. 그게 정답에 가깝다.\n확인 지점은 많을수록 안전한 게 아니라, 많을수록 무뎌진다.\n실무에서 자동화 설계의 핵심 질문은 하나다 — “이 단계는 되돌릴 수 있나?”',
+    partial: '라인은 돌았지만 확인 위치가 애매했다. 앞쪽 단계는 틀려도 다시 하면 되지만 발송은 아니다.\n확인을 여러 곳에 걸면 사람이 내용을 안 보고 누르게 된다 — 그게 자동화 편향이다.\n확인 하나를 답변 초안과 고객 발송 사이에 끼워 넣고 다시 해보라.',
+    fail: '확인 없이 나간 것은 되돌릴 수 없다. 자동화의 위험은 속도가 아니라 되돌릴 수 없다는 데 있다.\n수집 → 분류 → 초안 → 발송 순으로 잇고, 초안과 발송 사이의 선을 끊어 그 자리에 확인을 넣어 보라.\n그 한 칸이 사고를 막는다.'
   }
 };

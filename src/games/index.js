@@ -20,7 +20,7 @@ export const manifest = [
     title: '어디서 할까?',      learn: '프로젝트 · 아티팩트 · CLI 에이전트 · Cowork' },
   { id: 'model-or-product', no: 6,  chapter: 2, engine: 'A', required: true,  ready: true,
     title: '모델이냐 제품이냐',  learn: '모델 · 제품 · 표면' },
-  { id: 'name-trap',        no: 7,  chapter: 2, engine: 'B', required: true,  ready: true,
+  { id: 'name-trap',        no: 7,  chapter: 2, engine: 'P', required: true,  ready: true,
     title: '이름에 속지 마라',   learn: 'CLI 에이전트 · Codex의 정체' },
   { id: 'toolbox-sort',     no: 8,  chapter: 2, engine: 'A', required: true,  ready: true,
     title: '도구함 정렬',       learn: '커맨드 · 스킬 · 서브에이전트 · 훅 · 플러그인 · MCP' },
@@ -30,9 +30,9 @@ export const manifest = [
   // ---- 챕터 3 — 일 시키기 (전체 심화) ----
   { id: 'onboarding-doc',   no: 10, chapter: 3, engine: 'C', required: false, ready: true,
     title: '신입 온보딩 문서 만들기', learn: '지침 파일 · 컨텍스트 엔지니어링' },
-  { id: 'team-layout',      no: 11, chapter: 3, engine: 'D', required: false, ready: true,
+  { id: 'team-layout',      no: 11, chapter: 3, engine: 'W', required: false, ready: true,
     title: '팀 배치',           learn: '서브에이전트 · 오케스트레이션' },
-  { id: 'auto-line',        no: 12, chapter: 3, engine: 'D', required: false, ready: true,
+  { id: 'auto-line',        no: 12, chapter: 3, engine: 'W', required: false, ready: true,
     title: '자동화 라인',       learn: '에이전트 루프 · 휴먼 인 더 루프' },
 
   // ---- 챕터 4 — 안전장치 ----

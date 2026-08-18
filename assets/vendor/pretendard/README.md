@@ -6,8 +6,8 @@
 |---|---|
 | 원본 | [orioncactus/pretendard](https://github.com/orioncactus/pretendard) **v1.3.9** `dist/web/variable/woff2/PretendardVariable.woff2` (2,057,688 B) |
 | 라이선스 | SIL Open Font License 1.1 — 원문은 같은 폴더 `OFL.txt` |
-| 이 폴더의 파일 | `PretendardVariable.subset.woff2` **157,800 B** · 글리프 949개 · 굵기축 `wght 45~930` |
-| 덮는 글자 | 857자 (한글 음절 742자 + 영문·숫자·기호) — `covered.txt` |
+| 이 폴더의 파일 | `PretendardVariable.subset.woff2` **158,452 B** · 글리프 953개 · 굵기축 `wght 45~930` |
+| 덮는 글자 | 861자 — `covered.txt` |
 
 원본 2MB 를 그대로 넣으면 사내망 첫 로딩에서 체감된다. 굵기축이 살아 있으므로
 Regular/Bold 를 따로 받지 않고 이 파일 **하나**로 45~930 굵기를 다 쓴다.
