@@ -1,149 +1,192 @@
-// 미니게임 2 — 지어낸 답 찾기 (엔진 G 슈팅형)
-// 배우는 것: 할루시네이션 · 근거 확인 습관
+// 미니게임 2 — 지어낸 답 찾기 (엔진 V 증거판)
+// 배우는 것: 할루시네이션 · 근거 확인
 //
-// 설계 의도: "AI가 가끔 틀린 말을 한다"를 듣는 것과, 그럴듯한 문장 사이에서
-// 실제로 골라내 보는 것은 완전히 다르다. 근거 문서를 옆에 두고 대조하게 만든다.
-// 지어낸 문장일수록 더 구체적이고 자신 있다는 점을 몸으로 알게 된다.
+// 왜 슈팅을 버렸나:
+//   슈팅판의 조작은 "쏜다 / 안 쏜다" 두 값뿐이었다. 그래서 이겨도 왜 이겼는지가
+//   안 남는다. 게다가 규정 원문이 옆에 떠 있으니 **낱말 대조**로 풀린다 —
+//   "이월" 은 원문에 없다, 끝. 정작 배워야 할 것이 안 나온다.
 //
-// 왜 슈팅인가: 체크박스로 고를 때는 시간이 무한했다. 그러면 "천천히 다 대조하면
-// 맞힐 수 있는 문제"가 되어 버려서, 실무에서 실제로 벌어지는 실수 —
-// **바빠서 그냥 넘긴다** — 가 재현되지 않는다. 문장이 계속 내려오면 그게 재현된다.
-// 맞는 문장을 쏘면 감점이라서 "의심스러우면 다 쏘기" 전략도 통하지 않는다.
+// 여기서는 문장마다 **어디에 걸리는지를 대야 한다.** 걸 곳이 없으면 없다고
+// 직접 표시해야 하고, 그럴듯한 조항에 잘못 걸면 그것도 틀린 것으로 잡힌다.
+// 낱말 대조로는 두 문장에서 반드시 진다:
+//   - 4번 문장은 규정과 같은 낱말(신청·승인)을 쓰지만 근거는 없다
+//   - 3번 문장은 규정과 낱말이 거의 안 겹치지만 근거는 있다
 //
-// 내용(규정 원문·거짓 문장 3개·사유)은 검증된 것을 그대로 옮겼다. 새로 지어낸 것 없음.
+// 말투가 함정이다. **가장 자신 있고 숫자까지 붙은 문장 셋이 전부 무근거**이고,
+// 근거가 있는 문장 하나는 일부러 애매하게 써 두었다. 그래서 "자신 있게
+// 쓰였으니 맞겠지" 가 끝에 가서 무너진다.
+//
+// 근거 문서는 가상의 사내 규정이다. 실재하는 회사·시스템을 가리키지 않는다.
 
 import { Run, applyFault, applyGain } from '../core/sim.js';
+import { judge, KIND } from '../core/evidence.js';
 
 export default {
   id: 'hallucination',
-  engine: 'G',
+  engine: 'V',
   title: '지어낸 답 찾기',
-  subtitle: '위 규정에 없는 문장이 내려온다. 근거 없는 것만 쏘시오',
+  subtitle: '문장마다 근거를 찾아 선으로 잇는다',
   chapter: 1,
   required: true,
-  // 이 판은 근거 확인만 다룬다. '시스템 프롬프트'도 여기서 주고 있었는데,
-  // 화면에 그 말이 한 번도 안 나온다 — 겪지 않은 용어가 도감에 쌓이면 도감이 장식이 된다.
-  // 3번 판(역할을 켜고 끄는 판)이 제 자리라 그쪽으로 옮겼다.
   concept: ['할루시네이션'],
   checkedAt: '2026-08',
 
   data: {
-    source: {
-      cap: '사내 규정 발췌 — 이 안에 있는 것만 사실이다',
-      body: '제12조 (연차) 입사 1년 미만 직원은 월 1일의 연차가 발생한다. ' +
-            '제13조 (사용) 연차는 발생일로부터 1년 안에 사용한다. ' +
-            '제14조 (신청) 연차는 사용 3일 전까지 신청한다. 부서장 승인으로 확정된다.'
-    },
+    askCap: '돌아온 답변',
+    ask: 'AI에게 연차 규정을 물었더니 답변 문장 7개가 돌아왔다.',
 
-    prompt: 'AI에게 “우리 회사 연차 규정 알려줘”라고 물었다. 아래가 그 답이다',
-    runHint: '규정에 없는 문장을 눌러 쏜다. 규정에 있는 문장은 그냥 지나가게 둔다',
-    lineLabel: '여기를 지나가면 사실로 인정된다',
-    runLabel: 'AI 답변 받기',
-    runCaption: '내가 걸러낸 대로 이 답변을 쓴다면',
+    runCaption: '표시한 대로 이 답변을 보고서에 쓴다면',
 
-    travelSec: 8,
-    gapSec: 2.3,
-
-    // 화면에 나가는 낱말. 엔진은 이 말들을 모른다.
     labels: {
-      hit: '근거 없음', miss: '놓쳤다', over: '이건 규정에 있다', pass: '통과',
-      tap: '규정에 없는 내용이라고 판단하면 누르세요',
-      sayHit: '근거 없는 문장을 적발했습니다.',
-      sayMiss: '근거 없는 문장이 그대로 통과했습니다.',
-      sayOver: '규정에 있는 문장을 쐈습니다.'
+      lines: 'AI 답변',
+      spans: '사내 규정 발췌',
+      none: '무근거',
+      noneMark: '×',
+      noneHint: '규정 어디에도 걸 곳이 없다',
+      meter: '표시한 문장',
+      hold: '전부 표시해야 결과가 나온다',
+      reset: '표시 지우기',
+      run: '이대로 보고하기',
+      hint: '문장을 누르고, 그 문장의 근거가 되는 조항을 누른다.',
+      hintArmed: '걸 자리를 누르세요. 같은 문장을 다시 누르면 놓습니다.',
+      statusLeft: '남은 문장',
+      statusFull: '문장 7개를 전부 표시했다',
+      sheet: '어디에 걸렸어야 했나',
+      blank: '표시 없음',
+      aria: '아직 걸 자리를 정하지 않았다.',
+      sayPick: '번 문장을 집었다. 걸 자리를 누르세요.',
+      sayLink: '조항에 이었다.',
+      sayCut: '번 문장의 선을 끊었다.',
+      sayDrop: '놓았다.',
+      sayNeedLine: '문장을 먼저 누르세요.'
     },
 
-    items: [
-      { id: 'a1', bad: false,
-        label: '입사 1년 미만이면 매달 1일씩 연차가 생깁니다.' },
+    // 근거 문서 — 이 안에 있는 것만 사실이다. 마지막 조항은 아무 문장도 뒷받침하지
+    // 않는다. 걸 데가 마땅치 않은 문장을 여기에 억지로 거는 것을 잡으려고 둔다.
+    spans: [
+      { id: 's1', mark: '가',
+        text: '제12조 (발생) 입사 1년 미만 직원은 매달 1일의 연차가 생긴다.' },
+      { id: 's2', mark: '나',
+        text: '제13조 (기한) 연차는 생긴 날부터 1년 안에 쓴다.' },
+      { id: 's3', mark: '다',
+        text: '제14조 (신청) 연차는 쓰기 3일 전까지 신청한다.' },
+      { id: 's4', mark: '라',
+        text: '제15조 (확정) 부서장이 승인하면 확정된다.' },
+      { id: 's5', mark: '마',
+        text: '제16조 (보관) 연차 사용 기록은 인사 담당자가 보관한다.' }
+    ],
 
-      { id: 'a2', bad: true,
-        label: '미사용 연차는 다음 해로 최대 5일까지 이월됩니다.',
-        why: '규정 어디에도 이월 얘기가 없다. 숫자까지 붙어 있어 더 그럴듯하다 — 지어낸 문장의 전형이다.' },
+    // tone 은 판정에 안 쓴다. 함정이 데이터에 실제로 들어 있는지 세는 데만 쓴다
+    // (core/evidence.js 의 toneTrap). 화면에도 안 나온다 — 나오면 답이 샌다.
+    //   sure  자신 있고 숫자까지 붙은 말투
+    //   vague 애매해서 믿음이 안 가는 말투
+    lines: [
+      { id: 'l1', src: 's1', tone: 'plain',
+        text: '입사 1년이 안 된 직원은 매달 1일씩 연차가 생깁니다.',
+        why: '발생 조항이 매달 1일을 그대로 적고 있다.' },
 
-      { id: 'a3', bad: false,
-        label: '연차는 사용 3일 전까지 신청하고, 부서장 승인으로 확정됩니다.' },
+      { id: 'l2', src: null, tone: 'sure',
+        text: '미사용 연차는 다음 해로 최대 5일까지 이월되고, 이월분은 3월 31일까지 써야 합니다.',
+        why: '이월이라는 얘기가 규정에 한 번도 안 나온다. 숫자가 셋이나 붙어 가장 확실해 보인 문장이 근거는 하나도 없다.' },
 
-      { id: 'a4', bad: true,
-        label: '연차 신청은 사내 그룹웨어 “근태” 메뉴에서 합니다.',
-        why: '어디서 신청하는지는 규정에 없다. 맞을 수도 있지만 이 자료로는 확인되지 않는다.' },
+      { id: 'l3', src: 's3', tone: 'vague',
+        text: '신청은 쓰기 며칠 전까지 미리 해 두어야 하는 것으로 알고 있습니다.',
+        why: '애매하게 쓰였을 뿐 신청 조항이 그대로 뒷받침한다. 말투와 근거는 따로 논다.' },
 
-      { id: 'a5', bad: false,
-        label: '연차는 발생일로부터 1년 안에 써야 합니다.' },
+      { id: 'l4', src: null, tone: 'sure',
+        text: '신청서를 올리면 평균 1.5일 안에 승인이 납니다.',
+        why: '승인에 며칠이 걸리는지는 규정에 없다. 낱말이 겹쳐서 확정 조항에 걸기 쉽지만, 그 조항은 걸리는 날짜를 말하지 않는다.' },
 
-      { id: 'a6', bad: true,
-        label: '반차는 오전 9시~오후 1시, 오후 1시~6시로 나뉩니다.',
-        why: '반차라는 말 자체가 규정에 없다. 묻지도 않은 내용을 친절하게 덧붙이다 생긴 환각이다.' }
+      { id: 'l5', src: 's2', tone: 'plain',
+        text: '연차는 생긴 날부터 1년 안에 써야 합니다.',
+        why: '기한 조항이 1년을 그대로 적고 있다.' },
+
+      { id: 'l6', src: null, tone: 'sure',
+        text: '연차는 오전 9시부터 오후 1시, 오후 1시부터 6시까지 반나절로 나뉩니다.',
+        why: '반나절로 나눠 쓴다는 말이 규정에 없다. 묻지도 않은 것을 시간까지 붙여 덧붙이다 생긴 환각이다.' },
+
+      { id: 'l7', src: 's4', tone: 'plain',
+        text: '부서장이 승인하면 연차가 확정됩니다.',
+        why: '확정 조항이 부서장 승인을 그대로 적고 있다.' }
     ]
   },
 
   /**
-   * setup = { hit, overshot, missed, clean, bestCombo }
-   *   hit      근거 없는 문장을 걸러냈다
-   *   missed   근거 없는 문장이 그대로 통과했다
-   *   overshot 근거가 있는 문장을 잘못 쐈다
+   * setup = { marks, lines, spans }
+   *   marks  문장 id → 구간 id 또는 'none'
+   *
+   * 잇기 규칙은 core/evidence.js 가 판단한다 — 엔진이 마지막 화면을 그릴 때
+   * 쓰는 것과 **같은 함수**다. 둘이 어긋나면 화면과 점수가 다른 말을 한다.
    */
   simulate(setup, d) {
     const r = new Run();
+    const rows = judge(d.lines, setup.marks);
     const mistakes = [];
-    const find = (id) => d.items.find(i => i.id === id);
-    const falseCount = d.items.filter(i => i.bad).length;
+    const textOf = (id) => (d.lines.find(l => l.id === id) || {}).text || '';
+    const whyOf = (id) => (d.lines.find(l => l.id === id) || {}).why || '';
 
-    r.read('규정 원문과 AI 답변을 나란히 놓는다');
+    r.read('규정 원문과 답변을 나란히 놓는다');
 
-    for (const it of d.items) {
-      if (setup.hit.includes(it.id)) {
-        r.ok(`걸러냄 — ${short(it.label)}`);
-      } else if (setup.missed.includes(it.id)) {
-        r.fail(`그대로 남음 — ${short(it.label)}`);
-        mistakes.push({ itemId: it.id, hint: it.why });
-      } else if (setup.overshot.includes(it.id)) {
-        r.warn(`잘못 지움 — ${short(it.label)} (규정에 있는 내용이다)`);
-        mistakes.push({ itemId: it.id, hint: '이 문장은 규정에 그대로 있다. 근거를 확인하지 않고 지웠다.' });
+    for (const row of rows) {
+      const t = short(textOf(row.id));
+      switch (row.kind) {
+        case KIND.LINK_OK:    r.ok(`제자리 — ${t}`); break;
+        case KIND.NONE_OK:    r.ok(`걸러냄 — ${t}`); break;
+        case KIND.LINK_NONE:  r.fail(`근거 없이 인정 — ${t}`); break;
+        case KIND.LINK_WRONG: r.warn(`엉뚱한 조항 — ${t}`); break;
+        case KIND.NONE_MISS:  r.warn(`규정에 있는데 지움 — ${t}`); break;
+        default:              r.warn(`표시 안 함 — ${t}`);
+      }
+      if (!row.ok) mistakes.push({ itemId: row.id, hint: whyOf(row.id) });
+    }
+
+    // 무근거 문장을 어딘가에 걸어 준 것 — 지어낸 문장을 사실로 인정한 것이다
+    const passed = rows.filter(x => x.kind === KIND.LINK_NONE).length;
+    for (let i = 0; i < passed; i++) applyFault(r, 'halluc', 26);
+
+    for (const row of rows) {
+      if (row.kind === KIND.LINK_WRONG) {
+        r.fault('엉뚱한 근거', '그 조항은 이 문장을 뒷받침하지 않는다', 18);
+      } else if (row.kind === KIND.NONE_MISS) {
+        r.fault('근거를 놓침', '규정에 있는 내용을 걸 곳 없다고 지웠다', 18);
+      } else if (row.kind === KIND.BLANK) {
+        r.fault('표시 안 함', '근거를 대지 않은 문장이 그대로 남았다', 18);
       }
     }
 
-    // 놓친 것 하나하나가 아니라 "무엇이 남았는가"로 점수를 매긴다
-    for (const id of setup.missed) {
-      const it = find(id);
-      r.fault(short(it.label), it.why, 26);
-    }
-    for (const id of setup.overshot) {
-      r.fault('근거 있는 내용을 지움', '확인하지 않고 지우면 맞는 정보까지 사라진다', 12);
-    }
+    const right = rows.filter(x => x.ok).length;
+    const wrong = rows.length - right;
 
-    if (!setup.missed.length && !setup.overshot.length) {
+    if (!wrong) {
       applyGain(r, 'grounded', 10);
-      r.gain('할루시네이션 판별', '말투가 아니라 근거로 판단했다', 5);
-    } else if (setup.hit.length) {
-      r.gain('근거 확인', `${setup.hit.length}건은 근거로 걸러냈다`, 4);
+      r.gain('환각 판별', '말투가 아니라 근거로 판단했다', 5);
+    } else if (right) {
+      r.gain('근거 확인', `${right}건은 걸 자리를 제대로 찾았다`, 4);
     }
 
-    if (setup.missed.length) applyFault(r, 'halluc', 0);
+    r.out(passed
+      ? `근거 없는 문장 ${passed}건이 보고서에 그대로 남는다`
+      : wrong
+        ? '지어낸 문장은 다 잡았지만 근거 자리가 어긋났다'
+        : `문장 ${rows.length}건이 전부 제 근거에 걸렸다`);
 
-    r.out(setup.missed.length
-      ? `근거 없는 문장 ${setup.missed.length}건이 그대로 보고서에 들어간다`
-      : setup.overshot.length
-        ? '근거 없는 문장은 다 걸렀지만 맞는 내용도 지워졌다'
-        : `근거 없는 문장 ${falseCount}건을 모두 걸러냈다 — 규정에 있는 내용만 남았다`);
-
-    return r.finish({ pass: 82, partial: 50 }, { mistakes });
+    return r.finish({ pass: 88, partial: 52 }, { mistakes });
   },
 
   named: {
     all: 'AI가 근거 없이 사실처럼 말하는 것을 **할루시네이션**(환각)이라고 한다. ' +
-         '말투의 확신과 내용의 정확도는 아무 상관이 없다 — 방금 그걸 확인했다.'
+         '근거를 대라고 하는 순간 지어낸 문장은 걸 곳이 없다 — 방금 그 자리를 직접 찾아봤다.'
   },
 
   debrief: {
-    pass: '지어낸 문장일수록 더 구체적이고 자신 있다는 걸 봤을 것이다. 숫자가 붙으면 특히 그렇다.\n답이 맞는지 판단하는 유일한 방법은 근거 자료와 대조하는 것뿐이다.\n실무에서는 "이 문장의 근거가 어디냐"를 되묻는 습관 하나로 대부분 걸러진다.',
-    partial: '몇 개는 걸렀지만 몇 개는 지나쳤다. 놓친 것들의 공통점은 “있을 법한 내용”이라는 점이다.\n있을 법한 것과 자료에 있는 것은 다르다.\n맞는 문장을 쐈다면 반대 실수다 — 의심만으로는 안 되고 근거를 봐야 한다.',
-    fail: '문장이 자연스러우면 사실처럼 읽힌다 — 그게 환각이 위험한 이유다.\n답을 읽지 말고 규정을 먼저 읽은 뒤, 규정에 없는 단어가 나오는 문장을 쏘라.\n“이월”, “그룹웨어”, “반차”는 규정에 한 번도 안 나온다.'
+    pass: '가장 자신 있고 숫자까지 붙은 문장들이 하나도 걸리지 않았다.\n애매해서 못 믿을 것 같던 문장은 오히려 규정에 그대로 있었다.\n말투는 근거가 아니다. 근거가 어디냐를 되묻는 습관 하나로 대부분 걸러진다.',
+    partial: '몇 문장은 제자리를 찾았지만 몇 문장은 어긋났다.\n있을 법한 것과 규정에 적힌 것은 다르다 — 그럴듯함은 근거가 아니다.\n근거 있는 문장을 지웠다면 반대쪽 실수다. 의심만으로는 판단이 안 된다.',
+    fail: '문장이 매끄러우면 사실처럼 읽힌다 — 그게 환각이 위험한 이유다.\n답부터 읽지 말고 규정을 먼저 읽은 뒤, 문장마다 걸 자리를 찾아라.\n이월, 반나절, 평균 며칠은 규정 어디에도 없다.'
   }
 };
 
 /** 로그 한 줄에 문장 전체를 넣으면 읽히지 않는다 */
-function short(label) {
-  const s = String(label).replace(/[.。]$/, '');
-  return s.length > 22 ? s.slice(0, 21) + '…' : s;
+function short(text) {
+  const s = String(text).replace(/[.]$/, '');
+  return s.length > 18 ? s.slice(0, 17) + '…' : s;
 }

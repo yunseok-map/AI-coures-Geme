@@ -1,0 +1,292 @@
+/* ============================================================
+   엔진 V — 증거판. 답변 문장을 근거 문서의 해당 구간에 선으로 잇는다.
+
+   여기서 지키는 것 둘:
+
+   1) **판정이 끝나기 전에는 어떤 색도 옳고 그름을 말하지 않는다.**
+      걸어 둔 문장과 안 걸어 둔 문장의 차이만 보인다. 한 문장 걸 때마다
+      초록·빨강이 뜨면 뒤 문장은 그 색을 보고 풀게 된다 — 이 판은 그러면 끝난다.
+
+   2) **좁은 화면에서는 두 열을 세로로 쌓는다.**
+      360px 에서 두 열을 유지하면 문장 카드가 140px 가 된다. 글이 세로로
+      한 글자씩 흐르고 가로 스크롤이 생긴다. 열을 포기하고 선을 세로로 그린다
+      (engines/evidence.js 의 curve() 가 방향을 보고 손잡이를 돌린다).
+   ============================================================ */
+
+.ev__hint {
+  margin: var(--sp-3) 0 var(--sp-2);
+  font-size: var(--fs-aux);
+  color: var(--muted);
+}
+
+/* ---------- 작업대 ---------- */
+.ev__board {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--sp-4) var(--sp-6);   /* 가로 간격이 넓어야 선이 보인다 */
+  padding: var(--sp-4) var(--sp-5);
+  background: var(--surface-well);
+  border: var(--border-w) dashed var(--hair);
+  border-radius: var(--radius);
+}
+
+.ev__col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.ev__cap {
+  font-size: var(--fs-aux);
+  font-weight: 700;
+  color: var(--muted);
+}
+
+/* ---------- 선 ----------
+   카드보다 아래에 깔린다. 카드는 불투명해서 카드 위 클릭은 카드가 받고,
+   빈 자리 위의 클릭만 선이 받는다. */
+.ev__wires {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+.ev__wire {
+  fill: none;
+  stroke: var(--ink-45);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+/* 판정이 끝난 뒤에만 색이 붙는다 */
+.ev__wire--ok { stroke: var(--pass); }
+.ev__wire--no { stroke: var(--fail); stroke-dasharray: 6 6; }
+
+#evTip path { fill: var(--ink-45); }
+
+/* 눌러서 끊는 자리. 눈에 안 보이지만 손가락이 닿을 만큼 굵다 */
+.ev__wire__hit {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 22;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+.ev__wire__hit:hover + .ev__wire {
+  stroke: var(--fail);
+  stroke-dasharray: 4 5;
+}
+
+/* 집어 든 동안 손끝을 따라오는 선 */
+.ev__drag {
+  fill: none;
+  stroke: var(--mark);
+  stroke-width: 3;
+  stroke-dasharray: 5 7;
+  opacity: 0;
+}
+.ev__drag.is-on { opacity: .75; }
+
+/* ---------- 답변 문장 ---------- */
+.ev__line,
+.ev__span {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  align-items: start;
+  gap: var(--sp-1) var(--sp-2);
+  min-height: var(--tap-min);
+  min-width: 0;
+  padding: var(--sp-2) var(--sp-3);
+  text-align: left;
+  font: inherit;
+  color: var(--ink);
+  background: var(--card);
+  border: var(--border-w) solid var(--edge);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--lift-1);
+  cursor: pointer;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+  transition: border-color var(--dur-tap) var(--ease),
+              box-shadow var(--dur-tap) var(--ease),
+              transform var(--dur-tap) var(--ease);
+}
+.ev__line:hover:not(:disabled),
+.ev__span:hover:not(:disabled) { transform: translateY(var(--rise)); box-shadow: var(--lift-2); }
+.ev__line:active:not(:disabled),
+.ev__span:active:not(:disabled) { transform: translateY(1px); }
+.ev__line:disabled,
+.ev__span:disabled { cursor: default; }
+
+.ev__line { grid-template-columns: 22px minmax(0, 1fr); }
+
+.ev__line__no {
+  grid-row: 1 / span 2;
+  font-family: var(--font-mono);
+  font-size: var(--fs-aux);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  padding-top: 2px;
+}
+.ev__line__text { font-size: var(--fs-label); line-height: 1.45; }
+
+/* 걸어 둔 자리를 카드에도 적는다 — 선이 겹쳐 보이는 화면에서도 읽힌다 */
+.ev__line__mark:not(:empty) {
+  grid-column: 2;
+  justify-self: start;
+  padding: 2px var(--sp-2);
+  font-size: var(--fs-aux);
+  font-weight: 700;
+  color: var(--mark);
+  background: var(--mark-08);
+  border: 1px solid var(--mark-28);
+  border-radius: var(--radius-pill);
+}
+
+.ev__line--set { border-color: var(--mark-28); }
+.ev__line--armed {
+  border-color: var(--mark);
+  box-shadow: 0 0 0 3px var(--mark-16), var(--lift-2);
+}
+.ev__line--armed .ev__dot--out { background: var(--mark); border-color: var(--mark); }
+
+/* ---------- 근거 구간 ---------- */
+.ev__span { grid-template-columns: 26px minmax(0, 1fr); }
+
+.ev__span__mark {
+  display: grid;
+  place-items: center;
+  min-width: 24px;
+  padding: 1px 0;
+  font-size: var(--fs-aux);
+  font-weight: 700;
+  color: var(--on-mark);
+  background: var(--ink-45);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--gloss);
+}
+.ev__span__text { font-size: var(--fs-aux); line-height: 1.45; color: var(--ink); }
+
+.ev__span--used { border-color: var(--mark-28); }
+
+/* 걸 곳이 없다 — 구간이 아니라 판단이라는 것이 보여야 한다 */
+.ev__span--none { border-style: dashed; }
+.ev__span--none .ev__span__mark { background: var(--fail); }
+
+/* 집은 것이 있을 때 나머지가 "받을 수 있다"고 알린다 */
+.ev__board--armed .ev__span--target:hover { border-color: var(--mark); }
+
+/* 선이 드나드는 자리 */
+.ev__dot {
+  position: absolute;
+  top: 50%;
+  width: 12px; height: 12px;
+  margin-top: -6px;
+  background: var(--card);
+  border: 2px solid var(--edge);
+  border-radius: 50%;
+}
+.ev__dot--in  { left: -7px; }
+.ev__dot--out { right: -7px; }
+
+/* ---------- 계기 ---------- */
+.ev__meter {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+  font-size: var(--fs-aux);
+  color: var(--muted);
+}
+.ev__meter__num {
+  font-size: var(--fs-title);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.ev__meter__cut { margin-left: auto; }
+.ev__meter--full .ev__meter__num { color: var(--mark); }
+
+.ev__status {
+  margin: var(--sp-2) 0 0;
+  font-size: var(--fs-aux);
+  font-family: var(--font-mono);
+  color: var(--muted);
+}
+
+/* ---------- 끝난 뒤 ----------
+   어느 문장이 어디에 걸렸어야 했는지가 한 화면에 들어와야 한다. */
+.ev__sheet {
+  display: grid;
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+  padding: var(--sp-3);
+  background: var(--card);
+  border: var(--border-w) solid var(--edge);
+  border-radius: var(--radius);
+}
+.ev__row {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: var(--sp-2);
+  padding: var(--sp-2);
+  border-left: 3px solid var(--hair);
+  border-radius: var(--radius-sm);
+  background: var(--surface-well);
+}
+.ev__row--ok { border-left-color: var(--pass); background: var(--pass-10); }
+.ev__row--no { border-left-color: var(--fail); background: var(--fail-10); }
+
+.ev__row__no {
+  font-family: var(--font-mono);
+  font-size: var(--fs-aux);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.ev__row__body { display: grid; gap: 3px; min-width: 0; }
+.ev__row__t {
+  font-size: var(--fs-aux);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+}
+.ev__row__at {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+  font-size: var(--fs-aux);
+  color: var(--muted);
+}
+.ev__row__at i { font-style: normal; }
+.ev__row__want { color: var(--ink); }
+.ev__row--ok .ev__row__want { color: var(--pass-deep); }
+.ev__row--no .ev__row__want { color: var(--fail-deep); }
+.ev__row__why {
+  font-size: var(--fs-aux);
+  line-height: 1.45;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+}
+
+/* ---------- 좁은 화면 ----------
+   두 열을 세로로 쌓는다. 선은 아래로 내려갔다 올라온다. */
+@media (max-width: 639px) {
+  .ev__board {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--sp-5);
+    padding: var(--sp-3);
+  }
+  .ev__dot {
+    top: auto; left: 50%;
+    margin-top: 0; margin-left: -6px;
+  }
+  .ev__dot--in  { top: -7px; left: 50%; }
+  .ev__dot--out { bottom: -7px; right: auto; }
+  .ev__meter__cut { margin-left: 0; flex-basis: 100%; }
+}

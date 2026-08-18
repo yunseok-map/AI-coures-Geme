@@ -8,7 +8,7 @@ export const manifest = [
   // ---- 챕터 1 — AI 기본기 ----
   { id: 'context-bag',      no: 1,  chapter: 1, engine: 'C', required: true,  ready: true,
     title: '가방 싸기',        learn: '토큰 · 컨텍스트 윈도우 · 컨텍스트 로트' },
-  { id: 'hallucination',    no: 2,  chapter: 1, engine: 'G', required: true,  ready: true,
+  { id: 'hallucination',    no: 2,  chapter: 1, engine: 'V', required: true,  ready: true,
     title: '지어낸 답 찾기',    learn: '할루시네이션 · 근거 확인' },
   { id: 'rewrite-prompt',   no: 3,  chapter: 1, engine: 'E', required: true,  ready: true,
     title: '지시문 고쳐쓰기',   learn: '프롬프트 4요소' },

@@ -45,6 +45,8 @@ export function mount(root, game, ctx) {
   const d = game.data;
   const startedAt = Date.now();
   const travel = d.travelSec || 7;
+  /** 판단이 끝난 서류가 그 자리에 멈춰 서 있는 시간(초) — 이유를 읽는 시간이다 */
+  const READ = d.readSec ?? 1.3;
   const gap = d.gapSec ?? 2.6;
   const bandFrom = d.bandFrom ?? 0.42;   // 창구 구간 (0..1)
   const bandTo = d.bandTo ?? 0.78;
@@ -54,6 +56,7 @@ export function mount(root, game, ctx) {
     approve: '승인', reject: '반려',
     okApprove: '옳게 승인', okReject: '옳게 반려',
     badApprove: '통과시켰다', badReject: '잘못 반려', auto: '못 보고 통과',
+    leaked: '놓침',
     round: '라운드', rework: '재작업', pile: '되돌아온 일감', next: '이어서',
     empty: '되돌아온 일감이 없다'
   }, d.labels || {});
@@ -134,16 +137,22 @@ export function mount(root, game, ctx) {
 
   function drawHud() {
     const left = items.filter(i => !i.done).length;
-    const tally = log.concat(out ? [out] : []);
+    // 라운드가 끝나면 out 이 log 에 들어간다. 그때 log 와 out 을 또 합치면
+    // 방금 라운드가 두 번 세어진다 — 서류 4건짜리 라운드에서 "8 통과"가 떴다.
+    const tally = out && !log.includes(out) ? log.concat([out]) : log;
     const good = sum(tally, r => r.okReject.length + r.okApprove.length);
-    const gone = sum(tally, r => r.passed.length + r.auto.length);
+    // 빨간 숫자는 **놓친 것**만 센다. 예전에는 auto 를 통째로 더해서
+    // 멀쩡한 서류가 그냥 지나간 것까지 빨갛게 셌다 — 그건 결재로는 맞는 결과다.
+    // 게다가 라운드 사이 화면이 "통과시킨 N건"이라고 다른 수를 말해서
+    // 같은 화면에 '통과'가 두 가지 뜻으로 떴다.
+    const gone = sum(tally, r => r.passed.length + (r.autoBad || []).length);
     const wrong = sum(tally, r => r.wrongReject.length);
 
     hud.innerHTML =
       (roundCount > 1
         ? `<span class="ax__stat">${esc(L.round)} <b>${Math.max(1, round)}</b>/${roundCount}</span>` : '') +
       `<span class="ax__stat ax__stat--ok"><b>${good}</b> 정확</span>` +
-      `<span class="ax__stat ax__stat--bad"><b>${gone}</b> 통과</span>` +
+      `<span class="ax__stat ax__stat--bad"><b>${gone}</b> ${esc(L.leaked)}</span>` +
       `<span class="ax__stat">오반려 <b>${wrong}</b></span>` +
       (phase === 'run' ? `<span class="ax__stat">남은 서류 <b>${left}</b></span>` : '') +
       (combo > 1 ? `<span class="ax__combo">${combo}연속</span>` : '');
@@ -206,8 +215,10 @@ export function mount(root, game, ctx) {
     items = (built.items || []).map((it, i) => ({
       ...it, at: i * gap, y: -0.18, live: false, done: false, node: null, seen: false
     }));
+    // autoBad 는 auto 의 부분집합이다 — 지나간 것 중 **나쁜 것**만 따로 센다.
+    // 지난 라운드의 items 는 사라지므로 그때 가서 다시 셀 수 없다.
     out = { no: round, size: items.length,
-      okReject: [], okApprove: [], passed: [], wrongReject: [], auto: [] };
+      okReject: [], okApprove: [], passed: [], wrongReject: [], auto: [], autoBad: [] };
 
     t = 0; active = null; phase = 'run';
     for (const n of track.querySelectorAll('.qc__card, .ax__pop')) n.remove();
@@ -248,23 +259,29 @@ export function mount(root, game, ctx) {
     t += dt;
 
     for (const it of items) {
-      // 도장을 찍은 서류는 그 자리에 멈춰 선다 — 왜 그렇게 됐는지를 읽을 시간이다.
-      // 라운드가 바뀔 때 창구를 통째로 비운다.
-      if (it.done) continue;
-
       if (!it.live) {
-        if (t < it.at) continue;
+        if (it.done || t < it.at) continue;
         it.live = true;
         it.node = cardNode(it);
         track.append(it.node);
       }
+      if (!it.node) continue;
 
+      // 판단이 끝난 서류는 **잠깐 멈췄다가 제 속도로 빠진다.**
+      //
+      // 처음에는 그 자리에 영영 세워 두었다. 그랬더니 창구를 그냥 지나간 것들이
+      // 전부 같은 높이에서 멈춰 넷이 겹쳤다 — 왜 그렇게 됐는지 읽으라고 세운 건데
+      // 아무것도 못 읽었다. 느리게 흘려 봐도 카드 키가 간격보다 커서 여전히 겹쳤다.
+      // 멈춰서 읽히고, 다음 서류가 오기 전에 비켜 주는 것이 맞다.
+      if (it.hold > 0) { it.hold -= dt; continue; }
       it.y += dt / travel;
       it.node.style.top = (it.y * 100) + '%';
 
-      const inBand = it.y >= bandFrom && it.y <= bandTo;
-      if (inBand && active !== it) enterBand(it);
-      if (!inBand && active === it) leaveBand(it);
+      if (!it.done) {
+        const inBand = it.y >= bandFrom && it.y <= bandTo;
+        if (inBand && active !== it) enterBand(it);
+        if (!inBand && active === it) leaveBand(it);
+      }
 
       if (it.y >= 1) fallThrough(it);
     }
@@ -339,6 +356,7 @@ export function mount(root, game, ctx) {
   function autoPass(it) {
     it.done = true;
     out.auto.push(it.id);
+    if (it.bad) out.autoBad.push(it.id);
     combo = 0;
     sfx.play('leak');
     mark(it, it.bad ? 'miss' : 'pass', L.auto, it.bad ? 'bad' : 'pass');
@@ -372,6 +390,8 @@ export function mount(root, game, ctx) {
   }
 
   function mark(it, kind, popText, popKind) {
+    // 판단이 붙는 순간이 곧 멈춰 서는 순간이다. 도장을 찍었든 그냥 지나갔든 같다.
+    it.hold = READ;
     const n = it.node;
     if (n) {
       n.classList.remove('qc__card--active');
@@ -403,7 +423,7 @@ export function mount(root, game, ctx) {
     judgeBar.btn.no.disabled = judgeBar.btn.yes.disabled = true;
 
     log.push(out);
-    const leaked = out.passed.length + out.auto.filter(id => isBad(id)).length;
+    const leaked = out.passed.length + out.autoBad.length;
     const back = (typeof game.carry === 'function') ? game.carry(out) : [];
     const stuck = pending.length;
     pending = pending.concat(back);
@@ -424,11 +444,6 @@ export function mount(root, game, ctx) {
     }, isReduced() ? 200 : 800);
   }
 
-  function isBad(id) {
-    const it = items.find(x => x.id === id);
-    return !!(it && it.bad);
-  }
-
   /**
    * 라운드 사이 화면. 설명이 길면 아무도 안 읽는다 — 두 문장까지만 남긴다.
    *
@@ -439,7 +454,9 @@ export function mount(root, game, ctx) {
     const rework = back.filter(b => b.kind === 'rework').length;
     const redo = back.length - rework;
     const line = [];
-    if (leaked) line.push(`통과시킨 ${leaked}건이 ${L.rework} ${rework}건으로 돌아온다.`);
+    // 계기판의 빨간 숫자와 **같은 것을 세어야 한다.** 다른 수가 뜨면
+    // 무엇 때문에 일이 불어났는지가 안 보인다.
+    if (leaked) line.push(`놓친 ${leaked}건이 ${L.rework} ${rework}건으로 돌아온다.`);
     if (stuck) line.push(`창구에 못 온 ${stuck}건은 그대로 밀린다.`);
     if (redo) line.push(`반려한 것이 ${redo}건 다시 올라온다.`);
     if (!line.length) line.push(L.empty + '.');

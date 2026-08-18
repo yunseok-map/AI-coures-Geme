@@ -15,7 +15,8 @@ const here = dirname(fileURLToPath(import.meta.url));
 const SUITES = [
   ['17판 전수 구조', 'test-all.mjs'],
   ['13 사고 막기 (디펜스)', 'test-defense.mjs'],
-  ['2 지어낸 답 찾기 (슈팅)', 'test-shoot.mjs'],
+  ['2 지어낸 답 찾기 (증거판)', 'test-evidence.mjs'],
+  ['엔진 G 가 살아 있는지', 'test-shoot.mjs'],
   ['15 이상 징후 찾기 (슈팅)', 'test-shoot15.mjs'],
   ['14 결재 반려 (검토 라인)', 'test-qc.mjs'],
   ['11·12 배선 (워크플로우)', 'test-wire.mjs'],
