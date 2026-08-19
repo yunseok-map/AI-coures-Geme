@@ -171,8 +171,11 @@ export function mount(root, game, ctx) {
     // 자리 하나가 비었다고 막거나 나무라면 이 판의 임팩트 모먼트를 못 겪는다.
     if (phase !== 'build') return;   // 출고 뒤의 안내는 ship() 이 세워 둔 것을 그대로 둔다
     const on = !!(held.engine || held.chassis);
+    // 초록 "다 됐다"는 **두 자리가 다 찼을 때만** 켠다. 하나만 올린 상태에서 켜면
+    // 그대로 내보내라는 말이 되는데, 자리 하나가 빈 채로 나가는 것이 이 판의
+    // 임팩트 모먼트다 — 겪게 두는 것과 등을 떠미는 것은 다르다.
     step.set(on ? `${eulReul(`[${shipLabel}]`)} 누른다` : '엔진과 차체를 하나씩 고른다',
-      { done: on });
+      { done: !!(held.engine && held.chassis) });
   }
 
   async function ship() {

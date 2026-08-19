@@ -343,7 +343,10 @@ export function mount(root, game, ctx) {
     if (armed) { step.set('다음에 올 상자를 누른다'); return; }
     if (!links.length) { step.set('상자를 누르고 다음 상자를 누른다'); return; }
     const runLabel = d.runLabel || '이대로 돌리기';
-    step.set(`${eulReul(`[${runLabel}]`)} 누른다. 더 이어도 된다`, { done: true });
+    // 초록 "다 됐다"를 켜지 않는다. 본문이 "더 이어도 된다"라고 말하는데 라벨이
+    // "다 됐다"이면 줄이 앞뒤가 안 맞는다. 선을 하나 이은 것과 흐름을 다 만든 것은
+    // 다른 상태이고, **더 이으면 결과가 바뀐다.**
+    step.set(`${eulReul(`[${runLabel}]`)} 누른다. 더 이어도 된다`);
   }
 
   function incoming(id) {

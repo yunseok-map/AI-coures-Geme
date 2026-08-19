@@ -301,9 +301,12 @@ export function mount(root, game, ctx) {
 
       // 어느 대응책이 무엇을 막는지는 위 칸이 이미 보여 준다. 여기서는
       // **몇 개까지 켤 수 있고 다음에 무엇을 누르는지**만 말한다.
+      // 예산이 남아 있으면 초록을 켜지 않는다. "더 켜거나"라고 말하면서 라벨이
+      // "다 됐다"이면 줄이 스스로 앞뒤가 안 맞고, 무엇보다 **더 켜면 결과가 바뀐다.**
+      // 예산을 다 쓴 뒤에는 더 할 수 있는 것이 없으므로 그때만 켠다.
       if (!picks.length) step.set(`[${L.step4}]에서 눌러 켠다`);
       else if (picks.length < budget) {
-        step.set(`더 켜거나 ${eulReul(`[${L.run}]`)} 누른다`, { done: true });
+        step.set(`더 켜거나 ${eulReul(`[${L.run}]`)} 누른다`);
       } else step.set(`${eulReul(`[${L.run}]`)} 누른다`, { done: true });
 
       const was = bar.btn.run.disabled;

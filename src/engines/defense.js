@@ -159,7 +159,10 @@ export function mount(root, game, ctx) {
     if (armed) { step.set(`${eulReul(`[${PUT}]`)} 누른다`); return; }
     const set = slots.filter(s => s.gate).length;
     if (!set) { step.set(`장치를 누르고 ${eulReul(`[${FREE}]`)} 누른다`); return; }
-    step.set(`${eulReul(`[${RUN}]`)} 누른다`, { done: true });
+    // 초록 "다 됐다"를 켜지 않는다. 장치를 하나 놓았을 뿐인데 다 됐다고 하면
+    // 거기서 돌리게 되고, **몇 개를 어디에 놓을지가 이 판의 전부다.**
+    // 놓을수록 느려지므로 "자리를 다 채우면 끝"도 아니다 — 끝나는 상태가 없다.
+    step.set(`${eulReul(`[${RUN}]`)} 누른다`);
   }
 
   function drawSlots() {

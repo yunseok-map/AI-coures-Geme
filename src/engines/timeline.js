@@ -207,7 +207,10 @@ export function mount(root, game, ctx) {
     if (armed != null) { step.set('하루에서 걸어 둘 순간을 누른다'); return; }
     if (!Object.keys(placed).length) { step.set('선반의 도구를 눌러 집는다'); return; }
     const runLabel = d.runLabel || '하루를 돌린다';
-    step.set(`${eulReul(`[${runLabel}]`)} 누른다. 더 걸어도 된다`, { done: true });
+    // 초록 "다 됐다"를 켜지 않는다. 본문이 "더 걸어도 된다"라고 말하는데 라벨이
+    // "다 됐다"이면 줄이 앞뒤가 안 맞는다. 무엇보다 **더 걸면 결과가 바뀐다** —
+    // 무엇을 몇 개 언제 걸지가 이 판의 판단이다.
+    step.set(`${eulReul(`[${runLabel}]`)} 누른다. 더 걸어도 된다`);
   }
 
   function drawTray() {

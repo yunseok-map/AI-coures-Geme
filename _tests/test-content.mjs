@@ -186,6 +186,37 @@ console.log('\n== [지금 할 일] 줄의 버튼 이름 뒤 조사 ==');
   }
 }
 
+// ---------------------------------------------------------------- 초록 "다 됐다"
+console.log('\n== [지금 할 일] 초록이 앞뒤가 맞는가 ==');
+//
+// `{ done: true }` 는 줄을 초록으로 바꾸고 라벨을 "다 됐다"로 만든다. 그건 안내가
+// 아니라 **판단**이라, 아직 고를 것이 남았는데 켜면 사람은 거기서 실행한다.
+// 그게 그 판이 벌하는 쪽이면 줄이 판을 망친다 — 1번 판에서 실제로 그랬다.
+//
+// 전부를 기계로 가릴 수는 없다(무엇이 "다 된 것"인지는 판마다 다르다). 다만
+// **줄이 스스로 모순인 경우**는 확실히 가릴 수 있다: 본문이 "더 …해도 된다"라고
+// 말하면서 라벨이 "다 됐다"인 것. 8·11·12·15번이 실제로 그랬다.
+{
+  const dir = new URL('../src/engines/', import.meta.url);
+  const files = (await readdir(dir)).filter(f => f.endsWith('.js'));
+  // step.set(...) 한 번의 인자 전체를 잡는다 — 여러 줄에 걸쳐 쓰기도 한다
+  const CALL = /step\.set\(([\s\S]*?)\);/g;
+  const MORE = /더\s*[^`'"]{0,12}(해도|어도|아도|도)\s*된다|더\s+[가-힣]+거나/;
+
+  for (const f of files) {
+    const src = await readFile(new URL(f, dir), 'utf8');
+    const bad = [];
+    for (const m of src.matchAll(CALL)) {
+      const arg = m[1];
+      if (!/done:\s*true/.test(arg)) continue;      // 조건부(done: x)는 사람이 판단한다
+      if (!MORE.test(arg)) continue;
+      bad.push(arg.replace(/\s+/g, ' ').slice(0, 70));
+    }
+    check(`engines/${f} — "더 해도 된다"면서 "다 됐다"라고 하지 않는다`,
+      bad.length === 0, bad.join(' / '));
+  }
+}
+
 // ---------------------------------------------------------------- 결과 문구
 console.log('\n== 결과 화면 문구 ==');
 for (const [m, g] of games) {

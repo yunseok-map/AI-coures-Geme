@@ -181,9 +181,12 @@ export function mount(root, game, ctx) {
     const backLabel = L.close || '다른 구역 보기';
 
     // 갈 수 있으면 가는 버튼을, 발품이 모자라면 물러나는 버튼을 이름 그대로 부른다.
+    // 초록 "다 됐다"는 켜지 않는다. 갈 수 있다는 것과 여기가 맞는 구역이라는 것은
+    // 다른 말인데 줄이 구별을 못 한다 — 안 맞는 구역에서도 [그래도 가 본다]가
+    // 뜨는 자리라, 켜면 **어느 구역을 고르는가**를 줄이 대신 답해 버린다.
     step.set(far
       ? `발품이 모자란다. ${eulReul(`[${backLabel}]`)} 누른다`
-      : `${eulReul(`[${goLabel}]`)} 누른다`, { done: !far });
+      : `${eulReul(`[${goLabel}]`)} 누른다`);
 
     const bar = actions([
       { id: 'go', label: goLabel, primary: true, disabled: far },
