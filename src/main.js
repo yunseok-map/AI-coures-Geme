@@ -2,13 +2,14 @@
 
 import { start, parse, go } from './core/router.js';
 import { state } from './core/state.js';
-import { loadGame, metaOf, nextOf, manifest } from './games/index.js';
+import { loadGame, metaOf, nextOf, skippedBy, manifest } from './games/index.js';
 import { renderTopbar } from './shell/topbar.js';
 import { renderCourse } from './shell/coursemap.js';
 import { renderCodex } from './shell/codex.js';
 import { renderToolbook } from './shell/toolbook.js';
 import { renderReport } from './shell/report.js';
 import { showDebrief, hideDebrief } from './shell/debrief.js';
+import { eunNeun } from './core/ko.js';
 import { mountBookmark, refresh as refreshBook } from './shell/bookmark.js';
 import { needEnter, showEnter } from './shell/enter.js';
 import { stageIn, ripple } from './core/motion.js';
@@ -172,10 +173,36 @@ async function openGame(id) {
           ? `다음: ${next.no}. ${next.title}`
           : '결과 카드 보기',
         toCourse: () => go('/'),
+        skip: skipped(id, next),
         hint: allRequiredDone && next ? '필수 코스는 전부 끝났다.' : ''
       });
     }
   });
+}
+
+/**
+ * 건너뛴 판을 화면 문구로. 넘긴 게 없으면 null.
+ *
+ * 무엇을 넘겼는지는 `games/index.js` 가 안다(`skippedBy`). 여기는 그걸
+ * 사람이 읽는 말로 바꾸기만 한다 — 넘어간다는 사실과, 순서대로 갈 길 하나.
+ */
+function skipped(id, next) {
+  const over = skippedBy(id, next, (x) => state.isCleared(x));
+  if (!over.length) return null;
+
+  const first = over[0];
+  const range = over.length === 1
+    ? `${first.no}번`
+    : `${first.no}~${over[over.length - 1].no}번`;
+  return {
+    // 글꼴 조각에 없는 음절을 피해서 쓴 문장이다. 뜻이 같으면 덮는 글자로 쓴다 —
+    // 조각에 없는 글자는 그것만 시스템 글꼴로 나와서 한 단어 안에서 글꼴이 갈린다.
+    // 주석에 따옴표나 기호를 넣지 않는다: 글꼴 검사가 따옴표 안을 화면 글자로 세고,
+    // 기호는 어디에 있든 센다. 주석 때문에 폰트를 다시 만들라는 말을 듣게 된다.
+    note: `${eunNeun(range)} 심화다. 필수 코스는 여기를 건너뛰고 간다. 안 해도 수료된다.`,
+    label: `순서대로 — ${first.no}. ${first.title}`,
+    go: () => go(`/game/${first.id}`)
+  };
 }
 
 function unknown(id) {

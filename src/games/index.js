@@ -84,3 +84,25 @@ export function nextOf(id, isCleared) {
        || after.find(m => !isCleared(m.id))
        || null);
 }
+
+/**
+ * `nextOf` 가 **뛰어넘은** 판들. 넘긴 게 없으면 빈 배열.
+ *
+ * 필수는 1·2·3 · 5·6·7·8 · 15 · 16 · 17 이라 8번을 깨면 [다음]이 9~14번
+ * 여섯 판을 넘어 15번으로 간다. 사용자가 "숨은 지시는 원래 순서대로 나와야
+ * 하는 것 아니냐, 7~8단계 지나자마자 나온다"고 했다 — 챕터를 둘이나 넘는데
+ * 화면에 그 말이 없으니 순서가 깨진 것으로 보인 것이다.
+ *
+ * 필수 구성은 확정된 결정이라 그대로 두고, **넘긴다는 사실만 화면에 내놓는다.**
+ * 문구는 셸이 만든다. 여기는 "무엇을 넘겼는가"만 답한다.
+ *
+ * 아직 안 만든 판(`ready: false`)과 이미 깬 판은 넘긴 것이 아니므로 뺀다.
+ * 뒤로 돌아가는 경우(다음이 앞쪽에 있을 때)도 넘긴 것이 아니다.
+ */
+export function skippedBy(id, next, isCleared) {
+  if (!next) return [];
+  const i = manifest.findIndex(m => m.id === id);
+  const j = manifest.findIndex(m => m.id === next.id);
+  if (i < 0 || j <= i + 1) return [];
+  return manifest.slice(i + 1, j).filter(m => m.ready && !isCleared(m.id));
+}

@@ -155,6 +155,56 @@ check('안 쓰는 엔진이 없다', unused.length === 0, unused.join(', '));
 console.log('\n판 목록');
 for (const r of rows) console.log('  ' + r.map((c, i) => String(c).padEnd([4, 20, 3, 10, 8, 4][i])).join(' '));
 
+// ---------------------------------------------------------------- 필수 경로의 건너뛰기
+//
+// 사용자: 숨은 지시(15번)가 7~8단계 지나자마자 나오는데 순서대로 나와야 하는 것
+// 아니냐고 했다. 맞다 — 필수가 1·2·3 · 5·6·7·8 · 15 · 16 · 17 이라 [다음]이
+// 8번에서 **9~14번 여섯 판을 넘어** 15번으로 간다. 챕터를 둘이나 넘는데 화면에
+// 그 말이 없으면 순서가 깨진 것으로 읽힌다.
+//
+// 필수 구성은 확정된 결정이라 그대로 둔다. 대신 **넘기는 자리를 여기 못 박아**,
+// 화면이 그 자리에서 반드시 말하게 한다(main.js 의 skipped → debrief 의 안내).
+// 목록이 바뀌어 넘기는 자리가 달라지면 이 검사가 먼저 알려 준다.
+console.log('\n== 필수 코스가 건너뛰는 자리 ==');
+{
+  const { nextOf, skippedBy } = await import(`${ROOT}/games/index.js`);
+  const cleared = new Set();
+  const isCleared = (x) => cleared.has(x);
+  const jumps = [];
+
+  let at = manifest[0];
+  for (let guard = 0; at && guard < manifest.length * 2; guard++) {
+    cleared.add(at.id);
+    const next = nextOf(at.id, isCleared);
+    const over = skippedBy(at.id, next, isCleared);
+    if (over.length) jumps.push({ from: at.no, to: next.no, over: over.map(m => m.no) });
+    if (!next) break;
+    at = next;
+  }
+
+  // 자리는 둘이다. 사용자가 알아챈 건 뒤엣것이지만(챕터를 둘 넘어서 눈에 띈다),
+  // 3번 다음에 4번을 넘기는 것도 같은 일이다 — 둘 다 화면이 말해야 한다.
+  check('필수만 따라가면 넘기는 자리가 생긴다', jumps.length > 0, '없다');
+  check('넘기는 자리는 3→5 와 8→15 둘이다',
+    jumps.map(j => `${j.from}→${j.to}`).join(', ') === '3→5, 8→15',
+    jumps.map(j => `${j.from}→${j.to}`).join(', '));
+  check('3번 뒤에 넘어가는 것은 4번 하나다',
+    jumps[0] && jumps[0].over.join(',') === '4',
+    jumps[0] ? jumps[0].over.join(',') : '없다');
+  check('8번 뒤에 넘어가는 것은 9~14번 여섯 판이다',
+    jumps[1] && jumps[1].over.join(',') === '9,10,11,12,13,14',
+    jumps[1] ? jumps[1].over.join(',') : '없다');
+  // 넘긴 판을 나중에 하고 오면 다시 말하지 않아야 한다 — 이미 깬 것은 넘긴 게 아니다
+  const done = new Set(manifest.filter(m => m.no >= 9 && m.no <= 14).map(m => m.id));
+  const after = skippedBy('when-fires', manifest.find(m => m.no === 15), (x) => done.has(x));
+  check('이미 깬 판은 건너뛴 것으로 세지 않는다', after.length === 0, String(after.length));
+
+  // 화면이 실제로 그 말을 하는가 — main.js 원문에서 확인한다(DOM 이 없다)
+  check('main.js 가 건너뛴 판을 결과 화면에 넘긴다', /skip:\s*skipped\(/.test(mainSrc));
+  check('건너뛴다는 사실을 문장으로 말한다', /건너뛰/.test(mainSrc), '문구 없음');
+  check('순서대로 갈 길을 같이 준다', /순서대로/.test(mainSrc), '길 없음');
+}
+
 console.log(`\n검사 ${pass + fail}건 · 통과 ${pass} · 실패 ${fail}`);
 if (bad.length) { console.log('\n실패 목록:'); for (const b of bad) console.log('  ✗ ' + b); }
 console.log('');

@@ -139,6 +139,24 @@ export async function showDebrief(game, result, on) {
     inner.append(chips);
   }
 
+  // ---- 건너뛴 판 (있을 때만) ----
+  //
+  // [다음]이 필수만 집어서 8번 다음에 15번으로 간다. 챕터를 둘 넘는데 화면에는
+  // 그 말이 없어서 순서가 망가진 것처럼 보였다. 넘어간다는 말과 순서대로 갈
+  // 길을 같이 놓는다. 아래 버튼 줄에 넣지 않는 이유는 자리다 — 그 줄은 버튼이
+  // 폭을 똑같이 나눠 갖고 넘치면 말줄임표로 잘라서, 넷이 되면 다 못 읽는다.
+  if (on.skip) {
+    const s = document.createElement('div');
+    s.className = 'debrief__skip';
+    const p = document.createElement('p');
+    p.className = 'debrief__hint';
+    p.textContent = on.skip.note;
+    const b = button(on.skip.label, () => { hideDebrief(); on.skip.go(); });
+    b.className = 'btn-quiet debrief__inorder';
+    s.append(p, b);
+    inner.append(s);
+  }
+
   // ---- 안내 한 줄 (있을 때만) ----
   if (on.hint) {
     const h = document.createElement('p');

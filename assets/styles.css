@@ -804,6 +804,12 @@ input { caret-color: var(--mark); }
   margin: var(--sp-2) 0;
   font-size: var(--fs-aux); color: var(--mark); font-weight: 600;
 }
+/* 건너뛴 판 안내 + 순서대로 가는 길.
+   아래 버튼 줄은 폭을 나눠 갖고 넘치면 잘라 내므로 여기서 따로 한 줄을 쓴다. */
+.debrief__skip { margin: var(--sp-2) 0 var(--sp-3); }
+.debrief__skip .debrief__hint { margin: 0 0 var(--sp-2); }
+.debrief__inorder { width: 100%; min-height: var(--tap-min); }
+
 .debrief__actions { display: flex; gap: var(--sp-2); }
 .debrief__actions button { flex: 1; min-height: var(--tap-min); }
 /* 다음 버튼 문구가 길어질 수 있다 — 줄바꿈 대신 줄여서 보여 준다 */
