@@ -814,8 +814,14 @@ input { caret-color: var(--mark); }
 .named__ln + .named__ln { margin-top: 4px; }
 /* 글자가 한 자씩 설 때 쓰는 조각 (core/motion.js 의 nameIn).
    줄바꿈이 글자 단위로 일어나면 문장이 들쭉날쭉해지므로 inline-block 으로 세운다.
-   연출이 끝나면 이 span 들은 걷어낸다 — 낭독기가 한 글자씩 읽으면 안 된다. */
-.nm__c { display: inline-block; will-change: transform, opacity; }
+   연출이 끝나면 이 span 들은 걷어낸다 — 낭독기가 한 글자씩 읽으면 안 된다.
+
+   **text-indent 를 반드시 0 으로 끊는다.** 이 값은 물려받는데, 쪼갠 글자는
+   저마다 상자(inline-block)라서 윗줄의 매달린 들여쓰기 -8px 가 **글자마다**
+   한 번씩 먹었다. 글자 한 자 폭이 13.8px 에서 5.8px 로 줄어 옆 글자와 8px씩
+   겹쳤고, 네 줄짜리 문단이 217px 에서 114px 로 납작해졌다가 되돌릴 때
+   확 펴졌다 — 글이 써지는 게 아니라 뭉갰다가 튀어나오는 것으로 보였다. */
+.nm__c { display: inline-block; text-indent: 0; will-change: transform, opacity; }
 
 .debrief__text { margin-bottom: var(--sp-2); }
 

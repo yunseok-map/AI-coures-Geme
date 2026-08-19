@@ -502,6 +502,11 @@ export function typeIn(el, html, opts = {}) {
   }).then(() => { clearTimeout(guard); el.innerHTML = plain; });
 }
 
+/** 한 문장을 다 쓰는 데 쓸 시간(ms). 문구가 길수록 한 자를 빨리 쓴다 */
+const WRITE = 1150;
+/** 글자 한 자가 서는 데 걸리는 시간(ms) */
+const FADE = 260;
+
 /**
  * 한 문장이 글자 단위로 선다 — "방금 겪은 것에 이름이 있다" 순간에만 쓴다.
  *
@@ -519,18 +524,30 @@ export function nameIn(el, opts = {}) {
 
   let split;
   try {
-    split = new SplitText(el, { type: 'chars', charsClass: 'nm__c' });
+    // tag 를 반드시 span 으로 준다. 기본값은 div 라서 **글줄 안에 블록 상자**가
+    // 들어간다 — 좁은 화면에서 줄바꿈 자리가 통째로 달라져 문단이 33~63px 뛰었다.
+    split = new SplitText(el, { type: 'chars', charsClass: 'nm__c', tag: 'span' });
   } catch {
     return Promise.resolve();   // 쪼개지 못하면 그냥 둔다. 글은 이미 화면에 있다
   }
 
   const back = () => { try { split.revert(); } catch { /* 이미 되돌아갔다 */ } };
-  const guard = setTimeout(back, (opts.duration ?? 900) + 900);
+
+  // 한 자 간격은 **글자 수를 보고 정한다.** 고정 간격을 쓰면 문구 길이에 따라
+  // 쓰는 시간이 제멋대로다 — 열네 판은 141자라 1.95초, 열세 판은 161자라 2.19초였다.
+  // 그런데 되돌리는 안전장치는 1.8초 고정이어서, 스물한 문구 중 일곱이 **다 써지기
+  // 전에 끊기고 나머지가 한꺼번에 나타났다.** 전체 시간을 먼저 정하고 간격을 거기 맞춘다.
+  const n = split.chars.length || 1;
+  const each = Math.min(opts.each ?? 14, Math.max(5, WRITE / n));
+  const total = sec(FADE) + sec(each) * n;
+
+  // 안전장치는 실제 길이에서 잰다. 트윈이 죽어도 마크업은 반드시 되돌아가야 한다.
+  const guard = setTimeout(back, total * 1000 + 500);
 
   return gsap.from(split.chars, {
     opacity: 0, y: 8,
-    duration: sec(260),
-    stagger: sec(opts.each ?? 14),
+    duration: sec(FADE),
+    stagger: sec(each),
     ease: 'power2.out'
   }).then(() => { clearTimeout(guard); back(); });
 }
