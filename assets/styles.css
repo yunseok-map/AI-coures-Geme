@@ -55,6 +55,18 @@ h1, h2, h3, p { margin: 0; }
 h1, h2, h3, .stage__title, .debrief__head, .term__name { text-wrap: balance; }
 p, .named__ln, .debrief__text, .stage__sub { text-wrap: pretty; }
 
+/* ---------- 표제 글꼴이 걸리는 자리 ----------
+   화면의 제목과 도장, 그리고 등급 이름까지만이다. 본문·라벨·버튼에 번지면
+   목소리가 둘이 아니라 하나가 되고, 그 하나는 읽기 나쁜 쪽이다.
+   숫자는 여기 없다 — 계기판 숫자는 고정폭이라야 자릿수가 안 흔들린다. */
+h1, h2,
+.stage__title, .enter__title, .boot-msg h1,
+.chapter__name, .resume__name,
+.stamp, .report__rank, .rankup__name,
+.ax__veil__t, .dp__veil__t {
+  font-family: var(--font-display);
+}
+
 /* ---------- 눌리는 버튼 ----------
    아랫면(lip)을 border-bottom 으로 만들고, 누르면 그 두께만큼 내려가면서
    아랫면이 사라진다. 물리적으로 눌린 느낌이 나는 가장 싼 방법이다. */
@@ -648,7 +660,9 @@ input { caret-color: var(--mark); }
 /* ---------- 4) 판정 도장 ---------- */
 .stamp {
   display: inline-block;
-  padding: var(--sp-2) var(--sp-4);
+  /* 자간이 마지막 글자 뒤에도 붙는다. 좌우 여백을 똑같이 주면 글자가 그만큼
+     왼쪽으로 쏠려서 테두리 안에서 안 맞는다 — 오른쪽에서 자간만큼 뺀다. */
+  padding: var(--sp-2) calc(var(--sp-4) - .1em) var(--sp-2) var(--sp-4);
   font-weight: 800;
   font-size: var(--fs-hero);
   letter-spacing: .1em;

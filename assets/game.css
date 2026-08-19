@@ -25,8 +25,8 @@
   border-radius: var(--radius-pill);
   transform-origin: center bottom;
 }
-.pip--ok { background: var(--pass); animation: pipFill 300ms var(--ease-back) both; }
-.pip--no { background: var(--fail); animation: pipFill 300ms var(--ease-back) both; }
+.pip--ok { background: var(--pass); animation: pipFill 300ms var(--ease-out) both; }
+.pip--no { background: var(--fail); animation: pipFill 300ms var(--ease-out) both; }
 @keyframes pipFill {
   from { transform: scaleY(.3); opacity: .3; }
   60%  { transform: scaleY(1.9); }
@@ -47,7 +47,7 @@
   color: var(--on-mark); background: var(--reward);
   border-radius: var(--radius-pill);
   padding: 3px var(--sp-2);
-  animation: tagPop 340ms var(--ease-back) both;
+  animation: tagPop 340ms var(--ease-out) both;
 }
 @keyframes tagPop {
   from { transform: scale(.5) rotate(-8deg); opacity: 0; }
@@ -84,7 +84,7 @@
   border-radius: 50%;
   background: var(--pass); color: var(--on-mark);
   font-size: 20px; font-weight: 700; line-height: var(--lh-flat);
-  animation: sheetPop 320ms var(--ease-back) both 60ms;
+  animation: sheetPop 320ms var(--ease-out) both 60ms;
 }
 .sheet--no .sheet__icon { background: var(--fail); }
 @keyframes sheetPop {

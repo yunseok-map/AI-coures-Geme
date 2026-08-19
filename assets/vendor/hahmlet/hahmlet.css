@@ -1,0 +1,21 @@
+/* Hahmlet — 표제에만 쓰는 글꼴. 이 게임 화면에 나오는 글자만 남긴 조각.
+   원본: https://github.com/hyper-type/hahmlet (Google Fonts ofl/hahmlet),
+   SIL Open Font License 1.1. 라이선스 원문은 같은 폴더의 OFL.txt.
+   만드는 방법은 README.md.
+
+   외부 요청 0건 규칙은 그대로다 — 이 파일과 woff2 는 저장소 안에 있고
+   같은 출처에서 불린다. 경로는 반드시 상대경로(GitHub Pages).
+
+   굵기가 하나뿐이다. 가변 원본의 굵기축을 살리면 조각이 173KB 가 되는데,
+   표제는 한 굵기로 충분해서 700 만 남겼다(89KB).
+   그런데 화면 쪽은 제목에 800·900 을 부른다. 그래서 font-weight 를 100~900 으로
+   적어 둔다 — 어느 굵기를 불러도 이 파일이 걸리고, 브라우저가 굵기를 흉내 내서
+   획을 부풀리지 않는다. 범위를 700 하나로 적으면 900 을 부르는 자리에서
+   가짜 굵게가 걸려 세리프가 뭉갠다. */
+@font-face {
+  font-family: 'Hahmlet';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;   /* 늦으면 본문 글꼴로 먼저 보인다 — 제목이 빈 채로 있지 않는다 */
+  src: url('./Hahmlet-Bold.subset.woff2') format('woff2');
+}
