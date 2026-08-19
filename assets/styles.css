@@ -425,12 +425,15 @@ input { caret-color: var(--mark); }
 /* 처음이라면 — 첫 방문에 한 번. 덮개가 아니라 카드다 (shell/coursemap.js).
    표면 2단계: 아래 "이어서 하기"(3단계)보다 가벼워야 한다. 안내가 주인공이면
    시작 버튼을 못 찾는다. */
+/* 흰 카드 옆구리에 굵은 색 띠를 다는 것은 요즘 도구가 뱉는 화면의 가장 큰
+   특징이라 뺐다. 대신 **위에 굵은 괘선**을 긋는다 — 도면에서 표제란을 나누는
+   방법이고, 이 화면이 이미 stage__sub 와 결과 머리에서 쓰고 있는 방법이다. */
 .intro {
   margin-top: var(--sp-4);
   padding: var(--sp-4);
   background: var(--card);
   border: 1px solid var(--hair);
-  border-left: 4px solid var(--mark);
+  border-top: 2px solid var(--ink);
   border-radius: var(--radius);
   box-shadow: var(--lift-1);
 }
@@ -454,12 +457,14 @@ input { caret-color: var(--mark); }
 }
 .intro__ok { margin-top: var(--sp-1); }
 
+/* 지금 갈 곳. 눈에 제일 먼저 띄어야 하지만 옆구리 띠로 하지 않는다(.intro 주석).
+   위 괘선을 진행색으로 그어서 "여기가 지금 자리"를 색이 아니라 자리로 말한다. */
 .resume {
   margin-top: var(--sp-4);
   padding: var(--sp-4);
   background: var(--card);
   border: 1px solid var(--ink-12);
-  border-left: 4px solid var(--mark);
+  border-top: 3px solid var(--mark);
   box-shadow: var(--lift-2);
 }
 .resume__cap {
