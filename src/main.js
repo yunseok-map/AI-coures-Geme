@@ -12,6 +12,7 @@ import { showDebrief, hideDebrief } from './shell/debrief.js';
 import { mountBookmark, refresh as refreshBook } from './shell/bookmark.js';
 import { needEnter, showEnter } from './shell/enter.js';
 import { stageIn, ripple } from './core/motion.js';
+import { BUILD } from './core/version.js';
 
 // 모듈이 실행됐다는 표시. index.html 의 file:// 안내가 이 값을 본다.
 document.documentElement.setAttribute('data-booted', '1');
@@ -24,20 +25,20 @@ document.getElementById('boot-fallback')?.remove();
 // 엔진. 진입할 때만 불러온다 — 첫 화면에서 전부 받지 않는다.
 // A~E 는 세팅형(고르고 제출), F~H 는 실시간 액션형이다.
 const ENGINES = {
-  C: () => import('./engines/build.js'),     // 조립
-  E: () => import('./engines/preview.js'),   // 미리보기
-  W: () => import('./engines/wire.js'),      // 배선 — 상자를 선으로 이어 흐름을 만든다
-  P: () => import('./engines/bet.js'),       // 예측 — 진실을 보기 전에 먼저 건다
-  L: () => import('./engines/assembly.js'),  // 조립 라인 — 엔진을 차체에 끼워 출고한다
-  T: () => import('./engines/timeline.js'),  // 발동 타임라인 — 하루에 걸어 두고 돌려 본다
-  R: () => import('./engines/dispatch.js'),  // 실시간 관제 — 일감을 창구로 보낸다
-  S: () => import('./engines/library.js'),   // 서고 — 낱말을 던져 걸린 것만 넘긴다
-  V: () => import('./engines/evidence.js'),  // 증거판 — 문장을 근거 조항에 잇는다
-  N: () => import('./engines/map.js'),       // 지형 답사 — 발품을 써서 구역을 고른다
-  I: () => import('./engines/inject.js'),    // 숨은 지시 — 심어 보고, 편을 바꿔 막는다
-  M: () => import('./engines/gate.js'),      // 권한 게이트 — 케이블 위의 문을 하나씩 연다
-  F: () => import('./engines/defense.js'),   // 디펜스 — 내려오는 것을 막는다
-  H: () => import('./engines/qcline.js')     // 검토 라인 — 창구에서 승인/반려를 찍는다
+  C: () => import(`./engines/build.js?v=${BUILD}`),     // 조립
+  E: () => import(`./engines/preview.js?v=${BUILD}`),   // 미리보기
+  W: () => import(`./engines/wire.js?v=${BUILD}`),      // 배선 — 상자를 선으로 이어 흐름을 만든다
+  P: () => import(`./engines/bet.js?v=${BUILD}`),       // 예측 — 진실을 보기 전에 먼저 건다
+  L: () => import(`./engines/assembly.js?v=${BUILD}`),  // 조립 라인 — 엔진을 차체에 끼워 출고한다
+  T: () => import(`./engines/timeline.js?v=${BUILD}`),  // 발동 타임라인 — 하루에 걸어 두고 돌려 본다
+  R: () => import(`./engines/dispatch.js?v=${BUILD}`),  // 실시간 관제 — 일감을 창구로 보낸다
+  S: () => import(`./engines/library.js?v=${BUILD}`),   // 서고 — 낱말을 던져 걸린 것만 넘긴다
+  V: () => import(`./engines/evidence.js?v=${BUILD}`),  // 증거판 — 문장을 근거 조항에 잇는다
+  N: () => import(`./engines/map.js?v=${BUILD}`),       // 지형 답사 — 발품을 써서 구역을 고른다
+  I: () => import(`./engines/inject.js?v=${BUILD}`),    // 숨은 지시 — 심어 보고, 편을 바꿔 막는다
+  M: () => import(`./engines/gate.js?v=${BUILD}`),      // 권한 게이트 — 케이블 위의 문을 하나씩 연다
+  F: () => import(`./engines/defense.js?v=${BUILD}`),   // 디펜스 — 내려오는 것을 막는다
+  H: () => import(`./engines/qcline.js?v=${BUILD}`)     // 검토 라인 — 창구에서 승인/반려를 찍는다
 };
 
 const app = document.getElementById('app');

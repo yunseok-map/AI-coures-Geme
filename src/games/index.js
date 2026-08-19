@@ -4,6 +4,8 @@
 // 파일명 규칙: `번호-아이디.js`
 // 데이터를 미리 불러오지 않는다. 실제 진입할 때만 동적 import 한다.
 
+import { BUILD } from '../core/version.js';
+
 export const manifest = [
   // ---- 챕터 1 — AI 기본기 ----
   { id: 'context-bag',      no: 1,  chapter: 1, engine: 'C', required: true,  ready: true,
@@ -52,12 +54,20 @@ export const manifest = [
     title: '이 일엔 어떤 AI?',  learn: '용도별 도구 지형도 · 애그리게이터' }
 ];
 
-/** 진입할 때만 실제 게임 데이터를 불러온다. */
+/**
+ * 진입할 때만 실제 게임 데이터를 불러온다.
+ *
+ * 주소 뒤에 배포 도장을 붙인다. **동적 `import()` 는 하드 리로드의 no-cache 를
+ * 물려받지 않아서**, 이걸 안 붙이면 고쳐서 배포해도 옛 파일이 그대로 온다.
+ * 1번 판 책상을 6칸에서 8칸으로 고쳤는데 어떤 사람은 계속 6칸을 봤다 —
+ * 6칸은 사실상 이길 수 없는 판이라 그 사람들은 아무리 잘해도 못 깼다.
+ * 도장은 `_tests/stamp.mjs` 가 내용에서 계산해 찍는다.
+ */
 export async function loadGame(id) {
   const meta = manifest.find(m => m.id === id);
   if (!meta || !meta.ready) return null;
   const file = `${String(meta.no).padStart(2, '0')}-${meta.id}.js`;
-  const mod = await import(`./${file}`);
+  const mod = await import(`./${file}?v=${BUILD}`);
   return mod.default;
 }
 

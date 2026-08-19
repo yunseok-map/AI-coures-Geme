@@ -31,7 +31,10 @@ const SUITES = [
   ['용어 수집 (획득/읽음)', 'test-collect.mjs'],
   ['학습자 칸 (공용 PC)', 'test-who.mjs'],
   ['콘텐츠 검수 (글·용어·조사)', 'test-content.mjs'],
-  ['글꼴 조각', 'test-font.mjs']
+  ['글꼴 조각', 'test-font.mjs'],
+  // 맨 끝에 둔다 — 앞의 검사가 통과해도 도장을 안 찍었으면 배포하면 안 된다.
+  // 이게 빨간불이면 고치는 법은 한 줄: node _tests/stamp.mjs
+  ['배포 도장 (캐시)', 'test-version.mjs']
 ];
 
 let bad = 0;
