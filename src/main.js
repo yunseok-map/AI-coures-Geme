@@ -12,6 +12,7 @@ import { showDebrief, hideDebrief } from './shell/debrief.js';
 import { eunNeun } from './core/ko.js';
 import { mountBookmark, refresh as refreshBook } from './shell/bookmark.js';
 import { needEnter, showEnter } from './shell/enter.js';
+import { mountBackdrop } from './shell/backdrop.js';
 import { stageIn, ripple } from './core/motion.js';
 import { BUILD } from './core/version.js';
 
@@ -78,6 +79,9 @@ boot();
  * 그것부터 눌러 보게 되는데, 그때 숫자는 아직 누구 것인지 정해지지 않았다.
  */
 async function boot() {
+  // 종이 뒤 바닥부터 깐다. 시작 화면도 이 바닥 위에 놓인다.
+  mountBackdrop();
+
   if (needEnter()) await showEnter(app);
 
   app.textContent = '';

@@ -38,10 +38,25 @@ body {
 
   /* 모눈은 뺐다. 바탕에 격자를 깔면 그 위의 모든 것이 격자와 어긋나 보이고,
      화면이 값싸 보인다 — 무늬는 내용이 아닌데 시선을 가장 먼저 가져간다.
-     지금은 종이 한 장이다. 위에서 빛이 든 것처럼 아주 옅게만 밝다. */
-  background-color: var(--paper);
-  background-image: radial-gradient(120% 80% at 50% 0%, var(--paper-lit), var(--paper) 60%);
+
+     종이는 이제 화면 전체가 아니라 **한 장**이다(#app). 여기는 그 종이를
+     올려놓은 바닥이고, 종이와 같은 계열에서 한 단계 깊다. 둘을 가르는 것은
+     명도 차가 아니라 종이가 떨구는 그늘이다.
+     글자는 바닥 위에 놓지 않는다 — 전부 종이 위다. */
+  background-color: var(--table);
+  background-image: radial-gradient(130% 90% at 50% -10%, var(--table), var(--table-deep) 72%);
   background-attachment: fixed;
+}
+
+/* 바닥에서 도는 등고선. 그리는 것은 shell/backdrop.js.
+   종이 뒤에 완전히 가려지므로 글자와 겹칠 일이 없다. */
+.backdrop {
+  /* width/height 를 반드시 적는다. canvas 는 대체 요소라서 inset:0 만으로는
+     늘어나지 않고 **제 고유 크기(300x150)** 로 남는다 — 자리는 화면 전체인데
+     그림만 작게 그려져서 오른쪽이 비고, 좁은 화면에서는 가로 스크롤이 생겼다. */
+  position: fixed; inset: 0; z-index: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
 }
 
 h1, h2, h3, p { margin: 0; }
@@ -161,7 +176,25 @@ input { caret-color: var(--mark); }
 }
 
 /* ---------- 2) 공통 셸 ---------- */
-#app { min-height: 100dvh; display: flex; flex-direction: column; }
+/* 종이 한 장. 바닥(body) 위에 놓여 있고, 화면의 모든 글자가 이 안에 있다.
+   가장자리에 그늘을 떨궈서 붙어 있지 않고 **놓여 있는** 것으로 만든다.
+   좁은 화면에서는 종이가 화면을 꽉 채우므로 그늘도 옆선도 필요 없다. */
+#app {
+  position: relative; z-index: 1;
+  min-height: 100dvh; display: flex; flex-direction: column;
+  width: 100%; max-width: var(--sheet-max); margin: 0 auto;
+  background-color: var(--paper);
+  background-image: radial-gradient(120% 60% at 50% 0%, var(--paper-lit), var(--paper) 60%);
+}
+@media (min-width: 800px) {
+  /* 종이가 바닥에 놓인 자국. 옆으로 가는 그늘은 얇게, 아래로 지는 그늘은 넓게 —
+     그래야 붙어 있지 않고 놓여 있는 것으로 읽힌다. */
+  #app {
+    box-shadow: 0 1px 0 0 var(--paper-lit) inset,
+                0 2px 6px var(--table-edge),
+                0 18px 40px -12px var(--table-edge);
+  }
+}
 
 /* 상단바 (표면 4단계 — 늘 위에 떠 있다).
    내용이 아래로 흘러 들어가는 순간 그림자가 생긴다. 처음부터 그림자를 깔면
@@ -680,7 +713,10 @@ input { caret-color: var(--mark); }
 
 /* ---------- 5) 해설 패널 ---------- */
 .debrief {
+  /* 종이 폭에 맞춘다. 화면 끝까지 늘리면 종이와 상관없는 띠가 바닥을 가로질러
+     지나가 버린다 — 이 패널은 방금 한 판의 결과지이므로 그 종이 위에 있어야 한다. */
   position: fixed; inset: auto 0 0 0; z-index: 30;
+  width: 100%; max-width: var(--sheet-max); margin-inline: auto;
   background: var(--card);
   border-top: 2px solid var(--ink-12);
   box-shadow: var(--lift-3);
