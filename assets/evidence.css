@@ -74,9 +74,13 @@
   pointer-events: stroke;
   cursor: pointer;
 }
-.ev__wire__hit:hover + .ev__wire {
-  stroke: var(--fail);
-  stroke-dasharray: 4 5;
+
+/* 손가락 화면에서는 hover 가 탭에 붙어 그대로 남는다 — 눌렀던 것이 계속 골라진 것처럼 보인다 */
+@media (hover: hover) and (pointer: fine) {
+  .ev__wire__hit:hover + .ev__wire {
+    stroke: var(--fail);
+    stroke-dasharray: 4 5;
+  }
 }
 
 /* 집어 든 동안 손끝을 따라오는 선 */
@@ -114,8 +118,11 @@
               box-shadow var(--dur-tap) var(--ease),
               transform var(--dur-tap) var(--ease);
 }
-.ev__line:hover:not(:disabled),
-.ev__span:hover:not(:disabled) { transform: translateY(var(--rise)); box-shadow: var(--lift-2); }
+
+@media (hover: hover) and (pointer: fine) {
+  .ev__line:hover:not(:disabled),
+  .ev__span:hover:not(:disabled) { transform: translateY(var(--rise)); box-shadow: var(--lift-2); }
+}
 .ev__line:active:not(:disabled),
 .ev__span:active:not(:disabled) { transform: translateY(1px); }
 .ev__line:disabled,
@@ -131,7 +138,7 @@
   color: var(--muted);
   padding-top: 2px;
 }
-.ev__line__text { font-size: var(--fs-label); line-height: 1.45; }
+.ev__line__text { font-size: var(--fs-label); line-height: var(--lh-body); }
 
 /* 걸어 둔 자리를 카드에도 적는다 — 선이 겹쳐 보이는 화면에서도 읽힌다 */
 .ev__line__mark:not(:empty) {
@@ -168,7 +175,7 @@
   border-radius: var(--radius-sm);
   box-shadow: var(--gloss);
 }
-.ev__span__text { font-size: var(--fs-aux); line-height: 1.45; color: var(--ink); }
+.ev__span__text { font-size: var(--fs-aux); line-height: var(--lh-body); color: var(--ink); }
 
 .ev__span--used { border-color: var(--mark-28); }
 
@@ -176,8 +183,10 @@
 .ev__span--none { border-style: dashed; }
 .ev__span--none .ev__span__mark { background: var(--fail); }
 
-/* 집은 것이 있을 때 나머지가 "받을 수 있다"고 알린다 */
-.ev__board--armed .ev__span--target:hover { border-color: var(--mark); }
+@media (hover: hover) and (pointer: fine) {
+  /* 집은 것이 있을 때 나머지가 "받을 수 있다"고 알린다 */
+  .ev__board--armed .ev__span--target:hover { border-color: var(--mark); }
+}
 
 /* 선이 드나드는 자리 */
 .ev__dot {
@@ -250,7 +259,7 @@
 .ev__row__body { display: grid; gap: 3px; min-width: 0; }
 .ev__row__t {
   font-size: var(--fs-aux);
-  line-height: 1.45;
+  line-height: var(--lh-body);
   overflow-wrap: anywhere;
   word-break: keep-all;
 }
@@ -268,7 +277,7 @@
 .ev__row--no .ev__row__want { color: var(--fail-deep); }
 .ev__row__why {
   font-size: var(--fs-aux);
-  line-height: 1.45;
+  line-height: var(--lh-body);
   color: var(--muted);
   overflow-wrap: anywhere;
   word-break: keep-all;

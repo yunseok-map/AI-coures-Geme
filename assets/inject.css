@@ -103,12 +103,16 @@
               box-shadow var(--dur-tap) var(--ease),
               transform var(--dur-tap) var(--ease);
 }
-.ij__opt:hover:not(:disabled) { transform: translateY(var(--rise)); box-shadow: var(--lift-2); }
+
+/* 손가락 화면에서는 hover 가 탭에 붙어 그대로 남는다 — 눌렀던 것이 계속 골라진 것처럼 보인다 */
+@media (hover: hover) and (pointer: fine) {
+  .ij__opt:hover:not(:disabled) { transform: translateY(var(--rise)); box-shadow: var(--lift-2); }
+}
 .ij__opt:active:not(:disabled) { transform: translateY(1px); }
 .ij__opt:disabled { cursor: default; opacity: .7; }
 
-.ij__opt__t { font-size: var(--fs-label); line-height: 1.4; }
-.ij__opt__s { font-size: var(--fs-aux); line-height: 1.4; color: var(--muted); }
+.ij__opt__t { font-size: var(--fs-label); line-height: var(--lh-snug); }
+.ij__opt__s { font-size: var(--fs-aux); line-height: var(--lh-snug); color: var(--muted); }
 
 .ij__opt--on {
   border-color: var(--mark);
@@ -146,7 +150,7 @@
 .ij__paper__how {
   margin: 2px 0 var(--sp-2);
   font-size: var(--fs-aux);
-  line-height: 1.45;
+  line-height: var(--lh-body);
   color: var(--muted);
   overflow-wrap: anywhere;
   word-break: keep-all;
@@ -157,7 +161,7 @@
   padding: var(--sp-2);
   font-family: var(--font-mono);
   font-size: var(--fs-mono);
-  line-height: 1.5;
+  line-height: var(--lh-body);
   color: var(--fail-deep);
   background: var(--fail-10);
   border-left: 3px solid var(--fail);
@@ -204,7 +208,7 @@
 }
 .ij__doc__where {
   font-size: var(--fs-aux);
-  line-height: 1.45;
+  line-height: var(--lh-body);
   color: var(--muted);
   overflow-wrap: anywhere;
   word-break: keep-all;
@@ -218,7 +222,7 @@
   padding: var(--sp-2);
   font-family: var(--font-mono);
   font-size: var(--fs-mono);
-  line-height: 1.5;
+  line-height: var(--lh-body);
   color: var(--ink);
   background: var(--surface-well);
   border-radius: var(--radius-sm);
@@ -269,7 +273,10 @@
               box-shadow var(--dur-tap) var(--ease),
               transform var(--dur-tap) var(--ease);
 }
-.ij__guard:hover:not(:disabled) { transform: translateY(var(--rise)); box-shadow: var(--lift-2); }
+
+@media (hover: hover) and (pointer: fine) {
+  .ij__guard:hover:not(:disabled) { transform: translateY(var(--rise)); box-shadow: var(--lift-2); }
+}
 .ij__guard:active:not(:disabled) { transform: translateY(1px); }
 .ij__guard:disabled { cursor: default; opacity: .7; }
 
@@ -298,7 +305,7 @@
 .ij__guard__t { font-size: var(--fs-label); font-weight: 700; }
 .ij__guard__d {
   font-size: var(--fs-aux);
-  line-height: 1.4;
+  line-height: var(--lh-snug);
   color: var(--muted);
   overflow-wrap: anywhere;
   word-break: keep-all;

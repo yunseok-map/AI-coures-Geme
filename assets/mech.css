@@ -29,7 +29,7 @@
 }
 .bt__text {
   font-size: var(--fs-title);
-  line-height: 1.55;
+  line-height: var(--lh-read);
   color: var(--ink);
 }
 
@@ -78,10 +78,14 @@
               border-color var(--dur-tap) var(--ease),
               box-shadow var(--dur-tap) var(--ease);
 }
-.bt__pick:hover:not(:disabled) {
-  border-color: var(--mark);
-  box-shadow: var(--lift-2);
-  transform: translateY(var(--rise));
+
+/* 손가락 화면에서는 hover 가 탭에 붙어 그대로 남는다 — 눌렀던 것이 계속 골라진 것처럼 보인다 */
+@media (hover: hover) and (pointer: fine) {
+  .bt__pick:hover:not(:disabled) {
+    border-color: var(--mark);
+    box-shadow: var(--lift-2);
+    transform: translateY(var(--rise));
+  }
 }
 .bt__pick:active:not(:disabled) {
   transform: translateY(2px);
@@ -129,7 +133,7 @@
 .bt__verdict__body {
   margin: 0;
   font-size: var(--fs-body);
-  line-height: 1.6;
+  line-height: var(--lh-read);
   color: var(--ink);
 }
 
@@ -157,7 +161,7 @@
   color: var(--muted);
   margin-bottom: var(--sp-1);
 }
-.asm__order__body { font-size: var(--fs-body); line-height: 1.6; }
+.asm__order__body { font-size: var(--fs-body); line-height: var(--lh-read); }
 
 /* 조립대 — 자리 두 개와 그 사이의 더하기.
    서식이 아니라 **기계 위**로 읽혀야 해서 우묵하게 파고 안쪽 그림자를 넣는다. */
@@ -226,7 +230,10 @@
 .asm__part--chassis { border-radius: 3px; }
 .asm__part__label { font-size: var(--fs-label); font-weight: 700; }
 .asm__part__note  { font-size: var(--fs-aux); color: var(--muted); }
-.asm__part:hover:not(:disabled) { border-color: var(--mark); box-shadow: var(--lift-2); transform: translateY(var(--rise)); }
+
+@media (hover: hover) and (pointer: fine) {
+  .asm__part:hover:not(:disabled) { border-color: var(--mark); box-shadow: var(--lift-2); transform: translateY(var(--rise)); }
+}
 .asm__part:active:not(:disabled) { transform: translateY(2px); border-bottom-width: var(--border-w); }
 
 /* 지금 조립대에 올라가 있는 것 — 선반 쪽에서도 표시된다 */
@@ -246,7 +253,7 @@
 .asm__unit--husk { border-color: var(--fail); background: var(--fail-10); }
 .asm__unit__cap  { font-size: var(--fs-aux); color: var(--muted); }
 .asm__unit__name { font-size: var(--fs-title); font-weight: 700; margin: var(--sp-1) 0 var(--sp-2); }
-.asm__unit__row  { font-size: var(--fs-label); line-height: 1.7; }
+.asm__unit__row  { font-size: var(--fs-label); line-height: var(--lh-read); }
 .asm__unit__row b { color: var(--muted); font-weight: 600; margin-right: var(--sp-2); }
 
 /* 오늘 출고 목록 — 엔진 하나에서 여러 갈래로 뻗는 그림.

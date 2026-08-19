@@ -62,9 +62,13 @@
   pointer-events: stroke;
   cursor: pointer;
 }
-.wf__wire__hit:hover + .wf__wire {
-  stroke: var(--fail);
-  stroke-dasharray: 4 5;
+
+/* 손가락 화면에서는 hover 가 탭에 붙어 그대로 남는다 — 눌렀던 것이 계속 골라진 것처럼 보인다 */
+@media (hover: hover) and (pointer: fine) {
+  .wf__wire__hit:hover + .wf__wire {
+    stroke: var(--fail);
+    stroke-dasharray: 4 5;
+  }
 }
 
 /* 집어 든 동안 손끝을 따라오는 선 */
@@ -102,11 +106,14 @@
               box-shadow var(--dur-tap) var(--ease),
               transform var(--dur-tap) var(--ease);
 }
-.wf__node:hover:not(:disabled) { transform: translateY(var(--rise)); box-shadow: var(--lift-2); }
+
+@media (hover: hover) and (pointer: fine) {
+  .wf__node:hover:not(:disabled) { transform: translateY(var(--rise)); box-shadow: var(--lift-2); }
+}
 .wf__node:active:not(:disabled) { transform: translateY(1px); }
 .wf__node:disabled { cursor: default; }
 
-.wf__node__label { font-size: var(--fs-label); font-weight: 600; line-height: 1.25; }
+.wf__node__label { font-size: var(--fs-label); font-weight: 600; line-height: var(--lh-tight); }
 .wf__node__meta  { font-size: var(--fs-aux); color: var(--muted); }
 .wf__node__tag:not(:empty) {
   margin-top: 2px;
@@ -140,7 +147,10 @@
 
 /* 집은 것이 있을 때 나머지가 "받을 수 있다"고 알린다 */
 .wf__board--armed .wf__node--target { border-style: dashed; }
-.wf__board--armed .wf__node--target:hover { border-color: var(--mark); border-style: solid; }
+
+@media (hover: hover) and (pointer: fine) {
+  .wf__board--armed .wf__node--target:hover { border-color: var(--mark); border-style: solid; }
+}
 
 .wf__node.is-now {
   border-color: var(--mark);

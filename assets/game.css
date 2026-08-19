@@ -83,7 +83,7 @@
   width: 34px; height: 34px;
   border-radius: 50%;
   background: var(--pass); color: var(--on-mark);
-  font-size: 20px; font-weight: 700; line-height: 1;
+  font-size: 20px; font-weight: 700; line-height: var(--lh-flat);
   animation: sheetPop 320ms var(--ease-back) both 60ms;
 }
 .sheet--no .sheet__icon { background: var(--fail); }
@@ -100,7 +100,7 @@
 
 .sheet__body {
   margin-top: var(--sp-2);
-  font-size: var(--fs-label); line-height: 1.55;
+  font-size: var(--fs-label); line-height: var(--lh-read);
 }
 .sheet__bar { margin-top: var(--sp-3); }
 
@@ -208,7 +208,7 @@
   color: var(--on-mark); font-size: var(--fs-label); font-weight: 700;
   min-width: 0; overflow: hidden;
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
-  line-height: 1.35;
+  line-height: var(--lh-snug);
 }
 .desk__cost {
   color: var(--on-mark); opacity: .8;
@@ -303,9 +303,13 @@
               background-color var(--dur-tap) var(--ease),
               border-color var(--dur-tap) var(--ease);
 }
-/* 뜨는 높이는 --rise 하나로 맞춘다. 물건마다 다르게 뜨면 손맛이 어긋난다. */
-.part:hover:not(:disabled),
-.toggle:hover:not(:disabled) { transform: translateY(var(--rise)); box-shadow: var(--lift-2); }
+
+/* 손가락 화면에서는 hover 가 탭에 붙어 그대로 남는다 — 눌렀던 것이 계속 골라진 것처럼 보인다 */
+@media (hover: hover) and (pointer: fine) {
+  /* 뜨는 높이는 --rise 하나로 맞춘다. 물건마다 다르게 뜨면 손맛이 어긋난다. */
+  .part:hover:not(:disabled),
+  .toggle:hover:not(:disabled) { transform: translateY(var(--rise)); box-shadow: var(--lift-2); }
+}
 .part:active:not(:disabled),
 .toggle:active:not(:disabled) { transform: scale(.97); }
 
@@ -451,7 +455,7 @@
   padding: var(--sp-3);
   max-height: 240px; overflow-y: auto;
   display: grid; gap: var(--sp-1);
-  line-height: 1.55;
+  line-height: var(--lh-read);
 }
 .log__line { display: grid; grid-template-columns: 16px 1fr; gap: var(--sp-2); }
 .log__tick::before { content: "·"; color: var(--muted); }

@@ -29,14 +29,14 @@
 .enter__title {
   margin: var(--sp-2) 0 0;
   font-size: var(--fs-hero); font-weight: var(--w-black);
-  letter-spacing: -.01em; line-height: 1.2;
+  letter-spacing: -.01em; line-height: var(--lh-tight);
 }
 
 .enter__lead {
   margin: var(--sp-2) 0 0;
   padding-bottom: var(--sp-4);
   border-bottom: 1px solid var(--hair);
-  font-size: var(--fs-aux); color: var(--muted); line-height: 1.6;
+  font-size: var(--fs-aux); color: var(--muted); line-height: var(--lh-read);
 }
 
 /* 구역 이름 — "이미 하던 사람" / "처음 온 사람" */
@@ -61,7 +61,11 @@
   border-radius: var(--radius-sm);
   box-shadow: var(--lift-1);
 }
-.enter__pill:hover { border-color: var(--mark); }
+
+/* 손가락 화면에서는 hover 가 탭에 붙어 그대로 남는다 — 눌렀던 것이 계속 골라진 것처럼 보인다 */
+@media (hover: hover) and (pointer: fine) {
+  .enter__pill:hover { border-color: var(--mark); }
+}
 
 .enter__pill-name {
   min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -92,7 +96,7 @@
 /* 막힌 이유 — 반려 빨강. 이 화면에서 빨강이 켜지는 자리는 여기뿐이다 */
 .enter__err {
   margin: var(--sp-2) 0 0;
-  font-size: var(--fs-aux); line-height: 1.5; color: var(--fail);
+  font-size: var(--fs-aux); line-height: var(--lh-body); color: var(--fail);
 }
 
 /* 좁은 화면에서는 [들어간다]를 다음 줄로 내린다.

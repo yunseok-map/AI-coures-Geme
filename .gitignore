@@ -13,6 +13,14 @@ _test.js
 # 개발 도구가 만든 로컬 캐시
 .impeccable/
 
+# 에이전트 스킬 — 내가 쓰는 도구지 이 교육자료의 내용이 아니다.
+# 한 벌이 파일 200개·2만 줄이라 넣으면 저장소가 통째로 남의 문서가 된다.
+# 다시 받는 법은 README 가 아니라 각 스킬 배포처에 있다.
+.agents/
+.claude/skills/
+.claude/settings.local.json
+skills-lock.json
+
 # OS
 Thumbs.db
 desktop.ini

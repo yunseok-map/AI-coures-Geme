@@ -33,7 +33,7 @@
 
 .qcl__pile__cap {
   flex: 0 0 auto;
-  line-height: 1.4;
+  line-height: var(--lh-snug);
 }
 
 .qcl__pile__cap b {

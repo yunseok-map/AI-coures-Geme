@@ -170,7 +170,7 @@
 .gt__gate:active:not(:disabled) .gt__gate__ring { transform: scale(.92); }
 
 .gt__gate__name {
-  line-height: 1.2;
+  line-height: var(--lh-tight);
   background: var(--card);
   padding: 0 2px;
   border-radius: var(--radius-sm);
@@ -193,7 +193,7 @@
 .gt__gate__mark {
   font-size: 11px;
   font-weight: 700;
-  line-height: 1.2;
+  line-height: var(--lh-tight);
   text-align: center;
 }
 .gt__gate__mark--ok   { color: var(--pass); }

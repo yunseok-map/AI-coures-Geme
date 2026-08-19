@@ -23,7 +23,11 @@
   /* 떠 있는 물건이라 hover 로 더 뜨지 않는다 — 이미 떠 있다 */
   transition: filter var(--dur-tap);
 }
-.bk:hover:not(:disabled) { transform: none; box-shadow: none; filter: brightness(1.05); }
+
+/* 손가락 화면에서는 hover 가 탭에 붙어 그대로 남는다 — 눌렀던 것이 계속 골라진 것처럼 보인다 */
+@media (hover: hover) and (pointer: fine) {
+  .bk:hover:not(:disabled) { transform: none; box-shadow: none; filter: brightness(1.05); }
+}
 .bk:active:not(:disabled) { transform: none; border-bottom-width: 0; }
 /* 끄는 중 — 손에 들린 것처럼 살짝 커지고, 커서가 쥔 손으로 바뀐다 */
 .bk--drag { cursor: grabbing; filter: brightness(1.08); }
@@ -67,7 +71,7 @@
 .bk__face {
   display: flex; flex-direction: column; align-items: center;
   padding-left: 5px;
-  line-height: 1;
+  line-height: var(--lh-flat);
 }
 .bk__face b { font-size: var(--fs-label); font-weight: var(--w-black); }
 .bk__face i {
@@ -145,29 +149,32 @@
   border-radius: 0;
   box-shadow: none;
 }
-.bk__row:hover:not(:disabled) {
-  transform: none; box-shadow: none;
-  background: var(--surface-well);
-  border-left-color: var(--mark);
+
+@media (hover: hover) and (pointer: fine) {
+  .bk__row:hover:not(:disabled) {
+    transform: none; box-shadow: none;
+    background: var(--surface-well);
+    border-left-color: var(--mark);
+  }
 }
 .bk__row:active:not(:disabled) { transform: none; }
 .bk__row--open { background: var(--surface-well); border-left-color: var(--mark); }
 
 .bk__t { font-weight: 800; font-size: var(--fs-label); }
-.bk__a { font-size: var(--fs-aux); color: var(--muted); line-height: 1.45; }
+.bk__a { font-size: var(--fs-aux); color: var(--muted); line-height: var(--lh-body); }
 .bk__x {
   display: block;
   overflow: hidden;
   margin-top: var(--sp-1);
   padding-top: var(--sp-1);
   border-top: 1px dashed var(--hair);
-  font-size: var(--fs-aux); line-height: 1.55;
+  font-size: var(--fs-aux); line-height: var(--lh-read);
 }
 
 .bk__none {
   padding: var(--sp-5) var(--sp-3);
   text-align: center;
-  color: var(--muted); font-size: var(--fs-aux); line-height: 1.7;
+  color: var(--muted); font-size: var(--fs-aux); line-height: var(--lh-read);
 }
 
 /* 좁은 화면 — 책을 작게 하고 면은 화면 폭에 맞춘다 */

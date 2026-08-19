@@ -27,9 +27,14 @@ body {
   color: var(--ink);
   font-family: var(--font-body);
   font-size: var(--fs-body);
-  line-height: 1.6;
+  line-height: var(--lh-read);
   overscroll-behavior-y: none;
   word-break: keep-all;      /* 한글이 단어 중간에서 잘리지 않게 */
+
+  /* macOS 는 글자를 의도보다 굵게 그린다. Pretendard 처럼 획이 가는 글꼴에서
+     특히 티가 나서 같은 화면이 맥에서만 뭉개져 보인다. 뿌리에 한 번만 건다. */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 
   /* 모눈은 뺐다. 바탕에 격자를 깔면 그 위의 모든 것이 격자와 어긋나 보이고,
      화면이 값싸 보인다 — 무늬는 내용이 아닌데 시선을 가장 먼저 가져간다.
@@ -40,6 +45,15 @@ body {
 }
 
 h1, h2, h3, p { margin: 0; }
+
+/* 줄이 어디서 끊기는지를 브라우저에 맡기지 않는다.
+   `balance` 는 제목을 줄마다 고르게 나눈다 — 두 줄짜리 제목이 "긴 줄 + 낱말 하나"로
+   갈리는 것을 막는다. `pretty` 는 문단 마지막 줄에 낱말 하나만 남는 것을 막는다.
+   결과 화면의 용어 설명이 한 문장씩 서게 됐는데(core/text.js 의 termLines),
+   그 한 줄이 다시 "긴 줄 + 낱말 하나"로 접히면 끊어 놓은 뜻이 없다.
+   지원하지 않는 브라우저에서는 지금과 똑같이 그려진다. */
+h1, h2, h3, .stage__title, .debrief__head, .term__name { text-wrap: balance; }
+p, .named__ln, .debrief__text, .stage__sub { text-wrap: pretty; }
 
 /* ---------- 눌리는 버튼 ----------
    아랫면(lip)을 border-bottom 으로 만들고, 누르면 그 두께만큼 내려가면서
@@ -60,12 +74,16 @@ button {
               transform var(--dur-press) var(--ease),
               border-bottom-width var(--dur-press) var(--ease);
 }
-/* 물체는 전부 같은 방식으로 반응한다 — 뜨고(hover), 눌리고(active), 잠긴다(disabled).
-   반응이 물건마다 다르면 화면이 여러 사람이 만든 것처럼 읽힌다. */
-button:hover:not(:disabled) {
-  border-color: var(--ink-45);
-  transform: translateY(var(--rise));
-  box-shadow: var(--lift-2);
+
+/* 손가락 화면에서는 hover 가 탭에 붙어 그대로 남는다 — 눌렀던 것이 계속 골라진 것처럼 보인다 */
+@media (hover: hover) and (pointer: fine) {
+  /* 물체는 전부 같은 방식으로 반응한다 — 뜨고(hover), 눌리고(active), 잠긴다(disabled).
+     반응이 물건마다 다르면 화면이 여러 사람이 만든 것처럼 읽힌다. */
+  button:hover:not(:disabled) {
+    border-color: var(--ink-45);
+    transform: translateY(var(--rise));
+    box-shadow: var(--lift-2);
+  }
 }
 button:active:not(:disabled) {
   transform: translateY(calc(var(--lip) - var(--border-w)));
@@ -241,7 +259,7 @@ input { caret-color: var(--mark); }
 
 .stage__title {
   font-size: var(--fs-hero); font-weight: var(--w-black);
-  line-height: 1.25; letter-spacing: -.02em;
+  line-height: var(--lh-tight); letter-spacing: -.02em;
 }
 /* 제목과 부제 사이에 선을 긋는다. 부제가 제목에 붙어 흐릿하게 딸려오던 것을
    여기서 끊는다 — 도면에서 표제란과 내용은 선으로 나뉜다. */
@@ -309,7 +327,7 @@ input { caret-color: var(--mark); }
 }
 .who__note {
   flex: 1 1 12ch; min-width: 0;
-  font-size: var(--fs-aux); color: var(--muted); line-height: 1.5;
+  font-size: var(--fs-aux); color: var(--muted); line-height: var(--lh-body);
 }
 /* 사람 알약 — 지금 사람만 채운다. 나머지는 눌러서 넘어갈 수 있는 것으로 보인다. */
 .who__pill {
@@ -373,7 +391,7 @@ input { caret-color: var(--mark); }
 .intro__line {
   position: relative;
   margin: 0 0 var(--sp-2) var(--sp-4);
-  font-size: var(--fs-label); line-height: 1.55;
+  font-size: var(--fs-label); line-height: var(--lh-read);
 }
 .intro__line::before {
   content: "";
@@ -399,11 +417,11 @@ input { caret-color: var(--mark); }
 }
 .resume__name {
   margin-top: var(--sp-1);
-  font-size: var(--fs-title); font-weight: 700; line-height: 1.3;
+  font-size: var(--fs-title); font-weight: 700; line-height: var(--lh-snug);
 }
 .resume__learn {
   margin-top: 2px;
-  font-size: var(--fs-aux); color: var(--muted); line-height: 1.4;
+  font-size: var(--fs-aux); color: var(--muted); line-height: var(--lh-snug);
 }
 .btn-big {
   margin-top: var(--sp-3);
@@ -489,7 +507,10 @@ input { caret-color: var(--mark); }
               border-color var(--dur-tap) var(--ease),
               border-bottom-width var(--dur-press) var(--ease);
 }
-.node:hover:not(:disabled) { border-color: var(--mark); box-shadow: var(--lift-2); }
+
+@media (hover: hover) and (pointer: fine) {
+  .node:hover:not(:disabled) { border-color: var(--mark); box-shadow: var(--lift-2); }
+}
 .node:active:not(:disabled) {
   transform: translateY(calc(var(--lip) - var(--border-w)));
   border-bottom-width: var(--border-w);
@@ -544,10 +565,10 @@ input { caret-color: var(--mark); }
 }
 
 .node__body { min-width: 0; }
-.node__name { display: block; font-weight: 600; line-height: 1.4; }
+.node__name { display: block; font-weight: 600; line-height: var(--lh-snug); }
 .node__learn {
   display: block;
-  font-size: var(--fs-aux); color: var(--muted); line-height: 1.4;
+  font-size: var(--fs-aux); color: var(--muted); line-height: var(--lh-snug);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .node__meta { font-size: var(--fs-aux); color: var(--muted); white-space: nowrap; }
@@ -580,10 +601,13 @@ input { caret-color: var(--mark); }
   color: var(--muted);
   background: none;
 }
-.btn-quiet:hover:not(:disabled) {
-  color: var(--ink);
-  transform: none;
-  box-shadow: none;
+
+@media (hover: hover) and (pointer: fine) {
+  .btn-quiet:hover:not(:disabled) {
+    color: var(--ink);
+    transform: none;
+    box-shadow: none;
+  }
 }
 
 /* 주 버튼. 아랫면(lip)을 본색보다 어둡게 깔아야 "누를 수 있는 물체"로 보인다.
@@ -597,9 +621,12 @@ input { caret-color: var(--mark); }
   letter-spacing: .01em;
   box-shadow: var(--gloss);
 }
-.btn-primary:hover:not(:disabled) {
-  filter: brightness(1.08);
-  box-shadow: var(--lift-2), var(--gloss);
+
+@media (hover: hover) and (pointer: fine) {
+  .btn-primary:hover:not(:disabled) {
+    filter: brightness(1.08);
+    box-shadow: var(--lift-2), var(--gloss);
+  }
 }
 .btn-primary:active:not(:disabled) { box-shadow: var(--gloss); }
 .btn-danger { color: var(--fail); border-color: var(--fail); background: none; }
@@ -682,7 +709,7 @@ input { caret-color: var(--mark); }
 .ring--partial { --ring-on: var(--partial); }
 .ring--fail    { --ring-on: var(--fail); }
 
-.ring__num, .ring__unit { position: relative; line-height: 1; }
+.ring__num, .ring__unit { position: relative; line-height: var(--lh-flat); }
 .ring__num {
   font-size: var(--fs-display); font-weight: 900;
   font-variant-numeric: tabular-nums;

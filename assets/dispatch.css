@@ -80,12 +80,16 @@
   transition: transform var(--dur-press) var(--ease),
               border-color var(--dur-tap) var(--ease);
 }
-.dp__job:hover { border-color: var(--mark); transform: translateY(var(--rise)); }
+
+/* 손가락 화면에서는 hover 가 탭에 붙어 그대로 남는다 — 눌렀던 것이 계속 골라진 것처럼 보인다 */
+@media (hover: hover) and (pointer: fine) {
+  .dp__job:hover { border-color: var(--mark); transform: translateY(var(--rise)); }
+}
 .dp__job:active { transform: translateY(2px); border-bottom-width: var(--border-w); }
 .dp__job__text {
   display: block;
   font-size: var(--fs-aux);
-  line-height: 1.4;
+  line-height: var(--lh-snug);
 }
 /* 집어 든 것. 클래스를 겹쳐 쓰는 이유는 mech.css 의 .bt__pick 주석과 같다. */
 .dp__job.dp__job--armed {
@@ -134,7 +138,7 @@
               box-shadow var(--dur-tap) var(--ease);
 }
 .dp__desk__name { font-size: var(--fs-label); font-weight: 700; }
-.dp__desk__note { font-size: var(--fs-aux); color: var(--muted); line-height: 1.35; }
+.dp__desk__note { font-size: var(--fs-aux); color: var(--muted); line-height: var(--lh-snug); }
 .dp__desk__now {
   margin-top: auto;
   font-size: var(--fs-aux);
@@ -217,7 +221,7 @@
 .dp__veil__b {
   max-width: 34ch;
   font-size: var(--fs-label);
-  line-height: 1.6;
+  line-height: var(--lh-read);
   color: var(--on-mark);
 }
 
@@ -227,6 +231,6 @@
 @media (max-width: 420px) {
   .dp__desks { grid-template-columns: 1fr 1fr; margin-top: var(--sp-3); }
   .dp__desk { min-height: 72px; padding: var(--sp-2); }
-  .dp__desk__note { line-height: 1.25; }
+  .dp__desk__note { line-height: var(--lh-tight); }
   .dp__job, .dp__slot--empty { min-height: 54px; }
 }

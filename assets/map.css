@@ -25,7 +25,7 @@
 .mp__meter__num {
   font-family: var(--font-mono);
   font-size: var(--fs-hero);
-  line-height: 1;
+  line-height: var(--lh-flat);
   color: var(--ink);
 }
 .mp__meter__of { margin-left: auto; }
@@ -69,7 +69,7 @@
 .mp__job__text {
   margin: var(--sp-1) 0 0;
   font-size: var(--fs-label);
-  line-height: 1.5;
+  line-height: var(--lh-body);
 }
 
 .mp__asks {
@@ -135,13 +135,17 @@
               box-shadow var(--dur-tap) var(--ease);
 }
 .mp__tile:nth-child(2n) { border-radius: 8px 18px 10px 16px; }
-.mp__tile:hover:not(:disabled) { border-color: var(--mark); transform: translateY(var(--rise)); }
+
+/* 손가락 화면에서는 hover 가 탭에 붙어 그대로 남는다 — 눌렀던 것이 계속 골라진 것처럼 보인다 */
+@media (hover: hover) and (pointer: fine) {
+  .mp__tile:hover:not(:disabled) { border-color: var(--mark); transform: translateY(var(--rise)); }
+}
 .mp__tile:active:not(:disabled) { transform: translateY(2px); border-bottom-width: var(--border-w); }
 
-.mp__tile__name { font-size: var(--fs-label); font-weight: 700; line-height: 1.3; }
+.mp__tile__name { font-size: var(--fs-label); font-weight: 700; line-height: var(--lh-snug); }
 .mp__tile__line {
   font-size: var(--fs-aux);
-  line-height: 1.35;
+  line-height: var(--lh-snug);
   color: var(--muted);
 }
 .mp__tile__traits {
@@ -216,14 +220,14 @@
 .mp__look__cost b {
   font-family: var(--font-mono);
   font-size: var(--fs-display);
-  line-height: 1;
+  line-height: var(--lh-flat);
   color: var(--ink);
 }
 .mp__look__cost span { font-size: var(--fs-aux); color: var(--muted); }
 .mp__look__line {
   margin: var(--sp-1) 0 0;
   font-size: var(--fs-label);
-  line-height: 1.45;
+  line-height: var(--lh-body);
 }
 .mp__look__bar { margin-top: var(--sp-3); }
 
@@ -266,7 +270,7 @@
   margin: var(--sp-3) 0 0;
   padding: var(--sp-2) var(--sp-3);
   font-size: var(--fs-label);
-  line-height: 1.45;
+  line-height: var(--lh-body);
   color: var(--on-mark);
   background: var(--ink);
   border-radius: var(--radius-sm);
@@ -278,6 +282,6 @@
 @media (max-width: 400px) {
   .mp__map { gap: var(--sp-1); padding: var(--sp-1); }
   .mp__tile { min-height: 100px; }
-  .mp__tile__line { line-height: 1.25; }
+  .mp__tile__line { line-height: var(--lh-tight); }
   .mp__look { min-height: 124px; }
 }

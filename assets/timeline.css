@@ -35,7 +35,7 @@
   align-items: start;
   gap: var(--sp-2);
   font-size: var(--fs-label);
-  line-height: 1.5;
+  line-height: var(--lh-body);
   color: var(--ink);
 }
 /* 판정 전에는 빈 동그라미. 재생이 끝나면 하나씩 채워진다 — 이게 이 판의 결말이다. */
@@ -95,7 +95,7 @@
   font-size: var(--fs-mono);
   color: var(--muted);
 }
-.tl__what { grid-area: what; font-size: var(--fs-label); line-height: 1.45; }
+.tl__what { grid-area: what; font-size: var(--fs-label); line-height: var(--lh-body); }
 .tl__who {
   grid-area: who;
   font-size: var(--fs-aux);
@@ -112,7 +112,11 @@
 
 /* 걸 자리를 고르는 중 */
 .tl__row--target { cursor: pointer; }
-.tl__row--target:hover { background: var(--mark-08); }
+
+/* 손가락 화면에서는 hover 가 탭에 붙어 그대로 남는다 — 눌렀던 것이 계속 골라진 것처럼 보인다 */
+@media (hover: hover) and (pointer: fine) {
+  .tl__row--target:hover { background: var(--mark-08); }
+}
 .tl__row--target::after {
   content: '';
   grid-area: lane;
@@ -132,7 +136,7 @@
 .tl__mark {
   font-size: var(--fs-aux);
   font-weight: 700;
-  line-height: 1.5;
+  line-height: var(--lh-body);
   padding: 1px var(--sp-2);
   border: 2px solid var(--ink-20);
   border-radius: var(--radius-pill);
@@ -214,10 +218,13 @@
               border-color var(--dur-tap) var(--ease),
               box-shadow var(--dur-tap) var(--ease);
 }
-.tl__tool:hover, .tl__box:hover, .tl__key:hover {
-  border-color: var(--mark);
-  box-shadow: var(--lift-2);
-  transform: translateY(var(--rise));
+
+@media (hover: hover) and (pointer: fine) {
+  .tl__tool:hover, .tl__box:hover, .tl__key:hover {
+    border-color: var(--mark);
+    box-shadow: var(--lift-2);
+    transform: translateY(var(--rise));
+  }
 }
 .tl__tool:active, .tl__box:active, .tl__key:active {
   transform: translateY(2px);

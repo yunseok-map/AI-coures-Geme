@@ -18,7 +18,7 @@
   margin-bottom: var(--sp-2);
 }
 .rd__no { font-size: var(--fs-title); font-weight: 700; color: var(--ink); }
-.rd__note { font-size: var(--fs-aux); color: var(--muted); line-height: 1.35; }
+.rd__note { font-size: var(--fs-aux); color: var(--muted); line-height: var(--lh-snug); }
 .rd__note:empty { display: none; }
 
 /* ---------- 책상 위의 것을 누를 수 있게 ---------- */
@@ -36,9 +36,13 @@ button.desk__item {
               box-shadow var(--dur-tap) var(--ease),
               background-color var(--dur-tap) var(--ease);
 }
-button.desk__item:hover:not(:disabled) {
-  transform: translateY(var(--rise));
-  box-shadow: var(--lift-2), var(--gloss);
+
+/* 손가락 화면에서는 hover 가 탭에 붙어 그대로 남는다 — 눌렀던 것이 계속 골라진 것처럼 보인다 */
+@media (hover: hover) and (pointer: fine) {
+  button.desk__item:hover:not(:disabled) {
+    transform: translateY(var(--rise));
+    box-shadow: var(--lift-2), var(--gloss);
+  }
 }
 button.desk__item:active:not(:disabled) { transform: scale(.98); }
 

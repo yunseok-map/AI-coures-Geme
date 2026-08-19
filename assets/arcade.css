@@ -157,7 +157,7 @@
   border: var(--border-w) solid var(--ink-20);
   background: var(--card);
   box-shadow: var(--lift-2);
-  font-size: var(--fs-aux); line-height: 1.3;
+  font-size: var(--fs-aux); line-height: var(--lh-snug);
   text-align: left;
 }
 .ax__card__label { min-width: 0; }
