@@ -164,7 +164,7 @@ async function openGame(id) {
       const newTerms = state.record(id, result);
       renderTopbar(topbarHost, parse());   // 진행도·랭크를 즉시 반영
       refreshBook();                       // 떠 있는 책이 퍼덕인다
-      refreshBackdrop();                   // 뒤 책더미에 이번에 딴 용어가 얹힌다
+      refreshBackdrop(id);                 // 뒤 책더미와 전표에 이번 결과가 반영된다
 
       const next = nextOf(id, (x) => state.isCleared(x));
       const allRequiredDone = manifest

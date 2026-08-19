@@ -321,38 +321,58 @@ export function refresh() {
  * 날갯짓. 새가 뜨는 것처럼 **내려칠 때 빠르고, 올릴 때 느리다** —
  * 위아래를 같은 속도로 움직이면 날개가 아니라 시계추로 보인다.
  * 책도 날개에 맞춰 같이 뜬다(내려칠 때 올라가고, 올릴 때 가라앉는다).
+ *
+ * **책과 날개를 한 타임라인에 넣는다.** 전에는 날개는 타임라인, 책은 따로 도는
+ * yoyo 트윈이었다. 길이는 둘 다 1.56초로 같아서 처음에는 맞아 보이지만,
+ * 시계가 둘이면 어긋날 자리가 생긴다 — 새 용어를 따서 cheer 가 날개를 가로챈
+ * 다음부터는 **영영 어긋난 채로 돈다.** 책이 뜨는데 날개는 이미 올리고 있는
+ * 그림이 되어서, 뜨는 것처럼 안 보이고 그냥 흔들리는 것처럼 보인다.
+ * 시계 하나에 둘을 얹으면 어긋날 방법이 없다.
  */
+const FLAP_DOWN = 0.22;   // 내려치기
+const FLAP_UP = 0.5;      // 올리기
+const FLAP_SETTLE = 0.34; // 제자리
+const FLAP_REST = 0.5;    // 한 박자 쉼
+
 function idle() {
   if (isReduced() || !host) return;
   if (flap) flap.kill();
   const wings = host.querySelectorAll('.bk__wing');
   const book = host.querySelector('.bk__book');
 
+  const upAt = FLAP_DOWN;
+  const settleAt = upAt + FLAP_UP;
+
   flap = gsap.timeline({ repeat: -1 })
-    // 내려친다 — 짧고 세게
+    // 내려친다 — 짧고 세게. 그 사이에 책이 뜬다.
     .to(wings, {
       rotate: (i) => (i ? 26 : -26), scaleY: 0.62,
-      duration: 0.22, ease: 'power3.in'
-    })
-    // 올린다 — 길게 되돌아온다
+      duration: FLAP_DOWN, ease: 'power3.in'
+    }, 0)
+    .to(book, { y: -6, duration: FLAP_DOWN, ease: 'power2.out' }, 0)
+    // 올린다 — 길게 되돌아온다. 그 사이에 책이 가라앉는다.
     .to(wings, {
       rotate: (i) => (i ? -10 : 10), scaleY: 1.04,
-      duration: 0.5, ease: 'power2.out'
-    })
-    .to(wings, { rotate: 0, scaleY: 1, duration: 0.34, ease: 'sine.inOut' })
-    .to({}, { duration: 0.5 });   // 한 박자 쉰다 — 계속 퍼덕이면 눈이 아프다
-
-  // 책은 날갯짓 한 주기에 한 번 뜬다
-  gsap.to(book, {
-    y: -6, duration: 0.78, ease: 'sine.inOut', yoyo: true, repeat: -1
-  });
+      duration: FLAP_UP, ease: 'power2.out'
+    }, upAt)
+    .to(book, { y: 0, duration: FLAP_UP + FLAP_SETTLE, ease: 'sine.inOut' }, upAt)
+    .to(wings, { rotate: 0, scaleY: 1, duration: FLAP_SETTLE, ease: 'sine.inOut' }, settleAt)
+    // 한 박자 쉰다 — 계속 퍼덕이면 눈이 아프다
+    .to({}, { duration: FLAP_REST }, settleAt + FLAP_SETTLE);
 }
 
-/** 새 용어가 들어왔다 — 한 번 크게 퍼덕이고 책이 튄다 */
+/**
+ * 새 용어가 들어왔다 — 한 번 크게 퍼덕이고 책이 튄다.
+ *
+ * **평소 날갯짓을 세우고 시작해서, 끝나면 처음부터 다시 돌린다.** 안 세우면
+ * 두 타임라인이 같은 날개를 동시에 잡고, 크게 퍼덕인 뒤에도 평소 날갯짓은
+ * 제 시계대로 흘러가 있어서 **그 뒤로 계속 책과 어긋난 채** 돈다.
+ */
 function cheer() {
   if (isReduced()) { host.classList.remove('bk--cheer'); return; }
   const wings = host.querySelectorAll('.bk__wing');
-  gsap.timeline()
+  if (flap) flap.pause();
+  gsap.timeline({ onComplete: () => { if (flap) flap.restart(); } })
     .to(wings, { scaleY: 0.42, rotate: (i) => (i ? 42 : -42), duration: 0.1, ease: 'power3.in' })
     .to(wings, { scaleY: 1.1, rotate: (i) => (i ? -18 : 18), duration: 0.22, ease: 'power2.out' })
     .to(wings, { scaleY: 1, rotate: 0, duration: 0.3, ease: 'settle' })

@@ -530,10 +530,12 @@ input { caret-color: var(--mark); }
   background: var(--ink-12); border-radius: var(--radius-pill);
   overflow: hidden;
 }
+/* 폭은 coursemap.js 가 그릴 때 한 번만 박는다. 그래서 여기 있던 폭 전환 줄은
+   한 번도 돈 적이 없는 죽은 줄이었다 — 지웠다. 챕터 막대는 여섯 개가 동시에
+   나오므로 원래 애니메이션을 안 거는 자리다. */
 .chapter__meter i {
   display: block; height: 100%;
   background: var(--mark); border-radius: var(--radius-pill);
-  transition: width var(--dur-move) var(--ease-out);
 }
 
 .chapter__head--done .chapter__count { color: var(--pass); }
@@ -793,13 +795,15 @@ input { caret-color: var(--mark); }
   initial-value: 0;
 }
 
-/* 이번에 무엇을 했는지 — 용어를 "행동의 이름"으로 알려 주는 부분 */
+/* 이번에 무엇을 했는지 — 용어를 "행동의 이름"으로 알려 주는 부분.
+   옆구리 띠를 위 괘선으로 바꿨다(.intro 주석과 같은 이유).
+   바탕이 옅게 깔려 있으므로 이 상자는 띠가 없어도 본문과 갈린다. */
 .named {
-  border-left: 3px solid var(--mark);
+  border-top: 2px solid var(--mark);
   background: var(--mark-08);
   padding: var(--sp-3);
   margin-bottom: var(--sp-3);
-  border-radius: 0 var(--radius) var(--radius) 0;
+  border-radius: 0;
 }
 .named__key { font-size: var(--fs-aux); color: var(--mark); font-weight: 700; }
 .named__body { margin-top: 2px; }
@@ -875,11 +879,14 @@ input { caret-color: var(--mark); }
 .term-chip--sent { border-style: dashed; }
 
 /* 칩을 누르면 그 자리에서 뜻이 펼쳐진다. 화면을 떠나지 않는 게 요점이다. */
+/* 칩 바로 아래에 펼쳐지는 뜻풀이. 옆구리 띠 대신 **가는 윗선**으로 칩과 나눈다 —
+   들여쓰기만으로도 이 글이 위 칩에 딸린 것이라는 게 읽힌다. */
 .term-note {
   flex-basis: 100%;
   margin: 0 0 var(--sp-1);
+  padding: var(--sp-2) 0 0 var(--sp-3);
   font-size: var(--fs-aux); color: var(--muted);
-  border-left: 3px solid var(--reward-12); padding-left: var(--sp-3);
+  border-top: 1px solid var(--ink-12);
 }
 .term-note[hidden] { display: none; }
 
