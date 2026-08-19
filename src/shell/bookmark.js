@@ -329,10 +329,16 @@ export function refresh() {
  * 그림이 되어서, 뜨는 것처럼 안 보이고 그냥 흔들리는 것처럼 보인다.
  * 시계 하나에 둘을 얹으면 어긋날 방법이 없다.
  */
-const FLAP_DOWN = 0.22;   // 내려치기
-const FLAP_UP = 0.5;      // 올리기
-const FLAP_SETTLE = 0.34; // 제자리
-const FLAP_REST = 0.5;    // 한 박자 쉼
+/* 평소 날갯짓은 **퍼덕이는 게 아니라 숨 쉬는 것**이다.
+   전에는 0.22초에 26도를 내려치고(power3.in) 0.5초를 죽은 듯이 쉬었다. 화면 구석에서
+   1.56초마다 크게 한 번 치고 멈추는 물건이 되어, 읽고 있는 글에서 눈이 계속 끌려갔다.
+   각도를 절반 아래로 줄이고, 꺾이는 가속(power3)을 전부 sine 으로 바꾸고, 죽은 쉼을
+   없앴다. 한 번 도는 데 걸리는 시간은 오히려 늘었다(1.56초 -> 2.14초) — 크게 움직이는
+   것보다 **천천히 움직이는 것**이 살아 있는 것으로 읽힌다. */
+const FLAP_DOWN = 0.5;    // 내려치기
+const FLAP_UP = 0.72;     // 올리기
+const FLAP_SETTLE = 0.6;  // 제자리
+const FLAP_REST = 0.32;   // 숨 고르기
 
 function idle() {
   if (isReduced() || !host) return;
@@ -344,20 +350,20 @@ function idle() {
   const settleAt = upAt + FLAP_UP;
 
   flap = gsap.timeline({ repeat: -1 })
-    // 내려친다 — 짧고 세게. 그 사이에 책이 뜬다.
+    // 내려간다 — 그 사이에 책이 살짝 뜬다
     .to(wings, {
-      rotate: (i) => (i ? 26 : -26), scaleY: 0.62,
-      duration: FLAP_DOWN, ease: 'power3.in'
+      rotate: (i) => (i ? 11 : -11), scaleY: 0.9,
+      duration: FLAP_DOWN, ease: 'sine.inOut'
     }, 0)
-    .to(book, { y: -6, duration: FLAP_DOWN, ease: 'power2.out' }, 0)
-    // 올린다 — 길게 되돌아온다. 그 사이에 책이 가라앉는다.
+    .to(book, { y: -3, duration: FLAP_DOWN, ease: 'sine.inOut' }, 0)
+    // 올라온다 — 조금 지나쳤다가 돌아온다. 그 사이에 책이 가라앉는다.
     .to(wings, {
-      rotate: (i) => (i ? -10 : 10), scaleY: 1.04,
-      duration: FLAP_UP, ease: 'power2.out'
+      rotate: (i) => (i ? -4 : 4), scaleY: 1.02,
+      duration: FLAP_UP, ease: 'sine.inOut'
     }, upAt)
     .to(book, { y: 0, duration: FLAP_UP + FLAP_SETTLE, ease: 'sine.inOut' }, upAt)
     .to(wings, { rotate: 0, scaleY: 1, duration: FLAP_SETTLE, ease: 'sine.inOut' }, settleAt)
-    // 한 박자 쉰다 — 계속 퍼덕이면 눈이 아프다
+    // 아주 짧게 고른다. 길게 세우면 다시 치고-멈추고-치고 가 된다.
     .to({}, { duration: FLAP_REST }, settleAt + FLAP_SETTLE);
 }
 
@@ -373,11 +379,13 @@ function cheer() {
   const wings = host.querySelectorAll('.bk__wing');
   if (flap) flap.pause();
   gsap.timeline({ onComplete: () => { if (flap) flap.restart(); } })
-    .to(wings, { scaleY: 0.42, rotate: (i) => (i ? 42 : -42), duration: 0.1, ease: 'power3.in' })
-    .to(wings, { scaleY: 1.1, rotate: (i) => (i ? -18 : 18), duration: 0.22, ease: 'power2.out' })
-    .to(wings, { scaleY: 1, rotate: 0, duration: 0.3, ease: 'settle' })
+    // 평소보다 세 배쯤 크게 한 번. 평소가 조용해졌으므로 이만해도 충분히 크다 —
+    // 예전 값(42도·0.1초)은 이 크기의 물건에서 각도가 튀어 보였다.
+    .to(wings, { scaleY: 0.55, rotate: (i) => (i ? 32 : -32), duration: 0.14, ease: 'power2.in' })
+    .to(wings, { scaleY: 1.08, rotate: (i) => (i ? -14 : 14), duration: 0.26, ease: 'power2.out' })
+    .to(wings, { scaleY: 1, rotate: 0, duration: 0.34, ease: 'settle' })
     .fromTo(host.querySelector('.bk__book'),
-      { scale: 1 }, { scale: 1.18, duration: 0.16, yoyo: true, repeat: 1, ease: 'power2.out' }, 0);
+      { scale: 1 }, { scale: 1.14, duration: 0.18, yoyo: true, repeat: 1, ease: 'power2.out' }, 0);
   host.classList.add('bk--cheer');
   setTimeout(() => host && host.classList.remove('bk--cheer'), 1200);
 }
