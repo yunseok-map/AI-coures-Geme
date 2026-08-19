@@ -121,8 +121,8 @@
   margin-right: var(--sp-2);
   padding: 1px var(--sp-2);
   border-radius: var(--radius-pill);
-  background: var(--accent-12);
-  color: var(--accent-deep);
+  background: var(--partial-10);
+  color: var(--partial-deep);
   font-size: var(--fs-aux);
   font-weight: 700;
   white-space: nowrap;
@@ -132,7 +132,7 @@
 /* 같은 요소에 이미 `.qc__card` 규칙이 걸려 있다. 클래스를 두 번 써서 이긴다 —
    파일을 거는 순서가 어떻게 되든 결과가 같아야 한다. */
 .qcl__card--back.qcl__card--back {
-  border-left: var(--sp-1) solid var(--accent);
+  border-left: var(--sp-1) solid var(--partial);
 }
 
 @media (max-width: 380px) {

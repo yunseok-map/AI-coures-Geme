@@ -85,7 +85,7 @@
 .bk--empty .bk__spine { background: var(--ink-45); border-right-color: var(--ink); }
 
 /* 새로 땄을 때 등에 불이 들어온다 */
-.bk--cheer .bk__spine { background: var(--accent); border-right-color: var(--accent-deep); }
+.bk--cheer .bk__spine { background: var(--reward); border-right-color: var(--reward-deep); }
 
 .bk--open .bk__book { background: var(--mark-deep); }
 

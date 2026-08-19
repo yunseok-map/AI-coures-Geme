@@ -78,7 +78,7 @@
 }
 .collect__top { display: flex; align-items: baseline; gap: var(--sp-2); flex-wrap: wrap; }
 .collect__n { font-size: var(--fs-title); }
-.collect__n b { color: var(--accent-deep); font-size: var(--fs-display); line-height: var(--lh-flat); }
+.collect__n b { color: var(--reward-deep); font-size: var(--fs-display); line-height: var(--lh-flat); }
 .collect__cap { font-size: var(--fs-aux); color: var(--muted); }
 .collect__bar {
   height: 8px; margin-top: var(--sp-2);
@@ -86,7 +86,7 @@
 }
 .collect__fill {
   height: 100%; width: 0;
-  background: var(--accent); border-radius: var(--radius-pill);
+  background: var(--reward); border-radius: var(--radius-pill);
 }
 /* 하나라도 모았으면 막대가 눈에 띄어야 한다. 클래스는 motion.js 의 fillBar 가 붙인다. */
 .collect__fill.bar--some { min-width: 6px; }
@@ -110,17 +110,17 @@
   height: 4px; margin-top: 6px;
   background: var(--ink-06); border-radius: var(--radius-pill); overflow: hidden;
 }
-.grp__fill { height: 100%; background: var(--accent); border-radius: var(--radius-pill); }
+.grp__fill { height: 100%; background: var(--reward); border-radius: var(--radius-pill); }
 .grp__note { margin-top: 4px; font-size: var(--fs-aux); color: var(--muted); font-weight: 400; }
-.codex__groupname--done .grp__n { color: var(--accent-deep); font-weight: 700; }
-.codex__groupname--done .grp__note { color: var(--accent-deep); font-weight: 700; }
+.codex__groupname--done .grp__n { color: var(--reward-deep); font-weight: 700; }
+.codex__groupname--done .grp__note { color: var(--reward-deep); font-weight: 700; }
 
 /* 카드 상태. 왼쪽 띠 하나로 구분한다 — 목록에서 훑을 때 이게 가장 빨리 읽힌다. */
-.term--earned { border-left: var(--lip) solid var(--accent); }
+.term--earned { border-left: var(--lip) solid var(--reward); }
 .term--read   { border-left: var(--lip) solid var(--ink-20); }
 .term--new    { border-left: var(--lip) solid transparent; }
 
-.term__got  { margin-left: auto; font-size: var(--fs-aux); color: var(--accent-deep); font-weight: 700; }
+.term__got  { margin-left: auto; font-size: var(--fs-aux); color: var(--reward-deep); font-weight: 700; }
 .term__read { margin-left: auto; font-size: var(--fs-aux); color: var(--muted); }
 
 /* 못 딴 용어에 "몇 번 판에서 딸 수 있다" — 미획득 칸을 보고 뭘 할지 알게 한다 */

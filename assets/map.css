@@ -45,7 +45,7 @@
   border-radius: var(--radius-pill);
   transition: width var(--dur-move) var(--ease-out);
 }
-.mp__gauge.is-low i { background: var(--accent); }
+.mp__gauge.is-low i { background: var(--partial); }
 
 /* ---------- 지금 의뢰 ---------- */
 /* 지도 위에 얹힌 쪽지처럼. 모서리 하나만 접어 둔다 */

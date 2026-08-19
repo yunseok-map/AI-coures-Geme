@@ -274,7 +274,14 @@ input { caret-color: var(--mark); }
    화면에서 제일 먼저 읽히는 한 줄이다. 그래서 본문보다 크지도 작지도 않게 두고,
    대신 왼쪽에 네모 하나를 찍어 **여기부터 보라**고만 한다.
    두 줄이 되면 이 줄의 뜻이 없어진다 — 그때는 글을 줄여야 한다. */
+/* **늘 떠 있다.** CLAUDE.md 에 그렇게 적어 두고 실제로는 스크롤하면 사라졌다 —
+   판이 길어지는 순간(타임라인·배선·서고) 조작하는 내내 지시가 화면 밖에 있었다.
+   지시와 작업판을 따로 놓으면 사람이 머릿속에서 둘을 이어 붙여야 하고, 그 품이
+   배우는 데 쓸 몫을 먹는다(교수설계에서 말하는 분산된 주의). 상단바 바로 밑에 붙인다.
+   빈 문자열을 넣으면 todo() 가 hidden 을 걸어서 빈 띠가 남지 않는다 —
+   실시간 판이 흐르기 시작하면 그렇게 지운다. */
 .todo {
+  position: sticky; top: var(--shell-top); z-index: 10;
   display: flex; align-items: baseline; gap: var(--sp-2);
   margin-top: var(--sp-3);
   padding: var(--sp-2) var(--sp-3);
@@ -378,13 +385,13 @@ input { caret-color: var(--mark); }
   padding: var(--sp-4);
   background: var(--card);
   border: 1px solid var(--hair);
-  border-left: 4px solid var(--accent);
+  border-left: 4px solid var(--mark);
   border-radius: var(--radius);
   box-shadow: var(--lift-1);
 }
 .intro__cap {
   font-family: var(--font-mono); font-size: var(--fs-mono);
-  color: var(--accent-deep); font-weight: 700;
+  color: var(--mark-deep); font-weight: 700;
   letter-spacing: .02em;
   margin-bottom: var(--sp-2);
 }
@@ -397,7 +404,7 @@ input { caret-color: var(--mark); }
   content: "";
   position: absolute; left: calc(var(--sp-4) * -1);
   top: .55em; width: 7px; height: 7px;
-  background: var(--accent);
+  background: var(--mark);
   border-radius: 50%;
 }
 .intro__ok { margin-top: var(--sp-1); }
@@ -675,9 +682,16 @@ input { caret-color: var(--mark); }
   margin: 0 auto;
   padding: var(--sp-4) var(--sp-3) var(--sp-5);
 }
+/* 판정이 찍히는 자리. 이 게임에서 유일하게 크게 말해도 되는 순간이라
+   패널 끝까지 띠로 빼서 **여기서 한 판이 끝났다**고 알린다.
+   나머지는 조용히 둔다 — 화면에서 소리치는 자리가 둘이면 둘 다 안 들린다.
+   음수 여백은 .debrief__inner 의 안쪽 여백(sp-4 sp-3)을 되돌리는 값이다. */
 .debrief__head {
   display: flex; align-items: center; gap: var(--sp-4);
-  margin-bottom: var(--sp-4);
+  margin: calc(var(--sp-4) * -1) calc(var(--sp-3) * -1) var(--sp-4);
+  padding: var(--sp-4) var(--sp-3);
+  background: var(--surface-well);
+  border-bottom: 2px solid var(--ink);
 }
 .debrief__side { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-2); }
 .debrief__score {
@@ -792,9 +806,9 @@ input { caret-color: var(--mark); }
 .term-chip__mark { font-weight: 800; }
 /* 새로 딴 것만 보상색. 재도전에서 매번 축하하면 값이 떨어진다. */
 .term-chip--new {
-  border: var(--border-w) solid var(--accent);
-  color: var(--accent-deep);
-  background: var(--accent-12);
+  border: var(--border-w) solid var(--reward);
+  color: var(--reward-deep);
+  background: var(--reward-12);
   font-weight: 700;
 }
 .term-chip--had {
@@ -810,7 +824,7 @@ input { caret-color: var(--mark); }
   flex-basis: 100%;
   margin: 0 0 var(--sp-1);
   font-size: var(--fs-aux); color: var(--muted);
-  border-left: 3px solid var(--accent-12); padding-left: var(--sp-3);
+  border-left: 3px solid var(--reward-12); padding-left: var(--sp-3);
 }
 .term-note[hidden] { display: none; }
 
@@ -822,7 +836,7 @@ input { caret-color: var(--mark); }
   padding: var(--sp-1) var(--sp-3);
   font-size: var(--fs-aux); font-weight: 700;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  color: var(--on-mark); background: var(--accent);
+  color: var(--on-mark); background: var(--reward);
   border-radius: var(--radius-pill);
   box-shadow: var(--lift-2);
 }
@@ -893,7 +907,7 @@ input { caret-color: var(--mark); }
   display: block; height: 100%; width: 0;
   background: var(--ink-20); border-radius: var(--radius-pill);
 }
-.strip__fill--done { background: var(--accent); }
+.strip__fill--done { background: var(--reward); }
 .strip__fill.bar--some { min-width: 4px; }
 .strip__n {
   flex: 0 0 auto;

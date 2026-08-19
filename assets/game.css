@@ -44,7 +44,7 @@
 .hud__tag {
   flex: none;
   font-size: var(--fs-aux); font-weight: 700;
-  color: var(--on-mark); background: var(--accent);
+  color: var(--on-mark); background: var(--reward);
   border-radius: var(--radius-pill);
   padding: 3px var(--sp-2);
   animation: tagPop 340ms var(--ease-back) both;

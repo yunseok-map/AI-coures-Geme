@@ -105,7 +105,7 @@
 }
 /* 이 표시가 스킬과 훅을 가른다. 흐릿하면 이 판은 찍기가 된다. */
 .tl__who.is-ai    { color: var(--mark-deep); background: var(--mark-08); }
-.tl__who.is-human { color: var(--accent-deep); background: var(--accent-12); }
+.tl__who.is-human { color: var(--ink); background: var(--ink-12); }
 
 .tl__marks { grid-area: marks; display: flex; flex-wrap: wrap; gap: 4px; }
 .tl__marks:empty { display: none; }
@@ -146,7 +146,7 @@
 .tl__mark--every  { border-style: solid; border-color: var(--ink); color: var(--ink); }
 .tl__mark--match  { border-style: dashed; border-color: var(--mark); color: var(--mark-deep); }
 .tl__mark--lane   { border-style: solid; border-color: var(--mark); color: var(--mark-deep); }
-.tl__mark--manual { border-style: solid; border-color: var(--accent); color: var(--accent-deep); }
+.tl__mark--manual { border-style: solid; border-color: var(--ink); color: var(--ink); }
 /* 직접 걸어 둔 자리 — 나머지는 그 결과로 따라 찍힌 것이다 */
 .tl__mark.is-anchor { box-shadow: 0 0 0 3px var(--mark-16); }
 
@@ -154,7 +154,7 @@
 .tl__mark--every.is-fired  { background: var(--ink); color: var(--on-mark); }
 .tl__mark--match.is-fired  { background: var(--mark); color: var(--on-mark); border-style: solid; }
 .tl__mark--lane.is-fired   { background: var(--mark); color: var(--on-mark); }
-.tl__mark--manual.is-fired { background: var(--accent); color: var(--on-mark); }
+.tl__mark--manual.is-fired { background: var(--ink); color: var(--on-mark); }
 @keyframes tlFire {
   0%   { transform: scale(1); }
   40%  { transform: scale(1.18); }
@@ -288,10 +288,10 @@
   box-shadow: var(--lift-3);
 }
 
-.tl__key { border-color: var(--accent); }
+.tl__key { border-color: var(--ink); }
 /* 재생 중에만 살아난다. 그 전에는 있는 줄만 알고 못 쓴다 — 그게 커맨드다. */
 .tl__key--live {
-  background: var(--accent);
+  background: var(--ink);
   color: var(--on-mark);
   box-shadow: var(--gloss), var(--lift-2);
   animation: tlLive 1.4s var(--ease) infinite;
@@ -299,7 +299,7 @@
 .tl__key--live .tl__key__note { color: var(--on-mark); opacity: .8; }
 @keyframes tlLive {
   0%, 100% { box-shadow: var(--gloss), var(--lift-2); }
-  50%      { box-shadow: var(--gloss), 0 0 0 6px var(--accent-12); }
+  50%      { box-shadow: var(--gloss), 0 0 0 6px var(--ink-12); }
 }
 
 @media (prefers-reduced-motion: reduce) {

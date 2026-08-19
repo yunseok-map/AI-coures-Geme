@@ -59,7 +59,7 @@
 
 /* 연속 성공 — 보상 신호는 accent 로만. 흔해지면 의미가 없다 */
 .ax__combo {
-  color: var(--on-mark); background: var(--accent);
+  color: var(--on-mark); background: var(--reward);
   font-weight: 700; letter-spacing: .02em;
   padding: 2px var(--sp-2);
   border-radius: var(--radius-pill);

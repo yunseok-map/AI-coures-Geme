@@ -198,7 +198,7 @@
   box-shadow: var(--lift-1);
   min-width: 0;
 }
-.ij__doc--mine { border-left-color: var(--accent); }
+.ij__doc--mine { border-left-color: var(--ink); }
 
 .ij__doc__name {
   font-size: var(--fs-label);

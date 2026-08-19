@@ -122,14 +122,14 @@
   background: var(--surface-well);
 }
 .bt__verdict.is-right { border-left-color: var(--pass); background: var(--pass-10); }
-.bt__verdict.is-wrong { border-left-color: var(--accent); background: var(--accent-12); }
+.bt__verdict.is-wrong { border-left-color: var(--partial); background: var(--partial-10); }
 .bt__verdict__head {
   font-size: var(--fs-label);
   font-weight: 700;
   margin-bottom: var(--sp-2);
 }
 .bt__verdict.is-right .bt__verdict__head { color: var(--pass-deep); }
-.bt__verdict.is-wrong .bt__verdict__head { color: var(--accent-deep); }
+.bt__verdict.is-wrong .bt__verdict__head { color: var(--partial-deep); }
 .bt__verdict__body {
   margin: 0;
   font-size: var(--fs-body);

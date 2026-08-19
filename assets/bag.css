@@ -49,8 +49,8 @@ button.desk__item:active:not(:disabled) { transform: scale(.98); }
 /* 고른 것 — 접기·내리기가 무엇에 걸리는지가 한눈에 보여야 한다.
    테두리만 바꾸면 두세 개를 고른 상태에서 무엇이 골라졌는지 안 읽힌다. */
 .desk__item.desk__item--on {
-  background: var(--accent);
-  outline: var(--border-w) solid var(--accent-deep);
+  background: var(--ink);
+  outline: var(--border-w) solid var(--ink);
   outline-offset: 2px;
 }
 
