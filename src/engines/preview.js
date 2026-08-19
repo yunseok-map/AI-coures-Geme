@@ -183,7 +183,7 @@ export function mount(root, game, ctx) {
     step.set(!active.size ? '아래에서 켤 블록을 누른다' : full ? send : `${send}. 더 켜도 된다`,
       { done: full });
 
-    say(view.say || '결과가 바뀌었습니다.');
+    say(view.say || '결과가 바뀌었다.');
   }
 
   async function send() {

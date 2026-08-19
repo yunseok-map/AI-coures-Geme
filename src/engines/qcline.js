@@ -211,7 +211,7 @@ export function mount(root, game, ctx) {
 
     bar.node.replaceWith(judgeBar.node);
     hint.textContent = d.runHint || '창구에 들어온 서류만 판단할 수 있다. 지나가면 그대로 통과된다';
-    say('시작했습니다. 창구에 들어온 서류를 판단하세요.');
+    say('시작했다. 창구에 들어온 서류를 판단한다.');
     startRound();
   }
 
@@ -242,9 +242,9 @@ export function mount(root, game, ctx) {
 
     loop = createLoop(tick, {
       onPause: () => showVeil(
-        '잠깐 멈췄습니다',
-        '다른 창이나 탭으로 가면 브라우저가 화면을 멈춥니다. 고장이 아닙니다. ' +
-        '멈춘 사이에는 아무 일도 진행되지 않았습니다.',
+        '잠깐 멈췄다',
+        '다른 창이나 탭으로 가면 브라우저가 화면을 멈춘다. 고장이 아니다. ' +
+        '멈춘 사이에는 아무 일도 진행되지 않았다.',
         '이어서 하기', () => { hideVeil(); loop && loop.resume(); }),
       onResume: hideVeil
     });

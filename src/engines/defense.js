@@ -238,7 +238,7 @@ export function mount(root, game, ctx) {
       if (armed.left <= 0) armed = null;
     } else {
       // 아무것도 안 집고 빈 자리를 누르면 무엇을 해야 하는지 알려 준다
-      say('아래에서 장치를 먼저 고르세요.');
+      say('아래에서 장치를 먼저 고른다.');
       pulse(tray, 1);
       return;
     }
@@ -307,13 +307,13 @@ export function mount(root, game, ctx) {
 
     phase = 'run';
     drawHud();
-    say('돌리는 동안에는 장치를 바꿀 수 없습니다.');
+    say('돌리는 동안에는 장치를 바꿀 수 없다.');
 
     loop = createLoop(tick, {
       onPause: () => showVeil(
-        '잠깐 멈췄습니다',
-        '다른 창이나 탭으로 가면 브라우저가 화면을 멈춥니다. 고장이 아닙니다. ' +
-        '멈춘 사이에는 아무 일도 진행되지 않았습니다.',
+        '잠깐 멈췄다',
+        '다른 창이나 탭으로 가면 브라우저가 화면을 멈춘다. 고장이 아니다. ' +
+        '멈춘 사이에는 아무 일도 진행되지 않았다.',
         '이어서 하기', () => { hideVeil(); loop && loop.resume(); }),
       onResume: hideVeil
     });
@@ -422,12 +422,12 @@ export function mount(root, game, ctx) {
         flash(gateSlot.node, 'def__slot--fire');
         if (!isReduced()) burst(gateSlot.node, 8);
       }
-      say(`${f.label} — 막혔습니다.`);
+      say(`${f.label} — 막혔다.`);
     } else if (lane.result === 'over') {
       sfx.play('wrong');
       pop(where, '정상 업무였다', 'over');
       if (gateSlot) flash(gateSlot.node, 'def__slot--over');
-      say(`${f.label} — 정상 업무인데 막혔습니다.`);
+      say(`${f.label} — 정상 업무인데 막혔다.`);
     } else if (lane.result === 'leak') {
       tally.leak++;
       sfx.play('leak');
@@ -437,7 +437,7 @@ export function mount(root, game, ctx) {
       // 깜빡임은 사라지지만 자국은 남는다 — 사고가 쌓이는 것이 보여야 한다
       scarLine(foot, tally.leak, '사고');
       if (!isReduced()) shake(field);
-      say(`${f.label} — 막지 못했습니다.`);
+      say(`${f.label} — 막지 못했다.`);
     } else {
       tally.done++;
       sfx.play('place');
@@ -509,8 +509,8 @@ export function mount(root, game, ctx) {
     for (const s of slots) if (s.bar) s.bar.style.width = '0%';
     drawHud();
     say(stranded
-      ? '업무 시간이 끝났습니다. 라인에 남은 일감은 오늘 못 나갔습니다.'
-      : '업무 시간이 끝났습니다.');
+      ? '업무 시간이 끝났다. 라인에 남은 일감은 오늘 못 나갔다.'
+      : '업무 시간이 끝났다.');
 
     const setup = {
       placements: slots.filter(s => s.gate).map(s => ({ slot: s.i, gateId: s.gate.id }))

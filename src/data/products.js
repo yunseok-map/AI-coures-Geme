@@ -64,7 +64,7 @@ export const products = [
     id: 'artifacts',
     name: '아티팩트 (Artifacts)',
     kind: 'product',
-    oneLine: '대화 옆에 따로 열리는 결과물 창. 대화가 아니라 산출물이다',
+    oneLine: '대화 옆에 따로 열리는 창. 대화가 아니라 결과물이다',
     useWhen: '결과물을 문서로 뽑아서 계속 고쳐 나가고 싶을 때',
     surfaces: ['웹', '모바일 앱'],
     myth: '"파일 첨부와 같은 것?" — 반대다. 첨부는 내가 넣는 입력, 아티팩트는 AI가 만드는 출력',
@@ -78,7 +78,7 @@ export const products = [
     oneLine: '내 컴퓨터의 파일을 직접 읽고 고치고 명령을 실행하는 에이전틱 코딩 도구',
     useWhen: '내 PC의 파일 수백 개를 실제로 건드려야 할 때',
     surfaces: ['터미널', 'VS Code', 'JetBrains', '데스크톱 앱', '웹'],
-    myth: '"이름에 Code가 있으니 개발자 전용?" — 공식 정의는 지금도 코딩 도구가 맞다. 다만 파일·명령을 다루는 도구라 비코딩 업무에도 쓰이기 시작했고, 그래서 비개발자용 Cowork가 따로 나왔다',
+    myth: '"이름에 Code가 있으니 개발자 전용?" 공식 정의는 지금도 코딩 도구가 맞다. 다만 파일과 명령을 다루는 도구라 코딩 아닌 업무에도 쓰이기 시작했고, 그래서 개발자가 아닌 사람을 위한 Cowork가 따로 나왔다',
     official: 'https://code.claude.com/docs/en/overview',
     checkedAt: CHECKED_AT
   },
@@ -86,7 +86,7 @@ export const products = [
     id: 'cowork',
     name: 'Cowork',
     kind: 'product',
-    oneLine: '목표를 주면 내 파일과 도구를 넘나들며 일을 끝내는 비개발자용 업무 도구',
+    oneLine: '목표를 주면 내 파일과 도구를 넘나들며 일을 끝낸다. 개발자가 아닌 사람을 위한 업무 도구다',
     useWhen: '코딩이 아닌 사무 업무를 통째로 맡기고 싶을 때',
     surfaces: ['데스크톱', '웹', '모바일(베타)'],
     myth: '"Claude Code의 쉬운 버전?" — 대상과 용도가 다른 별개 제품이다. 코드베이스가 아니라 업무 파일을 다룬다',
@@ -97,10 +97,10 @@ export const products = [
     id: 'codex',
     name: 'Codex (OpenAI)',
     kind: 'product',
-    oneLine: 'ChatGPT·CLI·IDE·클라우드에서 도는 OpenAI의 에이전트 제품',
+    oneLine: 'ChatGPT 앱·웹, 터미널, IDE, 클라우드에서 같은 에이전트가 도는 OpenAI의 코딩 도구',
     useWhen: 'OpenAI 쪽의 CLI 에이전트 자리',
     surfaces: ['ChatGPT 앱', '웹', 'CLI', 'IDE 확장', '클라우드'],
-    myth: '"2021년 코드 자동완성 모델?" — 다른 물건이다. 2021년 Codex는 모델이었고 2023년 3월 폐기됐다. 2025년 5월 같은 이름으로 완전히 다른 에이전트 제품이 나왔다',
+    myth: '"Codex는 모델 이름 아닌가?" 한 이름이 제품에도 모델 갈래에도 붙어 있다. 사람이 설치해서 쓰는 쪽이 제품이고, 모델은 그 안에서 돈다',
     official: 'https://learn.chatgpt.com/docs/codex/cli',
     checkedAt: CHECKED_AT
   },
@@ -111,7 +111,7 @@ export const products = [
     oneLine: 'Gemini를 터미널로 바로 가져오는 오픈소스 AI 에이전트',
     useWhen: 'Google 쪽 생태계를 쓰거나 도구 내부를 직접 확인해야 할 때',
     surfaces: ['터미널'],
-    myth: '"오픈소스니까 사내에서 마음대로 써도 된다?" — 코드가 공개된 것과 회사 자료를 넣어도 되는 것은 별개다. 어느 CLI 에이전트든 사내 자료를 넣기 전 승인 절차를 확인해야 한다',
+    myth: '"오픈소스니까 사내에서 마음대로 써도 된다?" 코드가 공개된 것과 회사 자료를 넣어도 되는 것은 별개다. 어느 CLI 에이전트든 사내 자료를 넣기 전에 승인 절차부터 확인한다',
     official: 'https://google-gemini.github.io/gemini-cli/',
     checkedAt: CHECKED_AT
   },
@@ -144,7 +144,7 @@ export const toolLayer = [
     name: '커맨드',
     oneLine: '`/이름`을 쳐서 내가 직접 부르는 재사용 지시',
     key: '내가 부른다',
-    note: '공식 문구에서 "슬래시"가 빠졌다. 직접 만드는 커맨드는 스킬로 대체됐다(기존 파일은 계속 동작)'
+    note: '공식 문구에서 "슬래시"가 빠졌다. 직접 만드는 커맨드 자리는 스킬이 가져갔다(전에 만든 파일은 계속 돈다)'
   },
   {
     id: 'skill',

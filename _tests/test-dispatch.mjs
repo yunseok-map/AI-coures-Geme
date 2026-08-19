@@ -134,7 +134,7 @@ const BEST = [
   // 되돌아온 이유는 결과 화면의 사유 줄에 있다 (steps 가 아니라 faults 쪽)
   const whys = c.faults.map(f => f.why).join(' | ');
   check('벽에 부딪힌 이유를 창구 이름으로 말한다',
-    /CLI 에이전트가 아니면/.test(whys) && /Cowork 가 아니면/.test(whys), whys);
+    /CLI 에이전트가 아니면/.test(whys) && /Cowork가 아니면/.test(whys), whys);
 
   // 배경 일감만 채팅으로 — 되기는 되지만 시간을 흘린다
   const lazy = BEST.map(x => (item(x.itemId).bg === '규정집' ? to(x.itemId, 'chat') : x));

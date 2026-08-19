@@ -198,8 +198,8 @@ function node(g, isNow) {
   b.setAttribute('aria-label',
     `${g.no}번 ${g.title}. ${g.required ? '필수' : '심화'}. ${g.learn}. ` +
     (passed ? `완료, ${gradeLabel(result.grade)}`
-     : rejected ? '반려, 다시 하면 됩니다'
-     : g.ready ? '시작하려면 누르세요' : '아직 준비 중'));
+     : rejected ? '반려, 다시 하면 된다'
+     : g.ready ? '누르면 시작한다' : '아직 준비 중'));
 
   if (!g.ready) {
     b.disabled = true;

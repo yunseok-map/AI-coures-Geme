@@ -159,7 +159,7 @@ export function mount(root, game, ctx) {
 
     if (!armed) {
       armed = n.id;
-      say(`${eulReul(n.label)} 집었다. 다음에 올 상자를 누르세요.`);
+      say(`${eulReul(n.label)} 집었다. 다음에 올 상자를 누른다.`);
       paint();
       return;
     }
@@ -316,8 +316,8 @@ export function mount(root, game, ctx) {
     board.classList.toggle('wf__board--armed', !!armed);
 
     hint.textContent = armed
-      ? '다음에 올 상자를 누르세요. 같은 상자를 다시 누르면 놓습니다.'
-      : (d.wireHint || '상자를 누르고, 그 다음에 올 상자를 누르면 선이 이어집니다. 선을 누르면 끊깁니다.');
+      ? '다음에 올 상자를 누른다. 같은 상자를 다시 누르면 놓는다.'
+      : (d.wireHint || '상자를 누르고, 그 다음에 올 상자를 누르면 선이 이어진다. 선을 누르면 끊어진다.');
 
     const parts = [`이은 선 ${links.length}개`];
     if (sched.cycle.length) parts.push('돌고 도는 선이 있다');
@@ -408,7 +408,7 @@ export function mount(root, game, ctx) {
     paint();
 
     const sched = schedule(nodes, links);
-    say('이은 대로 일이 흐릅니다.');
+    say('이은 대로 일이 흐른다.');
     await playback(sched);
     await wait(200);
 

@@ -181,7 +181,7 @@ export function mount(root, game, ctx) {
     if (over) return;
     if (armed === ln.id) { armed = null; say(L.sayDrop || '놓았다.'); paint(); return; }
     armed = ln.id;
-    say(`${indexOf(ln.id)}${L.sayPick || '번 문장을 집었다. 걸 자리를 누르세요.'}`);
+    say(`${indexOf(ln.id)}${L.sayPick || '번 문장을 집었다. 걸 자리를 누른다.'}`);
     paint();
   }
 
@@ -189,7 +189,7 @@ export function mount(root, game, ctx) {
     if (over) return;
     if (!armed) {
       shake(targetNodes.get(id));
-      say(L.sayNeedLine || '문장을 먼저 누르세요.');
+      say(L.sayNeedLine || '문장을 먼저 누른다.');
       return;
     }
     const no = indexOf(armed);
@@ -330,8 +330,8 @@ export function mount(root, game, ctx) {
     board.classList.toggle('ev__board--armed', !!armed);
 
     hint.textContent = armed
-      ? (L.hintArmed || '걸 자리를 누르세요. 같은 문장을 다시 누르면 놓습니다.')
-      : (L.hint || '문장을 누르고, 그 문장의 근거가 있는 자리를 누르면 선이 이어집니다.');
+      ? (L.hintArmed || '걸 자리를 누른다. 같은 문장을 다시 누르면 놓는다.')
+      : (L.hint || '문장을 누르고, 그 문장의 근거가 있는 자리를 누르면 선이 이어진다.');
 
     meterNum.textContent = `${t.marked} / ${t.total}`;
     meter.classList.toggle('ev__meter--full', t.done);

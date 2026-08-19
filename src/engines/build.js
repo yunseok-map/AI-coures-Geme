@@ -174,7 +174,7 @@ export function mount(root, game, ctx) {
         slotNodes.get(s.id).node.classList.toggle('slot--filled', placed.get(s.id).length > 0);
         any = any || ok;
       }
-      say(any ? `${eulReul(p.label)} 집었다. 놓을 곳을 고르세요.`
+      say(any ? `${eulReul(p.label)} 집었다. 놓을 곳을 고른다.`
               : `${eulReul(p.label)} 받을 수 있는 칸이 없다.`);
       if (!any) shake(node);
       return;
@@ -551,7 +551,7 @@ export function mount(root, game, ctx) {
     const sim = game.simulate(setup, d);
     await r.play(sim.steps);
     markParts(sim.marks);
-    say('실행이 끝났습니다.');
+    say('실행이 끝났다.');
 
     // 수리형 — 한 번 돌려 보고 고쳐서 다시 돌린다. 첫 판에 못 맞히는 게 정상이다.
     if (d.repair && runNo < (d.repair.runs ?? 2)) { offerRepair(sim); return; }

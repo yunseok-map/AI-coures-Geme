@@ -177,7 +177,7 @@ export function mount(root, game, ctx) {
     armed = armed === it.id ? null : it.id;
     drawQueue();
     drawDesks();
-    if (armed) say(`${it.label} 집었다. 보낼 창구를 고르세요.`);
+    if (armed) say(`${it.label} 집었다. 보낼 창구를 고른다.`);
   }
 
   function tapDesk(id) {
@@ -233,11 +233,11 @@ export function mount(root, game, ctx) {
     if (phase !== 'count') return;
 
     phase = 'run';
-    say(d.runNote || '일감이 들어옵니다. 대기줄에서 집어 창구로 보내세요.');
+    say(d.runNote || '일감이 들어온다. 대기줄에서 집어 창구로 보낸다.');
     loop = createLoop(tick, {
-      onPause: () => veil(d.pauseTitle || '잠깐 멈췄습니다',
-        '다른 창이나 탭으로 가면 브라우저가 화면을 멈춥니다. 고장이 아닙니다. ' +
-        '멈춘 사이에는 아무 일도 진행되지 않았습니다.'),
+      onPause: () => veil(d.pauseTitle || '잠깐 멈췄다',
+        '다른 창이나 탭으로 가면 브라우저가 화면을 멈춘다. 고장이 아니다. ' +
+        '멈춘 사이에는 아무 일도 진행되지 않았다.'),
       onResume: unveil
     });
     loop.start();

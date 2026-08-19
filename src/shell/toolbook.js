@@ -19,7 +19,7 @@ export function renderToolbook(root, query = '') {
   banner.className = 'banner';
   banner.setAttribute('role', 'note');
   banner.innerHTML =
-    `<b>확인하고 쓰세요.</b> ${esc(BANNER)} ` +
+    `<b>확인하고 쓴다.</b> ${esc(BANNER)} ` +
     `<a href="#/game/spot-risk">왜 위험한지 보기 →</a>`;
   root.append(banner);
 
@@ -72,7 +72,7 @@ export function renderToolbook(root, query = '') {
     if (!hits.length) {
       const e = document.createElement('p');
       e.className = 'empty';
-      e.textContent = '해당하는 도구가 없다. 카테고리 이름으로 찾아보라.';
+      e.textContent = '해당하는 도구가 없다. 카테고리 이름으로 찾아보자.';
       list.append(e);
       return;
     }

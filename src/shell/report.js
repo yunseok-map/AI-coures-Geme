@@ -96,7 +96,7 @@ function pickTrait() {
     if (score > bestScore) { bestScore = score; best = t; }
   }
   return bestScore <= 0
-    ? { name: '이제 시작하는 사람', body: '아직 코스를 시작하지 않았다. 챕터 1부터 한 판 해보라.' }
+    ? { name: '이제 시작하는 사람', body: '아직 코스를 시작하지 않았다. 챕터 1부터 한 판 해 보자.' }
     : best;
 }
 

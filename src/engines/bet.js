@@ -108,7 +108,7 @@ export function mount(root, game, ctx) {
     const chip = el('span', 'bt__chip', esc(btn.textContent.trim()));
     card.append(chip);
     stamp(chip);
-    say('걸었습니다. 실제로 어떻게 되는지 봅니다.');
+    say('걸었다. 실제로 어떻게 되는지 본다.');
 
     bets.push({ id: it.id, bet: value });
     await wait(420);

@@ -238,8 +238,8 @@ export function mount(root, game, ctx) {
     drawTries();
     drawHits(last);
     say(list.length
-      ? `${q} — ${list.length}건 걸렸습니다.`
-      : `${q} — 한 건도 안 걸렸습니다.`);
+      ? `${q} — ${list.length}건 걸렸다.`
+      : `${q} — 한 건도 안 걸렸다.`);
     if (!list.length) shake(hitBox);
   }
 
@@ -248,7 +248,7 @@ export function mount(root, game, ctx) {
     if (picked.includes(doc.id)) return;
     if (picked.length >= HOLD) {
       shake(node);
-      say(d.fullNote || `넘길 수 있는 칸이 ${HOLD}개뿐입니다.`);
+      say(d.fullNote || `넘길 수 있는 칸이 ${HOLD}개뿐이다.`);
       return;
     }
     picked.push(doc.id);
@@ -266,7 +266,7 @@ export function mount(root, game, ctx) {
     if (fresh) {
       drawWords();
       pulse(wordBox.querySelector('.lib__rail'), 1);
-      say(`${doc.title}에서 새 낱말이 나왔습니다.`);
+      say(`${doc.title}에서 새 낱말이 나왔다.`);
     }
   }
 
