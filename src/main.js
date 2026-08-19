@@ -12,7 +12,7 @@ import { showDebrief, hideDebrief } from './shell/debrief.js';
 import { eunNeun } from './core/ko.js';
 import { mountBookmark, refresh as refreshBook } from './shell/bookmark.js';
 import { needEnter, showEnter } from './shell/enter.js';
-import { mountBackdrop } from './shell/backdrop.js';
+import { mountBackdrop, refreshBackdrop } from './shell/backdrop.js';
 import { stageIn, ripple } from './core/motion.js';
 import { BUILD } from './core/version.js';
 
@@ -164,6 +164,7 @@ async function openGame(id) {
       const newTerms = state.record(id, result);
       renderTopbar(topbarHost, parse());   // 진행도·랭크를 즉시 반영
       refreshBook();                       // 떠 있는 책이 퍼덕인다
+      refreshBackdrop();                   // 뒤 책더미에 이번에 딴 용어가 얹힌다
 
       const next = nextOf(id, (x) => state.isCleared(x));
       const allRequiredDone = manifest

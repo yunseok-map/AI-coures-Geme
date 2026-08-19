@@ -131,6 +131,12 @@ export const state = {
   get earnedCount() { return data.earnedTerms.length; },
 
   /**
+   * 딴 순서 그대로의 용어 목록. 뒷그림(shell/backdrop.js)이 딴 순서대로 책을 쌓는다.
+   * 사본을 준다 — 밖에서 밀어 넣으면 저장과 화면이 어긋난다.
+   */
+  get earnedList() { return data.earnedTerms.slice(); },
+
+  /**
    * 어떤 판을 깨면 어떤 용어가 들어오는지. 도감이 "이건 어디서 따나"를 보여줄 때 쓴다.
    * 목록은 games/index.js 가 아니라 각 판 파일의 concept 에 있으므로 호출부가 넘겨 준다.
    * @param {Array<{id:string, concept:string[]}>} games
