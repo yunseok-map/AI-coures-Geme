@@ -22,7 +22,7 @@
 
 import { el, esc, say, Bin, header, actions, runner, todo } from './base.js';
 import { enter, cardIn, pulse, shake, wait, press as pressFx } from '../core/motion.js';
-import { eulReul } from '../core/ko.js';
+import { eulReul, eulReulJosa } from '../core/ko.js';
 import { coverage, laneSpan } from '../core/fire.js';
 
 let bin = new Bin();
@@ -205,6 +205,11 @@ export function mount(root, game, ctx) {
   function tellStep() {
     if (running) { step.set(''); return; }
     if (armed != null) { step.set('하루에서 걸어 둘 순간을 누른다'); return; }
+    // 상자를 안 열면 선반에 도구가 둘뿐이라 지킬 수 있는 것이 절반도 안 된다.
+    // 그런데 상자는 "걸 수 있는 도구"처럼 안 생겨서 그냥 지나친다 — 실제로 그렇게
+    // 막혔다. **여는 것 자체가 첫 단추라** 아직 안 열었으면 그것부터 짚어 준다.
+    // 안에 무엇이 들었는지는 말하지 않는다 — 열어서 아는 것이 이 판의 한 대목이다.
+    if (box && !opened) { step.set(`[${box.label}]${eulReulJosa(box.label)} 눌러 연다`); return; }
     if (!Object.keys(placed).length) { step.set('선반의 도구를 눌러 집는다'); return; }
     const runLabel = d.runLabel || '하루를 돌린다';
     // 초록 "다 됐다"를 켜지 않는다. 본문이 "더 걸어도 된다"라고 말하는데 라벨이

@@ -213,7 +213,11 @@ console.log('\n== 정답 경로 — 도구 없는 공격을 만들면 대가를 
   // paste + hide 는 구조로 못 막는다. 사람이 한 건 보고, 나머지 둘은 통로를 끊어야 한다.
   const r = play('paste', 'hide', ['human', 'cut']);
   check('통과', r.grade === 'pass', `${r.grade} ${r.score}점`);
+  // **대가가 점수에 남아야 한다.** 전에는 잘한 점 보너스(+10)가 업무 중단(-10)을
+  // 상쇄해서 이 길이 깨끗하게 막은 것과 똑같은 100점이었다 — 대가가 없는 대가다.
+  // 지금은 잘한 점이 점수를 안 올리고 업무 중단이 18점이라 82점으로 내려앉는다.
   check('업무 중단이 대가로 남는다', names(r).includes('업무 중단'), names(r).join(' / '));
+  check('그래서 깨끗하게 막은 것보다 점수가 낮다', r.score < 100, `${r.score}점`);
   check('자동화 편향은 안 뜬다 (사람이 한 건만 봤다)', !names(r).includes('자동화 편향'));
   check('휴먼 인 더 루프를 딴다', gains(r).includes('휴먼 인 더 루프'), gains(r).join(' / '));
   check('결과 문구가 업무가 멈췄다고 말한다', /업무 하나가 멈췄다/.test(r.steps.at(-1).text),
@@ -221,8 +225,9 @@ console.log('\n== 정답 경로 — 도구 없는 공격을 만들면 대가를 
 
   // 같은 공격을 무난한 조합으로 막으려 하면 자기 것이 뚫린다
   const bad = play('paste', 'hide', ['origin', 'least']);
-  check('출처 구분과 권한 축소로는 자기 공격을 못 막는다', bad.grade !== 'pass',
-    `${bad.grade} ${bad.score}점`);
+  check('출처 구분과 권한 축소로는 자기 공격을 못 막는다',
+    names(bad).includes('프롬프트 인젝션'), names(bad).join(' / '));
+  check('그래도 깨끗하게 막은 것보다 점수가 낮다', bad.score < 100, `${bad.score}점`);
   check('그때 뚫린 것이 자기 것이다', bad.mistakes.some(m => m.itemId === 'mine'),
     bad.mistakes.map(m => m.itemId).join(', '));
 }
@@ -243,7 +248,9 @@ console.log('\n== 오답 경로 하나 — 아무것도 안 걸었다 ==');
 console.log('\n== 오답 경로 둘 — 사람 승인에만 다 맡겼다 ==');
 {
   const r = play('doc', 'send', ['human']);
-  check('등급 fail', r.grade === 'fail', `${r.grade} ${r.score}점`);
+  // 반려에서 조건부로 올라왔다 — 한 건당 32점을 16점으로 낮춘 여파다.
+  // **통과하지 못한다는 것**이 이 검사가 지키려는 것이지 반려냐 조건부냐가 아니다.
+  check('통과하지 못한다', r.grade !== 'pass', `${r.grade} ${r.score}점`);
   check('자동화 편향이 용어 그대로 기록된다', names(r).includes('자동화 편향'), names(r).join(' / '));
   check('두 건이 지나간다', names(r).filter(n => n === '프롬프트 인젝션').length === 2,
     names(r).join(' / '));
@@ -255,7 +262,7 @@ console.log('\n== 오답 경로 셋 — 대응책을 잘못 골랐다 (사람이
 {
   // 출처 구분은 에이전트가 가져온 글만 본다. 사람이 올린 첨부는 그대로 지나간다.
   const r = play('doc', 'send', ['origin']);
-  check('통과는 아니다', r.grade !== 'pass', `${r.grade} ${r.score}점`);
+  check('만점은 아니다 — 한 건이 지나갔다', r.score < 100, `${r.grade} ${r.score}점`);
   check('한 건이 지나간다', names(r).filter(n => n === '프롬프트 인젝션').length === 1,
     names(r).join(' / '));
   check('지나간 것이 사람이 건넨 글이다', r.mistakes.some(m => m.itemId === 'a2'),
@@ -269,7 +276,7 @@ console.log('\n== 오답 경로 넷 — 권한만 열어 둔 채 도구 쪽만 �
 {
   // 권한 축소는 메일·삭제만 본다. 웹으로 실어 내보내는 것은 그대로 나간다.
   const r = play('doc', 'send', ['least']);
-  check('통과는 아니다', r.grade !== 'pass', `${r.grade} ${r.score}점`);
+  check('만점은 아니다 — 한 건이 지나갔다', r.score < 100, `${r.grade} ${r.score}점`);
   check('웹으로 나간 건이 지나간다', r.mistakes.some(m => m.itemId === 'a1'),
     r.mistakes.map(m => m.itemId).join(', '));
   check('힌트가 어떤 도구를 썼는지 말한다',
@@ -310,7 +317,13 @@ console.log('\n== 판이 끝까지 돌아간다 ==');
   check('점수가 0 아래로 안 내려간다', worst.score >= 0, String(worst.score));
   check('결과 문구는 그래도 나온다', !!worst.steps.at(-1).text);
 
-  // 한 건이라도 지나가면 통과는 없다
+  // **두 건부터는 통과가 없다.**
+  //
+  // 전에는 한 건만 지나가도 통과가 없었다. 사용자가 "너무 어렵다"고 해서
+  // 2026-08-19 에 한 건까지는 통과시키되 점수를 깎는 쪽으로 바꿨다(84점).
+  // 이 판은 프롬프트 인젝션을 **처음 만나는 자리**이고 게임오버가 없다 —
+  // 되짚기 화면이 어느 건이 어떻게 지나갔는지 그대로 짚어 주므로 다시 하면 된다.
+  // 두 건이 지나가는 것은 대응책을 아예 잘못 고른 것이라 그때는 통과가 없다.
   const leaks = [];
   for (const w of d.wheres) for (const p of d.whats) {
     for (const g of [[], ['origin'], ['least'], ['human'], ['cut'],
@@ -318,10 +331,12 @@ console.log('\n== 판이 끝까지 돌아간다 ==');
       ['least', 'human'], ['least', 'cut'], ['human', 'cut']]) {
       const r = play(w.id, p.id, g);
       const through = r.faults.filter(f => f.name === '프롬프트 인젝션').length;
-      if (through > 0 && r.grade === 'pass') leaks.push(`${w.id}+${p.id} [${g.join(',')}]`);
+      if (through >= 2 && r.grade === 'pass') leaks.push(`${w.id}+${p.id} [${g.join(',')}]`);
+      if (through > 0 && r.score === 100) leaks.push(`만점 ${w.id}+${p.id} [${g.join(',')}]`);
     }
   }
-  check('한 건이라도 지나가면 통과가 아니다', leaks.length === 0, leaks.slice(0, 4).join(' / '));
+  check('두 건부터는 통과가 아니고, 한 건이라도 지나가면 만점이 아니다',
+    leaks.length === 0, leaks.slice(0, 4).join(' / '));
 }
 
 console.log('\n== 로그가 읽히는 길이인가 ==');

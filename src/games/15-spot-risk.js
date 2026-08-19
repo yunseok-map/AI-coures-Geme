@@ -202,16 +202,16 @@ export default {
     if (mine.ok) {
       r.read(d.say.dayMine);
       r.warn(craft(mine.where, mine.what).line);
-      r.gain('경계 확인', '데이터에 심은 글이 지시로 읽히는 것을 직접 만들어 봤다', 6);
+      r.gain('경계 확인', '데이터에 심은 글이 지시로 읽히는 것을 직접 만들어 봤다');
     } else {
       r.read(d.say.dayMoved);
       if (!mine.read) {
         r.ok(d.say.notRead);
-        r.fault('읽지 않는 자리', '에이전트가 오늘 읽지 않는 곳에 심었다. 읽혀야 시작된다', 34);
+        r.fault('읽지 않는 자리', '에이전트가 오늘 읽지 않는 곳에 심었다. 읽혀야 시작된다', 28);
         mistakes.push({ itemId: 'mine', hint: '오늘 읽는 것 목록에 없는 자리에 심었다' });
       } else {
         r.ok(d.say.noTool);
-        r.fault('없는 도구', '지시는 읽혔지만 그 일을 할 도구가 없었다. 공격의 상한은 가진 권한이다', 34);
+        r.fault('없는 도구', '지시는 읽혔지만 그 일을 할 도구가 없었다. 공격의 상한은 가진 권한이다', 28);
         mistakes.push({ itemId: 'mine', hint: '가진 도구 목록에 없는 일을 시켰다' });
       }
     }
@@ -228,7 +228,7 @@ export default {
         r.ok(`${a.label} ${d.labels.blocked} — ${by ? by.short : ''}`);
       } else {
         r.fail(`${a.label} ${d.labels.through} — ${a.what.hurt}`);
-        applyFault(r, 'inject', 32);
+        applyFault(r, 'inject', 16);
         mistakes.push({ itemId: a.id, hint: hintFor(a, d) });
       }
     }
@@ -239,16 +239,18 @@ export default {
     }
     for (const b of bills) {
       r.warn(d.say.costLine);
-      r.fault('업무 중단', '오늘 업무에 쓰는 도구까지 뗐다. 안전하지만 일이 멈춘다', 10);
+      r.fault('업무 중단', '오늘 업무에 쓰는 도구까지 뗐다. 안전하지만 일이 멈춘다', 18);
     }
 
     // ---- 잘한 점 ----
     const through = v.rows.filter(x => x.through);
     const hardHit = v.rows.some(x => x.stopped && !x.gate &&
       (x.by.includes('least') || x.by.includes('cut')));
-    if (!through.length) applyGain(r, 'guard', 10);
-    if (hardHit) applyGain(r, 'least', 4);
-    if (!v.fatigue && v.rows.some(x => x.gate)) applyGain(r, 'gate', 4);
+    // 보너스를 주지 않는다. 시작이 100점이라 여기서 더하면 그 여유가
+    // **사유를 가린다** — 도구를 떼어 일을 멈춰 놓고도 만점 통과가 나왔다.
+    if (!through.length) applyGain(r, 'guard');
+    if (hardHit) applyGain(r, 'least');
+    if (!v.fatigue && v.rows.some(x => x.gate)) applyGain(r, 'gate');
 
     r.out(through.length
       ? `세 건 중 ${through.length}건이 그대로 실행됐다`
@@ -256,7 +258,7 @@ export default {
         ? '세 건을 다 막았다 — 대신 오늘 업무 하나가 멈췄다'
         : '세 건을 다 막았고 오늘 업무도 그대로 돌아갔다');
 
-    return r.finish({ pass: 82, partial: 50 }, { mistakes });
+    return r.finish({ pass: 82, partial: 55 }, { mistakes });
   },
 
   named: {

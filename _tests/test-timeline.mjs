@@ -144,8 +144,19 @@ console.log('\n== 틀리는 길들 ==');
   // ④ 커맨드를 안 눌렀다
   const quiet = run(BEST, []);
   check('커맨드를 안 누르면 주간보고가 안 나온다', quiet.met.g3 === false);
-  check('네 가지만 지키면 통과가 아니다', quiet.grade !== 'pass', `${quiet.grade} ${quiet.score}`);
-  check('네 가지를 지키면 반려도 아니다', quiet.grade === 'partial', `${quiet.grade} ${quiet.score}`);
+  // **넷을 지키면 통과한다.** 예전에는 다섯을 전부 지켜야만 통과였는데(하나 놓치면
+  // 78점 조건부), 이 판은 다섯 도구의 발동 시점을 **처음 만나는 자리**다.
+  // 처음 배우는 것을 다섯 개 한꺼번에 다 맞혀야 통과시키면 배우기 전에 막힌다.
+  // 사용자가 "개념이 어렵다"고 한 판이라 2026-08-19 에 하나당 22점 → 14점으로 낮췄다.
+  check('네 가지를 지키면 통과한다', quiet.grade === 'pass', `${quiet.grade} ${quiet.score}`);
+  check('그래도 만점은 아니다 — 못 지킨 것이 점수에 남는다',
+    quiet.score < 100, `${quiet.score}점`);
+  // 낮췄어도 판단은 여전히 결과를 바꾼다 — 아무것도 안 하면 통과하지 못한다
+  const idle = run({ hook1: null, hook2: null, skill: null, agent: null }, []);
+  check('아무것도 안 하면 통과하지 못한다', idle.grade !== 'pass',
+    `${idle.grade} ${idle.score}`);
+  check('둘의 점수가 다르다', idle.score !== quiet.score,
+    `${quiet.score}점 vs ${idle.score}점`);
 
   // 한 칸 늦게 눌러도 인정한다 (순간이 1초도 안 된다)
   const slow = run(BEST, [{ toolId: 'cmd', tick: at('m5') + 1 }]);
@@ -157,7 +168,12 @@ console.log('\n== 틀리는 길들 ==');
   const closed = run({ hook1: at('m3') }, PRESS);
   const kept = Object.values(closed.met).filter(Boolean).length;
   check('상자를 안 열면 둘까지만 지킨다', kept === 2, `${kept}가지`);
-  check('상자를 안 열면 반려', closed.grade === 'fail', `${closed.grade} ${closed.score}`);
+  // 반려에서 조건부로 올라왔다 — 못 지킨 것 하나당 22점을 14점으로 낮춘 여파다.
+  // **통과하지 못한다는 것이 중요한 것**이지 반려냐 조건부냐는 아니다.
+  // 상자를 여는 것이 이 판의 첫 단추라는 사실은 그대로다(다섯 중 둘밖에 못 지킨다).
+  // 이제 [지금 할 일] 줄이 아직 안 열었으면 상자부터 짚어 준다.
+  check('상자를 안 열면 통과하지 못한다', closed.grade !== 'pass',
+    `${closed.grade} ${closed.score}`);
 
   // ⑥ 아무 데나 걸어 헛발동을 냈다
   const noisy = run({ ...BEST, hook1: at('m9') }, [
