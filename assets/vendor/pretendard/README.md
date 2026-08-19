@@ -6,8 +6,8 @@
 |---|---|
 | 원본 | [orioncactus/pretendard](https://github.com/orioncactus/pretendard) **v1.3.9** `dist/web/variable/woff2/PretendardVariable.woff2` (2,057,688 B) |
 | 라이선스 | SIL Open Font License 1.1 — 원문은 같은 폴더 `OFL.txt` |
-| 이 폴더의 파일 | `PretendardVariable.subset.woff2` **158,452 B** · 글리프 953개 · 굵기축 `wght 45~930` |
-| 덮는 글자 | 861자 — `covered.txt` |
+| 이 폴더의 파일 | `PretendardVariable.subset.woff2` **163,128 B** · 글리프 980개 · 굵기축 `wght 45~930` |
+| 덮는 글자 | 887자 — `covered.txt` |
 
 원본 2MB 를 그대로 넣으면 사내망 첫 로딩에서 체감된다. 굵기축이 살아 있으므로
 Regular/Bold 를 따로 받지 않고 이 파일 **하나**로 45~930 굵기를 다 쓴다.
@@ -63,6 +63,22 @@ node _tests/run-all.mjs
 ```
 
 `chars.txt` 는 저장소에 넣지 않는다 — 언제든 1번으로 다시 만들 수 있다.
+
+### 글자가 줄기만 했으면 인터넷 없이 된다
+
+문구를 지워서 **안 쓰는 글자만 남은** 경우(검사가 "조각에 안 쓰는 한글이 없다"로
+잡아 준다)에는 2번을 건너뛰고 **지금 조각을 다시 자르면 된다.** 원본을 받을 필요가
+없어서 사내망에서도 돌아간다. 3번의 입력 파일만 조각 자신으로 바꾼다:
+
+```sh
+python -m fontTools.subset assets/vendor/pretendard/PretendardVariable.subset.woff2 \
+  --text-file=chars.txt --flavor=woff2 --no-hinting --desubroutinize \
+  --name-IDs+=0,7,13,14 --output-file=assets/vendor/pretendard/_new.woff2
+```
+
+바꿔치기 전에 **글리프가 뺀 만큼만 줄었는지, 굵기축(`wght 45~930`)과 name 항목
+0·7·13·14 가 그대로인지** 확인한다. 새 글자가 필요하면 이 방법으로는 안 된다 —
+조각에 없는 글자는 조각에서 나올 수 없으므로 그때는 2번부터 한다.
 
 ## Pretendard 에 아예 없는 글자
 

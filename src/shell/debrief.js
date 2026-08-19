@@ -6,7 +6,7 @@
 
 import { stamp, countUp, wait, enter, burst, shake, sendTo, pulse, typeIn, nameIn }
   from '../core/motion.js';
-import { esc, strong, plain } from '../core/text.js';
+import { esc, strong, plain, termLines } from '../core/text.js';
 import { groupReasons } from '../core/sim.js';
 import { terms } from '../data/terms.js';
 
@@ -59,13 +59,19 @@ export async function showDebrief(game, result, on) {
   inner.append(head);
 
   // ---- 방금 한 것의 이름 ----
+  // 한 문장이 한 줄이다. 붙여 두면 폭에 따라 감기는데, 감긴 줄에는 눈이 걸 자리가
+  // 없다 — 어디까지가 이 용어 설명이고 어디부터 다음 용어인지 글줄로는 안 갈린다.
+  // 14번이 189자 한 문단에 용어 넷, 8번은 133자 한 문장에 다섯이었다.
+  // 끊는 것은 core/text.js 가 한다(브라우저 없이 검사하려고 올려 뒀다).
   const named = game.named && (game.named[grade] || game.named.all);
   if (named) {
     const box = document.createElement('div');
     box.className = 'named';
     box.innerHTML =
       `<div class="named__key">방금 한 것의 이름</div>` +
-      `<div class="named__body">${strong(named)}</div>`;
+      `<div class="named__body">` +
+        termLines(named).map(l => `<p class="named__ln">${strong(l)}</p>`).join('') +
+      `</div>`;
     inner.append(box);
   }
 

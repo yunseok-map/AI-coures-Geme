@@ -23,7 +23,7 @@ const text = r => r.steps.map(s => s.text).join(' | ');
 
 // ---------------------------------------------------------------- 판 데이터
 console.log('\n== 7번 데이터 모양 ==');
-check('문항이 여덟 개다', ITEMS.length === 8, String(ITEMS.length));
+check('문항이 일곱 개다', ITEMS.length === 7, String(ITEMS.length));
 check('id 에 중복이 없다', new Set(ITEMS.map(i => i.id)).size === ITEMS.length);
 check('모든 문항에 답이 있다', ITEMS.every(i => typeof i.answer === 'boolean'));
 check('모든 문항에 실행 기록이 있다', ITEMS.every(i => Array.isArray(i.run) && i.run.length >= 3));
@@ -38,6 +38,20 @@ check('can 문항의 답이 한쪽으로 몰려 있지 않다',
 check('축이 다른 문항은 자기 질문을 갖는다',
   ITEMS.filter(i => i.axis === 'id').every(i => i.ask && i.yes && i.no));
 
+// 카드만 보고 답할 수 있어야 한다 — 외워야 답하는 문항은 찍기가 된다.
+// 지침 파일 세 개가 같은 일을 하냐는 문항이 여기 있었는데, 그건 10번 판이
+// 가르치는 내용이라 배우기 전에 물은 셈이었다. 되돌아오면 여기서 잡는다.
+check('아직 안 배운 것을 미리 묻지 않는다',
+  !ITEMS.some(i => /AGENTS\.md|GEMINI\.md/.test(i.text || '')),
+  ITEMS.map(i => i.id).join(', '));
+// codex 문항은 "폐기됐다"와 "동료가 지금 쓴다"가 한 카드 안에서 부딪혀야 답이 갈린다.
+// 그 근거를 카드에서 빼면 다시 암기 문제가 된다.
+{
+  const cx = ITEMS.find(i => i.id === 'codex');
+  check('codex 문항 카드에 답을 가를 근거가 들어 있다',
+    !!cx && /폐기/.test(cx.text) && /지금/.test(cx.text), cx ? cx.text : '없음');
+}
+
 // ---------------------------------------------------------------- 판정
 console.log('\n== 7번 판정 ==');
 {
@@ -45,7 +59,13 @@ console.log('\n== 7번 판정 ==');
   check('전부 맞히면 통과', perfect.grade === 'pass', `${perfect.grade} ${perfect.score}`);
   check('전부 맞히면 사고 없음', perfect.faults.length === 0, names(perfect).join(', '));
   check('범위 감각을 잘한 점으로 준다', gains(perfect).includes('범위 감각'), gains(perfect).join(', '));
-  check('여덟 건 다 맞힌 것을 짚는다', text(perfect).includes('여덟 건'));
+  check('전부 맞힌 것을 건수로 짚는다', text(perfect).includes(`${ITEMS.length}건을 전부`));
+
+  // 잘한 점이 점수를 올리면 100점 상한에서 잘리고, 그 잘린 만큼이 빗나간 한 건을
+  // 덮는다. 실제로 codex 를 틀리고도 만점이 나왔다. 한 건이라도 빗나가면 만점이 아니다.
+  const oneOff = all(i => i.axis === 'id' ? !i.answer : i.answer);
+  check('한 건 빗나가면 만점이 아니다', play(oneOff).score < 100, String(play(oneOff).score));
+  check('한 건 빗나가도 통과는 한다', play(oneOff).grade === 'pass', `${play(oneOff).grade} ${play(oneOff).score}`);
 
   // 이 판의 임팩트 — "못 한다" 쪽으로 기운 사람
   const scared = play(all(i => i.axis === 'can' ? false : i.answer));

@@ -228,5 +228,39 @@ for (const [m, g] of games) {
   }
 }
 
+// ---------------------------------------------------------------- 방금 한 것의 이름
+//
+// 사용자: "워크슬롭 알려줄 때도 이게 글이 내려가다 보니까 보기가 어려운데."
+// 이 칸이 용어 서너 개를 한 문단에 몰아넣고 있었다 — 14번 189자, 15번 225자,
+// 8번은 **한 문장에 용어 다섯 개 133자**. 폭이 좁으면 그게 세 줄로 감기고,
+// 감긴 줄에는 눈이 걸 자리가 없어서 무엇이 몇 개인지부터 안 보인다.
+//
+// 결과 화면은 한 문장을 한 줄로 세운다(core/text.js 의 termLines). 여기서는
+// **끊고 난 줄이 실제로 읽을 만한 길이인지**를 본다. 글을 새로 길게 쓰면 걸린다.
+console.log('\n== 방금 한 것의 이름 ==');
+{
+  const { termLines } = await import(`${ROOT}/core/text.js`);
+  const LONG = 75;                       // 이 이상이면 좁은 화면에서 감긴다
+  for (const [m, g] of games) {
+    if (!g.named) continue;
+    for (const [k, v] of Object.entries(g.named)) {
+      const ls = termLines(v);
+      const worst = ls.reduce((a, b) =>
+        b.replace(/\*\*/g, '').length > a.replace(/\*\*/g, '').length ? b : a, '');
+      check(`${m.no}번 named.${k} — 줄마다 ${LONG}자 안`,
+        worst.replace(/\*\*/g, '').length <= LONG,
+        `${worst.replace(/\*\*/g, '').length}자: ${worst.slice(0, 46)}…`);
+      // 굵게 표시를 짝이 안 맞게 자르면 화면에 별표가 그대로 나간다
+      check(`${m.no}번 named.${k} — 자른 줄의 강조 짝이 맞는다`,
+        ls.every(l => (l.match(/\*\*/g) || []).length % 2 === 0),
+        ls.filter(l => (l.match(/\*\*/g) || []).length % 2).join(' / '));
+      // 자르고 붙이면 원문 그대로여야 한다 — 글자가 사라지면 뜻이 바뀐다
+      const back = ls.join(' ').replace(/\s+/g, ' ').trim();
+      check(`${m.no}번 named.${k} — 자르는 동안 글이 없어지지 않는다`,
+        back === String(v).replace(/\s+/g, ' ').trim(), back.slice(0, 60));
+    }
+  }
+}
+
 console.log(`\n결과: ${pass} 통과 / ${fail} 실패\n`);
 process.exit(fail ? 1 : 0);
