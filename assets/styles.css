@@ -280,12 +280,15 @@ input { caret-color: var(--mark); }
   border-radius: 0;
   overflow: hidden;
 }
+/* 폭은 core/motion.js 의 fillBar 가 GSAP 로 직접 넣는다.
+   여기에 CSS 전환을 겹쳐 두면 안 된다 — GSAP 가 매 프레임 넣는 값을 전환이 또
+   보간하려 들어 서로 싸우고, 애니메이션이 얼어붙었을 때 최종값으로 박아 주는
+   안전망과 "움직임 줄이기" 경로까지 늦춘다. 둘 다 즉시 박히라고 만든 것이다. */
 .progress__fill {
   position: relative;
   height: 100%; width: 0;
   background: var(--mark);
   border-radius: 0;
-  transition: width var(--dur-move) var(--ease-out);
 }
 /* 눈금 — 10칸. 채워진 위로도 그대로 지나간다 */
 .progress__bar::after {
