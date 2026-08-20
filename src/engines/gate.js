@@ -18,7 +18,7 @@
 // 어긋나면 이 판은 아무것도 못 가르친다.
 // 판정은 game.simulate({ open, work, attack }) 가 한다. 엔진은 내용을 모른다.
 
-import { el, esc, say, Bin, header, actions, runner, todo } from './base.js';
+import { el, esc, strong, say, Bin, header, actions, runner, todo } from './base.js';
 import { shake, enter, cardIn, pulse, wait, isReduced } from '../core/motion.js';
 import { eulReul } from '../core/ko.js';
 import { key, runSteps, width } from '../core/perm.js';
@@ -56,7 +56,7 @@ export function mount(root, game, ctx) {
   if (d.brief) {
     const t = el('article', 'ticket');
     t.innerHTML = `<div class="ticket__no">${esc(d.briefCap || '맡길 일')}</div>` +
-                  `<div class="ticket__body">${esc(d.brief)}</div>`;
+                  `<div class="ticket__body">${strong(d.brief)}</div>`;
     root.append(t);
   }
 

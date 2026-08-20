@@ -17,7 +17,7 @@
 // 점수를 내는 것이 **같은 함수**라, 화면과 판정이 어긋날 수 없다.
 // 엔진은 무슨 내용인지 모른다 — 문구는 전부 game.data 에서 온다.
 
-import { el, esc, say, Bin, header, actions, runner, todo } from './base.js';
+import { el, esc, strong, say, Bin, header, actions, runner, todo } from './base.js';
 import { enter, cardIn, pulse, shake, wait } from '../core/motion.js';
 import { eulReul } from '../core/ko.js';
 import { build, lineup, craft, attackLog, coverage, cost, defend, byId } from '../core/inject.js';
@@ -74,7 +74,7 @@ export function mount(root, game, ctx) {
       `</div>`;
     t.innerHTML =
       `<div class="ticket__no">${esc(d.briefNo || '')}</div>` +
-      `<div class="ticket__body">${esc(d.brief || '')}</div>` +
+      `<div class="ticket__body">${strong(d.brief || '')}</div>` +
       chips(L.reads, d.agent.reads, d.readNames) +
       chips(L.tools, d.agent.tools, d.toolNames);
     return t;

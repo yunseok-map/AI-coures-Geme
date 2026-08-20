@@ -8,7 +8,7 @@
 //                        **아무 말 없이** 흐려진다. 계산은 전부 core/bag.js 가 한다
 // 여기에 수리형(data.repair)이 겹칠 수 있다 — 한 번 돌려 보고 고쳐서 다시 돌린다.
 
-import { el, esc, say, Bin, header, actions, runner, todo } from './base.js';
+import { el, esc, strong, say, Bin, header, actions, runner, todo } from './base.js';
 import { press, shake, enter, flyTo, pulse, wipeIn, dropOut }
   from '../core/motion.js';
 import { hasBatchim, eulReul, eulReulJosa, euroJosa } from '../core/ko.js';
@@ -68,7 +68,7 @@ export function mount(root, game, ctx) {
     budgetBox = el('div', 'budget');
     budgetNum = el('span', 'budget__num');
     budgetBox.append(
-      el('span', 'budget__cap', esc(d.budgetLabel || '가방')),
+      el('span', 'budget__cap', esc(d.budgetLabel || '책상')),
       budgetNum
     );
     // 칸 하나가 무엇인지 적어 둘 수 있다. 엔진은 그 뜻을 모르고 자리만 내준다 —
@@ -228,7 +228,7 @@ export function mount(root, game, ctx) {
   function setTicket(cap, text) {
     if (!ticket) return;
     ticket.innerHTML = `<div class="ticket__no">${esc(cap || '')}</div>` +
-                       `<div class="ticket__body">${esc(text || '')}</div>`;
+                       `<div class="ticket__body">${strong(text || '')}</div>`;
   }
 
   // ------------------------------------------------------------ 회차형
@@ -397,7 +397,7 @@ export function mount(root, game, ctx) {
     }
     deskGrid.classList.toggle('desk--over', used > cap);
     deskGrid.setAttribute('aria-label',
-      `${d.budgetLabel || '가방'} ${used} / ${cap}칸 사용` +
+      `${d.budgetLabel || '책상'} ${used} / ${cap}칸 사용` +
       (used > cap ? `. ${used - cap}칸 넘쳤다` : '') + '. ' +
       (keep.length ? `올린 것: ${keep.map(p => p.label).join(', ')}` : '아직 없다') +
       (ghost ? `. 다음 회차에 ${ghost}칸이 더 찬다` : ''));

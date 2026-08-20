@@ -37,7 +37,7 @@ export default {
   id: 'onboarding-doc',
   engine: 'C',
   title: '신입 온보딩 문서 만들기',
-  subtitle: '그럴듯한 규칙이 분량보다 많다. 한 번에 맞히기 어렵다',
+  subtitle: '그럴듯한 규칙이 넣을 수 있는 것보다 많다. 한 번에 맞히기 어렵다',
   chapter: 3,
   required: false,
   concept: ['지침 파일', '컨텍스트 엔지니어링'],
@@ -117,7 +117,7 @@ export default {
 
     const trivia = ['greeting', 'emoji', 'history'].filter(on);
     if (trivia.length >= 2) {
-      r.read('업무와 상관없는 줄을 읽느라 앞쪽 규칙을 흘려 본다');
+      r.read('업무와 상관없는 줄을 읽느라 앞쪽 규칙이 묻힌다');
       applyFault(r, 'rot', 18);
     } else if (trivia.length) {
       r.score -= 5;

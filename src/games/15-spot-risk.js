@@ -235,7 +235,7 @@ export default {
 
     if (v.fatigue) {
       r.warn(d.say.fatigue);
-      r.fault('자동화 편향', '사람이 볼 것이 용량보다 많으면 내용을 안 보고 통과시킨다', 12);
+      r.fault('자동화 편향', '볼 것이 너무 많아지면 사람은 내용을 안 보고 통과시킨다', 12);
     }
     for (const b of bills) {
       r.warn(d.say.costLine);

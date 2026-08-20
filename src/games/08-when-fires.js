@@ -38,7 +38,7 @@ const MOMENTS = [
 
 const TOOLS = [
   { id: 'hook1', mode: 'every', label: '훅', short: '훅',
-    note: '건 순간과 같은 종류마다 예외 없이',
+    note: '걸어 둔 순간과 같은 종류마다 예외 없이',
     putNote: '훅은 사람이 하든 AI가 하든 가리지 않는다.',
     dead: '이 종류의 순간이 오늘 여기 하나뿐이다.' },
 
@@ -80,7 +80,7 @@ export default {
   id: 'when-fires',
   engine: 'T',
   title: '언제 발동하나',
-  subtitle: '도구를 하루에 걸어 두고 한 번 돌린다. 다섯의 차이는 발동 시점이다',
+  subtitle: '도구를 하루에 걸어 두고 한 번 돌린다. 다섯은 발동 시점으로 갈린다',
   chapter: 2,
   required: true,
   concept: ['커맨드', '스킬', '서브에이전트', '훅', '플러그인'],

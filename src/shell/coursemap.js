@@ -54,7 +54,7 @@ function nextUp() {
 /**
  * 처음 온 사람에게 세 줄.
  *
- * 왜 필요한가: 첫 화면이 곧바로 "1. 가방 싸기 [시작하기]" 다. 무엇을 하는 곳인지
+ * 왜 필요한가: 첫 화면이 곧바로 1. 책상 정리하기 [시작하기] 다. 무엇을 하는 곳인지
  * 모르는 사람에게는 그게 시험처럼 읽힌다 — 강요된 교육을 받는 사무직이 대상이라
  * 그 순간 창을 닫는다. 특히 **"틀려도 게임오버가 없다"** 를 먼저 알아야 누른다.
  *
@@ -101,7 +101,7 @@ function resume(done, total) {
   if (!next) {
     box.innerHTML =
       `<div class="resume__cap">17판 전부 완주</div>` +
-      `<div class="resume__name">결과 카드를 확인하라</div>`;
+      `<div class="resume__name">이제 결과 카드가 남았다</div>`;
     box.append(bigBtn('결과 카드 보기', () => go('/report')));
     return box;
   }

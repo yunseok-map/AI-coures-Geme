@@ -117,7 +117,7 @@ export function mount(root, game, ctx) {
   root.append(pile);
 
   const dock = el('div', 'ax__dock');
-  const hint = el('p', 'ax__traycap', esc(d.prompt || '창구에 온 서류를 판단하시오'));
+  const hint = el('p', 'ax__traycap', esc(d.prompt || '창구에 온 서류를 판단한다'));
   const bar = actions([
     { id: 'go', label: RUN, primary: true }
   ]);

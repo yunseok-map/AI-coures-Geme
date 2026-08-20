@@ -12,7 +12,7 @@
 // 시간 계산은 core/graph.js 가 한다 — 화면에 뜨는 소요 시간과 판정이 같은 답을 봐야 한다.
 // 판정은 game.simulate({ links, nodes, sched }) 가 한다. 엔진은 무슨 일인지 모른다.
 
-import { el, esc, say, Bin, header, actions, runner, todo } from './base.js';
+import { el, esc, strong, say, Bin, header, actions, runner, todo } from './base.js';
 import { shake, enter, pulse, wait, isReduced, drawLine } from '../core/motion.js';
 import { eulReul } from '../core/ko.js';
 import { schedule, wouldCycle, normalize } from '../core/graph.js';
@@ -45,7 +45,7 @@ export function mount(root, game, ctx) {
   if (d.brief) {
     const t = el('article', 'ticket');
     t.innerHTML = `<div class="ticket__no">${esc(d.briefCap || '상황')}</div>` +
-                  `<div class="ticket__body">${esc(d.brief)}</div>`;
+                  `<div class="ticket__body">${strong(d.brief)}</div>`;
     root.append(t);
   }
 

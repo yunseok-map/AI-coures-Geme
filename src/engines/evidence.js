@@ -16,7 +16,7 @@
 // 잇기 규칙은 core/evidence.js 가 한다 — 마지막 화면과 판정이 같은 답을 봐야 한다.
 // 판정은 game.simulate({ marks, lines, spans }) 가 한다. 엔진은 무슨 내용인지 모른다.
 
-import { el, esc, say, Bin, header, actions, runner, todo } from './base.js';
+import { el, esc, strong, say, Bin, header, actions, runner, todo } from './base.js';
 import { shake, enter, cardIn, pulse, wait, isReduced, drawLine } from '../core/motion.js';
 import { euroJosa, eulReul } from '../core/ko.js';
 import { NONE, judge, tally } from '../core/evidence.js';
@@ -56,7 +56,7 @@ export function mount(root, game, ctx) {
   if (d.ask) {
     const t = el('article', 'ticket');
     t.innerHTML = `<div class="ticket__no">${esc(d.askCap || '들어온 답변')}</div>` +
-                  `<div class="ticket__body">${esc(d.ask)}</div>`;
+                  `<div class="ticket__body">${strong(d.ask)}</div>`;
     root.append(t);
   }
   root.append(step.node);

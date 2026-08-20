@@ -186,6 +186,25 @@ console.log('\n== [지금 할 일] 줄의 버튼 이름 뒤 조사 ==');
   }
 }
 
+// ---------------------------------------------------------------- 상황 카드의 강조
+console.log('\n== 상황 카드가 강조 표시를 그리는가 ==');
+//
+// 콘텐츠 파일은 강조를 `**이렇게**` 로 적는다(core/text.js). 그런데 상황 카드를
+// esc() 로만 그린 엔진이 있어서 **별표가 화면에 그대로 나갔다** — 10·11·12번이
+// 그랬다. 엔진마다 갈리면 콘텐츠 쓰는 쪽에서 알 길이 없으므로 전부 strong() 이다.
+{
+  const dir = new URL('../src/engines/', import.meta.url);
+  const files = (await readdir(dir)).filter(f => f.endsWith('.js'));
+  for (const f of files) {
+    const src = await readFile(new URL(f, dir), 'utf8');
+    const bad = src.split('\n')
+      .map((l, i) => [i + 1, l])
+      .filter(([, l]) => l.includes('ticket__body') && /\besc\(/.test(l));
+    check(`engines/${f} — 상황 카드를 strong() 으로 그린다`, bad.length === 0,
+      bad.map(([n, l]) => `${n}행: ${l.trim()}`).join(' / '));
+  }
+}
+
 // ---------------------------------------------------------------- 초록 "다 됐다"
 console.log('\n== [지금 할 일] 초록이 앞뒤가 맞는가 ==');
 //

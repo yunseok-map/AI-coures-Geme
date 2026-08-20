@@ -130,7 +130,7 @@ function fillSources(list) {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'term__go';
-    // 조사는 붙여 쓴다 — "가방 싸기 에서"가 아니라 "가방 싸기에서"
+    // 조사는 붙여 쓴다 — 책상 정리하기 에서가 아니라 책상 정리하기에서
     b.textContent = `${from.no}. ${from.title}에서 딸 수 있다`;
     b.addEventListener('click', () => go(`/game/${from.id}`));
     slot.append(b);
